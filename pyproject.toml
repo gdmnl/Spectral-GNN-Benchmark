@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="pyg_spectral"
+version="0.1.0"
+authors=[
+    {name="Ningyi Liao", email="liao0090@e.ntu.edu.sg"},
+]
+description="Spectral GNN benchmark based on PyG"
+readme="README.md"
+requires-python=">=3.8"
+keywords=[
+    "pytorch",
+    "graph-neural-networks",
+    "spectral-gnn",
+]
+dependencies=[
+    "torch_geometric>=2.3",
+    "torch>=2.0",
+]
