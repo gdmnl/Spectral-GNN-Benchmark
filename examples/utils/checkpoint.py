@@ -2,36 +2,14 @@
 """
 Author: nyLiao
 File Created: 2023-03-20
-File: training.py
+File: checkpoint.py
 """
 from typing import Union, Callable
 from pathlib import Path
 
-import os
-import uuid
-import random
 import copy
-
-import numpy as np
 import torch
 import torch.nn as nn
-
-
-# noinspection PyUnresolvedReferences
-def set_seed(seed: int = None, cuda: bool = True):
-    if seed is None:
-        seed = int(uuid.uuid4().hex, 16) % 1000000
-    random.seed(seed)
-    os.environ['PYTHONHASHSEED'] = str(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if cuda and torch.cuda.is_available():
-        torch.cuda.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        # torch.backends.cudnn.benchmark = False
-        # torch.backends.cudnn.deterministic = True
-    # torch.use_deterministic_algorithms(True)
-    return seed
 
 
 class CkptLogger(object):
@@ -39,28 +17,29 @@ class CkptLogger(object):
     stopping during training.
 
     Args:
-        logpath (Path): The path to the directory where the checkpoints will be saved.
-        patience (int, optional): Patience number for early stopping. Defaults no early stopping.
+        logpath (Path): Path to checkpoints saving directory.
+        patience (int, optional): Patience for early stopping. Defaults no early stopping.
         period (int, optional): Periodic saving interval. Defaults to no periodic saving.
         prefix (str, optional): Prefix for the checkpoint file names.
         storage (str, optional): Storage scheme for saving the checkpoints.
             * 'model' vs 'state': Save model object or state_dict.
-            * 'ram', 'gpu': Save as file, RAM or GPU memory.
+            * '_file', '_ram', '_gpu': Save as file, RAM, or GPU memory.
         metric_cmp (function or ['max', 'min'], optional): Comparison function for the metric.
     """
     def __init__(self,
                  logpath: Path,
-                 patience: int = 999999,
+                 patience: int = -1,
                  period: int = 0,
                  prefix: str = 'model',
-                 storage: str = 'model_gpu',
+                 storage: str = 'state_gpu',
                  metric_cmp: Union[Callable[[float, float], bool], str]='max'):
         self.logpath = logpath
+        self.prefix = prefix
+        self.filetype = 'pth'
         self.patience = patience
         self.period = period
-        self.prefix = prefix
         # Checkpoint storage scheme
-        assert storage in ['model', 'state', 'model_ram', 'state_ram', 'model_gpu', 'state_gpu']
+        assert storage in ['model_file', 'state_file', 'model_ram', 'state_ram', 'model_gpu', 'state_gpu']
         self.storage = storage
         # Comparison function for metric
         if isinstance(metric_cmp, str):
@@ -79,11 +58,11 @@ class CkptLogger(object):
 
     # ===== Checkpoint file IO
     def _get_model_file(self, *suffix) -> Path:
-        return self.logpath.joinpath(f'{self.prefix}_{"-".join(suffix)}.pth')
+        return self.logpath.joinpath(f'{self.prefix}_{"-".join(suffix)}.{self.filetype}')
 
     def get_last_epoch(self) -> int:
         if self.epoch_current == 0:
-            for file in self.logpath.glob(f'{self.prefix}_*.pth'):
+            for file in self.logpath.glob(f'{self.prefix}_*.{self.filetype}'):
                 suffix = file.stem.split('_')[1:]
                 epoch = int(suffix[0]) if suffix[0].isdigit() else 0
                 if epoch > self.epoch_current:
@@ -100,9 +79,9 @@ class CkptLogger(object):
         name = f'{self.prefix}_{"-".join(suffix)}'
         path = self._get_model_file(*suffix)
 
-        if self.storage == 'state':
+        if self.storage == 'state_file':
             torch.save(model.state_dict(), path)
-        elif self.storage == 'model':
+        elif self.storage == 'model_file':
             torch.save(model, path)
         elif self.storage == 'state_gpu':
             # Alternative way is to use BytesIO
@@ -137,14 +116,14 @@ class CkptLogger(object):
         name = f'{self.prefix}_{"-".join(suffix)}'
         path = self._get_model_file(*suffix)
 
-        if self.storage == 'state':
+        if self.storage == 'state_file':
             state_dict = torch.load(path, map_location=map_location)
             model.load_state_dict(state_dict)
         elif self.storage in ['state_ram', 'state_gpu']:
             assert hasattr(self, name)
             model.load_state_dict(getattr(self, name))
             # model.to(map_location)
-        elif self.storage == 'model':
+        elif self.storage == 'model_file':
             model = torch.load(path, map_location=map_location)
         elif self.storage in ['model_ram', 'model_gpu']:
             assert hasattr(self, name)
@@ -156,6 +135,8 @@ class CkptLogger(object):
     # ===== Early stopping
     @property
     def is_early_stop(self) -> bool:
+        if self.patience < 0:
+            return False
         return self.epoch_from_best >= self.patience
 
     def step(self,

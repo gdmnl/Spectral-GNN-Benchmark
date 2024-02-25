@@ -14,21 +14,27 @@ import uuid
 import pandas as pd
 
 
-def setup_logger(filename: Path = Path('log.txt'),
+def setup_logger(logpath: Path,
                  level=logging.DEBUG,
+                 quiet: bool = True,
                  fmt='{message}'):
-    logger = logging.getLogger(filename.stem)
-    logger.logpath = filename.parent
+    formatter = logging.Formatter(fmt, style=fmt[0])
+    logger = logging.getLogger('log')
+    logger.logpath = logpath
+    logger.setLevel(level)
 
-    formatter = logging.Formatter(fmt, style='{')
-    fileHandler = logging.FileHandler(filename, delay=True)
-    fileHandler.setFormatter(formatter)
     streamHandler = logging.StreamHandler(stream=sys.stdout)
     streamHandler.setFormatter(formatter)
-
-    logger.setLevel(level)
-    logger.addHandler(fileHandler)
     logger.addHandler(streamHandler)
+
+    if not quiet:
+        filename = logpath.joinpath('log.txt')
+        fileHandler = logging.FileHandler(filename, delay=True)
+        fileHandler.setFormatter(formatter)
+        logger.addHandler(fileHandler)
+
+    # TODO: [wandb](https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/logging.py)
+
     return logger
 
 
@@ -41,13 +47,26 @@ def clear_logger(logger: Logger):
 
 def setup_logpath(dir: Path = Path('log'),
                   folder_args: Tuple=None,
-                  name_args: Tuple=None):
+                  name_args: Tuple=None,
+                  quiet: bool = True):
+    r"""Resolve log path for saving.
+
+    Args:
+        dir (Path): The base directory for saving logs. Default is './log/'.
+        folder_args (Tuple): Subfolder names.
+        name_args (Tuple): File name components.
+        quiet (bool, optional): Quiet run without creating directories.
+
+    Returns:
+        logpath (Path): Path for log file/directory.
+    """
     if folder_args is not None:
         dir = dir.joinpath(*folder_args)
     else:
         flag = str(uuid.uuid4())[:6]
         dir = dir.joinpath(flag)
-    dir.mkdir(parents=True, exist_ok=True)
+    if not quiet:
+        dir.mkdir(parents=True, exist_ok=True)
 
     if name_args is None:
         return dir
@@ -56,41 +75,75 @@ def setup_logpath(dir: Path = Path('log'),
 
 
 class CSVLogger(object):
-    def __init__(self, filename: Path = Path('log/summary.csv')):
-        self.filename = filename
+    r"""A class for logging data to a CSV file.
+
+    Args:
+        logpath (Path): Path to CSV file saving directory.
+        quiet (bool): Quiet run without saving file.
+    """
+    def __init__(self, logpath: Path, quiet: bool = True):
+        self.filename = logpath.joinpath('summary.csv')
+        self.quiet = quiet
         self.data = pd.DataFrame()
 
-    def _guess_fmt(self, col: str, val):
-        if isinstance(val, str):
+    def _guess_fmt(self, key: str, val):
+        """Guesses the format function for a given column based on its value type.
+        """
+        if isinstance(val, str) or isinstance(val, bool):
             return (lambda x: x)
         if isinstance(val, int):
             return (lambda x: format(x, 'd'))
         if isinstance(val, float):
-            if col.count('acc'):
+            if key.count('acc') or key.count('score'):
                 return (lambda x: format(x, '.4f'))
-            if col.count('loss'):
+            if key.count('loss'):
                 return (lambda x: format(x, '.6f'))
-            if col.count('time'):
+            if key.count('time'):
                 return (lambda x: format(x, '.4f'))
-            if col.count('mem') or col.count('num'):
+            if key.count('mem') or key.count('num'):
                 return (lambda x: format(x, '.3f'))
 
     def _log_single(self, val,
             col: str, row: int = 0,
             fmt = None):
+        """Log a single value to the specified column and row.
+        """
         fmt = fmt or self._guess_fmt(col, val)
         if col not in self.data.columns:
             self.data[col] = None
         self.data.loc[row, col] = val
         self.data[col] = self.data[col].apply(fmt)
 
-    def log(self, vals: dict, row: int = 0):
-        for col, val in vals.items():
-            self._log_single(val, col, row)
+    def log(self, vals: Tuple, row: int = 0):
+        r"""Log data entries.
 
-    def print(self):
-        self.filename.parent.mkdir(parents=True, exist_ok=True)
+        Args:
+            vals (Tuple): Tuple of (key, value, formatter).
+            row (int): The row index. Default is 0.
+        """
+        for vali in vals:
+            if len(vali) == 2:
+                key, val = vali
+                fmt = None
+            else:
+                key, val, fmt = vali
+            self._log_single(val, key, row, fmt)
+
+    def save(self):
+        r"""Saves the logged data to the CSV file.
+        """
+        if self.quiet:
+            return
         with open(self.filename, 'a') as f:
             # TODO: manage column difference in header
             self.data.to_csv(self.filename, index=False,
                              mode='a', header=f.tell()==0)
+
+    def __str__(self) -> str:
+        result = []
+        for col in self.data.columns:
+            if len(self.data[col]) > 1:
+                result.append(f'{col}={self.data[col].values.tolist()}')
+            else:
+                result.append(f'{col}={self.data[col].values[0]}')
+        return ', '.join(result)

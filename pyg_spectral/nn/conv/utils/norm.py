@@ -8,6 +8,7 @@ from torch_geometric.utils.num_nodes import maybe_num_nodes
 
 # TODO: `@torch.jit._overload` [`gcn_norm`](https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/nn/conv/gcn_conv.py)
 
+# TODO: consider migrate to like `torch_geometric.transforms`
 def identity_n_norm(edge_index, edge_weight=None, num_nodes=None,
                     rnorm=None, diag=1., dtype=torch.float32):
     r"""Manage normalization and identity of adjacency matrix.

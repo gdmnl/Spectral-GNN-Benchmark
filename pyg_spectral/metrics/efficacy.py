@@ -35,11 +35,11 @@ class F1Calculator(object):
         self.FP += ((1 - y_true) * y_pred).sum(dim=0).cpu()
         self.FN += (y_true * (1 - y_pred)).sum(dim=0).cpu()
 
-    def compute(self, average: str=None):
+    def get(self, average: str=None):
         r"""Compute the F1 score over all samples.
 
         Args:
-            average (['micro','macro']): F1 averaging.
+            average (['micro','macro']): F1 averaging scheme.
 
         Returns:
             f1 (float): F1 score.
@@ -56,4 +56,4 @@ class F1Calculator(object):
             raise ValueError('average must be "micro" or "macro"')
 
 
-# TODO: more metrics [glemos](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py)
+# TODO: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)
