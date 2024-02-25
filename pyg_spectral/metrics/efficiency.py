@@ -1,3 +1,9 @@
+# -*- coding:utf-8 -*-
+"""
+Author: nyLiao
+File Created: 2023-10-08
+File: efficiency.py
+"""
 import time
 import resource
 import torch
@@ -35,44 +41,105 @@ class Accumulator(object):
         self.reset()
 
     def reset(self):
-        self.val = 0
+        self.data = 0
         self.count = 0
 
     def update(self, val: float, count: int=1):
-        self.val += val
+        self.data += val
         self.count += count
-        return self.val
+        return self.data
 
     @property
     def avg(self) -> float:
-        return self.val / self.count
+        return self.data / self.count
 
 
-def memory_ram() -> float:
-    r"""Current RAM usage in GB
+class NumFmt(object):
+    def __init__(self, data: float = None, base: int = 10, suffix: str = ''):
+        assert base in [2, 10]
+        self.base = base
+        self.base_exp = 3 if base == 10 else 10
+        self.units = ['', 'K', 'M', 'G', 'T']
+        self.suffix = suffix
+        self.set(data)
+
+    def set(self, num: float):
+        if num is not None:
+            self.data = num
+
+    def update(self):
+        pass
+
+    def get_unit(self, num) -> str:
+        if num == 0:
+            return 0, self.units[self.base][0]
+        num = abs(num)
+
+        if self.base == 2:
+            exp = int((num.bit_length() - 1) / 10)
+        else:
+            exp = int(len(str(num)) / 3)
+        return self.units[exp]
+
+    def get(self, unit: str = None) -> float:
+        if unit is None:
+            unit = self.get_unit(self.data)
+        assert unit in self.units, f'Unit should be one of {self.units}'
+        exp = self.units.index(unit)
+        return self.data / (self.base ** (exp * self.base_exp))
+
+    def __str__(self) -> str:
+        unit = self.get_unit(self.data)
+        return f'{self.get(unit):.2f} {unit}{self.suffix}'
+
+
+class MemoryRAM(NumFmt):
+    r"""Memory usage of current process in RAM.
     """
-    return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20
+    def __init__(self):
+        super(MemoryRAM, self).__init__(base=2, suffix='B')
+        self.update()
+
+    def update(self):
+        self.set(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 2**10)
 
 
-def memory_cuda(dev) -> float:
-    r"""Current CUDA memory usage in GB
+class MemoryCUDA(NumFmt):
+    r"""Memory usage of current process in CUDA.
     """
-    return torch.cuda.max_memory_allocated(dev) / 2**30
+    def __init__(self):
+        super(MemoryCUDA, self).__init__(base=2, suffix='B')
+        self.update()
+
+    def update(self):
+        self.set(torch.cuda.max_memory_allocated())
 
 
-def get_num_params(model: Module) -> float:
-    r"""Number of module parameters
+class ParamNumel(NumFmt):
+    r"""Number of learnable parameters in an nn.Module.
     """
-    num_paramst = sum([param.nelement() for param in model.parameters() if param.requires_grad])
-    num_params = sum([param.nelement() for param in model.parameters()])
-    num_bufs = sum([buf.nelement() for buf in model.buffers()])
-    # return num_paramst/1e6, num_params/1e6, num_bufs/1e6
-    return num_paramst/1e6
+    def __init__(self, module: Module = None):
+        super(ParamNumel, self).__init__(base=10, suffix='')
+        if module is not None:
+            self.update(module)
+
+    def update(self, module: Module):
+        num_paramst = sum([param.nelement() for param in module.parameters() if param.requires_grad])
+        # num_params = sum([param.nelement() for param in module.parameters()])
+        # num_bufs = sum([buf.nelement() for buf in module.buffers()])
+        self.set(num_paramst)
 
 
-def get_mem_params(model: Module) -> float:
-    mem_paramst = sum([param.nelement()*param.element_size() for param in model.parameters() if param.requires_grad])
-    mem_params = sum([param.nelement()*param.element_size() for param in model.parameters()])
-    mem_bufs = sum([buf.nelement()*buf.element_size() for buf in model.buffers()])
-    # return mem_paramst/(1024**2), mem_params/(1024**2), mem_bufs/(1024**2)
-    return (mem_params+mem_bufs)/(1024**2)
+class ParamMemory(NumFmt):
+    r"""Memory usage of parameters in an nn.Module.
+    """
+    def __init__(self, module: Module = None):
+        super(ParamMemory, self).__init__(base=2, suffix='B')
+        if module is not None:
+            self.update(module)
+
+    def update(self, module: Module):
+        # mem_paramst = sum([param.nelement()*param.element_size() for param in module.parameters() if param.requires_grad])
+        mem_params = sum([param.nelement()*param.element_size() for param in module.parameters()])
+        mem_bufs = sum([buf.nelement()*buf.element_size() for buf in module.buffers()])
+        self.set(mem_params + mem_bufs)

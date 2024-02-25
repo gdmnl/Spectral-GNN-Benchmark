@@ -2,6 +2,10 @@
 backup/*
 save
 save/*
+save_*
+log
+log/*
+log_*
 data
 data/*
 data_*

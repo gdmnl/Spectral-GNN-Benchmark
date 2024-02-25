@@ -4,17 +4,19 @@ Author: nyLiao
 File Created: 2023-03-20
 File: logger.py
 """
-import sys
-import logging
-import uuid
-
 from typing import Tuple
 from pathlib import Path
 from logging import Logger
 
+import sys
+import logging
+import uuid
+import pandas as pd
+
 
 def setup_logger(filename: Path = Path('log.txt'),
-                 level=logging.DEBUG, fmt='{message}'):
+                 level=logging.DEBUG,
+                 fmt='{message}'):
     logger = logging.getLogger(filename.stem)
     logger.logpath = filename.parent
 
@@ -51,3 +53,44 @@ def setup_logpath(dir: Path = Path('log'),
         return dir
     fname = '-'.join(name_args) + '.txt'
     return dir.joinpath(fname)
+
+
+class CSVLogger(object):
+    def __init__(self, filename: Path = Path('log/summary.csv')):
+        self.filename = filename
+        self.data = pd.DataFrame()
+
+    def _guess_fmt(self, col: str, val):
+        if isinstance(val, str):
+            return (lambda x: x)
+        if isinstance(val, int):
+            return (lambda x: format(x, 'd'))
+        if isinstance(val, float):
+            if col.count('acc'):
+                return (lambda x: format(x, '.4f'))
+            if col.count('loss'):
+                return (lambda x: format(x, '.6f'))
+            if col.count('time'):
+                return (lambda x: format(x, '.4f'))
+            if col.count('mem') or col.count('num'):
+                return (lambda x: format(x, '.3f'))
+
+    def _log_single(self, val,
+            col: str, row: int = 0,
+            fmt = None):
+        fmt = fmt or self._guess_fmt(col, val)
+        if col not in self.data.columns:
+            self.data[col] = None
+        self.data.loc[row, col] = val
+        self.data[col] = self.data[col].apply(fmt)
+
+    def log(self, vals: dict, row: int = 0):
+        for col, val in vals.items():
+            self._log_single(val, col, row)
+
+    def print(self):
+        self.filename.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.filename, 'a') as f:
+            # TODO: manage column difference in header
+            self.data.to_csv(self.filename, index=False,
+                             mode='a', header=f.tell()==0)

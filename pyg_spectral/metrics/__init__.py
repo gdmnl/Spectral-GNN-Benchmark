@@ -1,1 +1,7 @@
-from .efficiency import Stopwatch, Accumulator
+from .efficiency import (
+    Stopwatch,
+    Accumulator,
+    MemoryRAM,
+    MemoryCUDA,
+    ParamNumel,
+    ParamMemory)
