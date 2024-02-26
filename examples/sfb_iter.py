@@ -10,9 +10,11 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch_geometric.transforms as T
+from pyg_spectral import metrics
+
 from torch_geometric.datasets import Planetoid
 from torch_geometric.nn.models import GCN
-from pyg_spectral import metrics
+from pyg_spectral.nn.models import FixIterSumAdj, VarIterSumAdj
 
 from utils import (
     setup_argparse,
@@ -46,37 +48,51 @@ def main(args):
         patience=args.patience, period=args.period, storage='state_gpu')
 
     logger.debug(f"[args]:{args}")
+    csv_logger.log([
+        ('data', args.data),
+        ('model', args.model),
+        ('seed', args.seed),])
     save_args(args.logpath, args)
 
     # ========== Load data
-    # TODO: data parser
+    # TODO: data loader
     # TODO: general graph norm transform
     dataset = Planetoid(DATAPATH, args.data,
-        transform=T.Compose([T.NormalizeFeatures(),
-                             T.ToSparseTensor()]))
+        transform=T.Compose([
+            T.NormalizeFeatures(),
+            T.ToSparseTensor(),]))
     data = dataset[0]
 
     logger.debug(f"[dataset]:{dataset}")
     logger.debug(f"[data]:{data}")
 
     # ========== Load model
-    # TODO: model parser
-    model = GCN(
+    # TODO: model loader
+    # model = GCN(
+    #     in_channels=dataset.num_features,
+    #     out_channels=dataset.num_classes,
+    #     hidden_channels=args.hidden,
+    #     num_layers=args.layer,
+    #     dropout=args.dp,
+    #     normalize=False,
+    # ).to(args.device)
+    model = VarIterSumAdj(
         in_channels=dataset.num_features,
         out_channels=dataset.num_classes,
         hidden_channels=args.hidden,
         num_layers=args.layer,
+        theta=('appr', 0.15),
         dropout=args.dp,
-        normalize=False,
+        K=2,
     ).to(args.device)
 
     logger.debug(f"[model]:{model}")
 
-    # TODO: layer-specific wd (then enable scheduler)
+    # TODO: layer-specific wd (then configure scheduler)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    #     optimizer, mode='max', factor=0.5,
-    #     threshold=1e-4, patience=15, verbose=False)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='max', factor=0.5,
+        threshold=1e-4, patience=15, verbose=False)
     loss_fn = nn.CrossEntropyLoss()
     stopwatch = metrics.Stopwatch()
 
@@ -134,7 +150,7 @@ def main(args):
             edge_idx=data.adj_t,
             y=data.y,
             split_mask=data.val_mask)
-        # scheduler.step(acc_val)
+        scheduler.step(acc_val)
 
         logstr = f"Epoch:{epoch:04d} | loss_train:{loss_train:.4f}, acc_val:{acc_val:.4f}, time_train:{time_train.data:.4f}"
         logger.info(logstr)
@@ -143,11 +159,11 @@ def main(args):
         if early_stop:
             break
 
-    csv_logger.log((
+    csv_logger.log([
         ('epoch_total', ckpt_logger.epoch_current),
         ('epoch_best', ckpt_logger.epoch_best),
         ('time_train', time_train.data),
-        ('acc_val', acc_val)))
+        ('acc_val', acc_val),])
 
     # ========== Test
     model = ckpt_logger.load('best', model=model)
@@ -159,11 +175,11 @@ def main(args):
     mem_rem = metrics.MemoryRAM().get(unit='G')
     mem_cuda = metrics.MemoryCUDA().get(unit='G')
 
-    csv_logger.log((
+    csv_logger.log([
         ('acc_test', acc_test),
         ('time_test', time_test),
         ('mem_rem', mem_rem),
-        ('mem_cuda', mem_cuda)))
+        ('mem_cuda', mem_cuda),])
     csv_logger.save()
     logger.info(str(csv_logger))
     clear_logger(logger)

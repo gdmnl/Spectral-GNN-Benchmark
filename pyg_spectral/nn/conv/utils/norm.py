@@ -6,7 +6,7 @@ from torch_geometric.utils import add_remaining_self_loops, scatter
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 
 
-# TODO: `@torch.jit._overload` [`gcn_norm`](https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/nn/conv/gcn_conv.py)
+# FEATURE: `@torch.jit._overload` [`gcn_norm`](https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/nn/conv/gcn_conv.py)
 
 # TODO: consider migrate to like `torch_geometric.transforms`
 def identity_n_norm(edge_index, edge_weight=None, num_nodes=None,
@@ -22,7 +22,7 @@ def identity_n_norm(edge_index, edge_weight=None, num_nodes=None,
         if `edge_index` stores float, return `edge_index` with weights
         else return `edge_index` and `edge_weight`
     """
-    # TODO: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
+    # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
     if isinstance(edge_index, SparseTensor):
         assert edge_index.size(0) == edge_index.size(1)
         if diag is not None:

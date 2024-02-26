@@ -72,7 +72,7 @@ def gen_theta(K: int, scheme: str, alpha: float = None) -> Tensor:
 
 class FixSumAdj(MessagePassing):
     r"""Summation of hops of adj-based propagations with fixed parameters.
-    Similar to `pyg.nn.conv.APPNP`
+    Similar to :class:`pyg.nn.conv.APPNP`
 
     Covers:
         - `khop`: SGC, DAGNN
@@ -83,7 +83,7 @@ class FixSumAdj(MessagePassing):
     Args:
         theta (Tensor): List of hop parameters.
         K (int, optional): Number of iterations :math:`K`. If K=0 then infer from p.
-        dropout (float, optional): Edge dropout. Defaults to 0.
+        dropedge (float, optional): Edge dropout. Defaults to 0.
 
     Shapes:
         - **input:**
@@ -92,8 +92,9 @@ class FixSumAdj(MessagePassing):
           edge weights :math:`(|\mathcal{E}|)` *(optional)*
         - **output:** node features :math:`(|\mathcal{V}|, F)`
     """
-    def __init__(self, theta: Union[Tensor, Tuple[str, float]], K: int = 0,
-                 dropout: float = 0., **kwargs):
+    def __init__(self, theta: Union[Tensor, Tuple[str, float]] = ('appr', 0.1),
+                 K: int = 0, dropedge: float = 0., **kwargs):
+        # FEATURE: `combine_root` as `pyg.nn.conv.SimpleConv`
         kwargs.setdefault('aggr', 'add')
         super(FixSumAdj, self).__init__(**kwargs)
 
@@ -101,7 +102,7 @@ class FixSumAdj(MessagePassing):
             theta = gen_theta(K, *theta)
         self.theta = theta
         self.K = K if K > 0 else len(theta)
-        self.dropout = dropout
+        self.dropedge = dropedge
 
     def forward(
         self,
@@ -116,9 +117,14 @@ class FixSumAdj(MessagePassing):
             h = x * self.theta[0]
         for k in range(1, self.K+1):
             # Edge dropout
-            edge_index, edge_mask = dropout_edge(edge_index, p=self.dropout, training=self.training)
-            if edge_weight is not None:
-                edge_weight = edge_weight[edge_mask]
+            if self.dropedge > 0:
+                assert isinstance(edge_index, Tensor) and \
+                    edge_index.size(0) == 2, \
+                    'DropEdge only supports tensor format edge_index'
+                edge_index, edge_mask = dropout_edge(
+                    edge_index, p=self.dropedge, training=self.training)
+                if edge_weight is not None:
+                    edge_weight = edge_weight[edge_mask]
 
             # propagate_type: (x: Tensor, edge_weight: OptTensor)
             x = self.propagate(edge_index, x=x, edge_weight=edge_weight)
@@ -139,7 +145,7 @@ class FixSumAdj(MessagePassing):
 
 class FixLinSumAdj(FixSumAdj):
     r"""Summation of hops of adj-based propagations with fixed parameters, then
-    perform linear transformation. Similar to `pyg.nn.conv.SSGConv`
+    perform linear transformation. Similar to :class:`pyg.nn.conv.SSGConv`
 
     Covers:
         * `khop`: SGC, DAGNN
@@ -154,10 +160,9 @@ class FixLinSumAdj(FixSumAdj):
           node features :math:`(|\mathcal{V}|, F_{out})`
     """
     def __init__(self, in_channels: int, out_channels: int,
-                 theta: Union[Tensor, Tuple[str, float]], K: int = 0,
-                 dropout: float = 0., bias: bool = True, **kwargs):
-        kwargs.setdefault('aggr', 'add')
-        super(FixLinSumAdj, self).__init__(theta, K, dropout, **kwargs)
+                 theta: Union[Tensor, Tuple[str, float]] = ('appr', 0.1),
+                 K: int = 0, dropedge: float = 0., bias: bool = True, **kwargs):
+        super(FixLinSumAdj, self).__init__(theta, K, dropedge, **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels

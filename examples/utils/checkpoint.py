@@ -96,7 +96,7 @@ class CkptLogger(object):
             if hasattr(self, name): delattr(self, name)
             setattr(self, name, copy.deepcopy(model))
         elif self.storage == 'model_ram':
-            # TODO: reduce mem fro 2xmem(model) to mem(model)
+            # FIXME: reduce mem fro 2xmem(model) to mem(model)
             if hasattr(self, name): delattr(self, name)
             device = next(model.parameters()).device
             setattr(self, name, copy.deepcopy(model.cpu()))

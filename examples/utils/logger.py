@@ -4,7 +4,7 @@ Author: nyLiao
 File Created: 2023-03-20
 File: logger.py
 """
-from typing import Tuple
+from typing import Tuple, List
 from pathlib import Path
 from logging import Logger
 
@@ -37,7 +37,7 @@ def setup_logger(logpath: Path,
         fileHandler.setFormatter(formatter)
         logger.addHandler(fileHandler)
 
-    # TODO: [wandb](https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/logging.py)
+    # FEATURE: [wandb](https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/logging.py)
 
     return logger
 
@@ -118,7 +118,7 @@ class CSVLogger(object):
         self.data.loc[row, col] = val
         self.data[col] = self.data[col].apply(fmt)
 
-    def log(self, vals: Tuple, row: int = 0):
+    def log(self, vals: List[Tuple], row: int = 0):
         r"""Log data entries.
 
         Args:
@@ -139,7 +139,7 @@ class CSVLogger(object):
         if self.quiet:
             return
         with open(self.filename, 'a') as f:
-            # TODO: manage column difference in header
+            # FEATURE: manage column difference in header
             self.data.to_csv(self.filename, index=False,
                              mode='a', header=f.tell()==0)
 

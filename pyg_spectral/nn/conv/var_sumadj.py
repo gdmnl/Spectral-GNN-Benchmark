@@ -21,7 +21,7 @@ class VarSumAdj(MessagePassing):
     Args:
         theta (Tensor): List of initial hop parameters.
         K (int, optional): Number of iterations :math:`K`. If K=0 then infer from p.
-        dropout (float, optional): Edge dropout. Defaults to 0.
+        dropedge (float, optional): Edge dropout. Defaults to 0.
 
     Shapes:
         - **input:**
@@ -30,8 +30,8 @@ class VarSumAdj(MessagePassing):
           edge weights :math:`(|\mathcal{E}|)` *(optional)*
         - **output:** node features :math:`(|\mathcal{V}|, F)`
     """
-    def __init__(self, theta: Union[Tensor, Tuple[str, float]], K: int = 0,
-                 dropout: float = 0., **kwargs):
+    def __init__(self, theta: Union[Tensor, Tuple[str, float]] = ('appr', 0.1),
+                 K: int = 0, dropedge: float = 0., **kwargs):
         kwargs.setdefault('aggr', 'add')
         super(VarSumAdj, self).__init__(**kwargs)
 
@@ -40,7 +40,7 @@ class VarSumAdj(MessagePassing):
         self.theta_init = theta
         self.theta = torch.nn.Parameter(theta)
         self.K = K if K > 0 else len(theta)
-        self.dropout = dropout
+        self.dropedge = dropedge
 
         if self.__class__ == VarSumAdj:
             self.reset_parameters()
@@ -62,9 +62,10 @@ class VarSumAdj(MessagePassing):
             h = x * self.theta[0]
         for k in range(1, self.K+1):
             # Edge dropout
-            edge_index, edge_mask = dropout_edge(edge_index, p=self.dropout, training=self.training)
-            if edge_weight is not None:
-                edge_weight = edge_weight[edge_mask]
+            if self.dropedge > 0:
+                edge_index, edge_mask = dropout_edge(edge_index, p=self.dropedge, training=self.training)
+                if edge_weight is not None:
+                    edge_weight = edge_weight[edge_mask]
 
             # propagate_type: (x: Tensor, edge_weight: OptTensor)
             x = self.propagate(edge_index, x=x, edge_weight=edge_weight)
@@ -84,8 +85,8 @@ class VarSumAdj(MessagePassing):
 
 
 class VarLinSumAdj(VarSumAdj):
-    r"""Summation of hops of adj-based propagation with learnable parameters, then
-    perform linear transformation.
+    r"""Summation of hops of adj-based propagation with learnable parameters,
+    then perform linear transformation.
 
     Covers:
 
@@ -98,10 +99,9 @@ class VarLinSumAdj(VarSumAdj):
           node features :math:`(|\mathcal{V}|, F_{out})`
     """
     def __init__(self, in_channels: int, out_channels: int,
-                 theta: Union[Tensor, Tuple[str, float]], K: int = 0,
-                 dropout: float = 0., bias: bool = True, **kwargs):
-        kwargs.setdefault('aggr', 'add')
-        super(VarLinSumAdj, self).__init__(theta, K, dropout, **kwargs)
+                 theta: Union[Tensor, Tuple[str, float]] = ('appr', 0.1),
+                 K: int = 0, dropedge: float = 0., bias: bool = True, **kwargs):
+        super(VarLinSumAdj, self).__init__(theta, K, dropedge, **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
