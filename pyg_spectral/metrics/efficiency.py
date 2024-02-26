@@ -55,13 +55,12 @@ class Accumulator(object):
 
 
 class NumFmt(object):
-    def __init__(self, data: float = None, base: int = 10, suffix: str = ''):
+    def __init__(self, base: int = 10, suffix: str = ''):
         assert base in [2, 10]
         self.base = base
         self.base_exp = 3 if base == 10 else 10
         self.units = ['', 'K', 'M', 'G', 'T']
         self.suffix = suffix
-        self.set(data)
 
     def set(self, num: float):
         if num is not None:

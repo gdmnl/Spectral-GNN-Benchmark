@@ -48,13 +48,13 @@ class CkptLogger(object):
         else:
             self.cmp = metric_cmp
 
-        self.epoch_current = 0
+        self.set_epoch()
+
+    def set_epoch(self, epoch: int = 0):
+        self.epoch_current = epoch
         self.epoch_from_best = 0
         self.epoch_best = 0
         self.metric_best = None
-
-    def set_epoch(self, epoch: int):
-        self.epoch_current = epoch
 
     # ===== Checkpoint file IO
     def _get_model_file(self, *suffix) -> Path:
@@ -86,20 +86,20 @@ class CkptLogger(object):
         elif self.storage == 'state_gpu':
             # Alternative way is to use BytesIO
             if hasattr(self, name): delattr(self, name)
-            self.setattr(name, copy.deepcopy(model.state_dict()))
+            setattr(self, name, copy.deepcopy(model.state_dict()))
         elif self.storage == 'state_ram':
             if hasattr(self, name): delattr(self, name)
             model_copy = copy.deepcopy(self.state_dict)
             model_copy = {k: v.cpu() for k, v in model_copy.items()}
-            self.setattr(name, model_copy)
+            setattr(self, name, model_copy)
         elif self.storage == 'model_gpu':
             if hasattr(self, name): delattr(self, name)
-            self.setattr(name, copy.deepcopy(model))
+            setattr(self, name, copy.deepcopy(model))
         elif self.storage == 'model_ram':
             # TODO: reduce mem fro 2xmem(model) to mem(model)
             if hasattr(self, name): delattr(self, name)
             device = next(model.parameters()).device
-            self.setattr(name, copy.deepcopy(model.cpu()))
+            setattr(self, name, copy.deepcopy(model.cpu()))
             model.to(device)
 
     def load(self, *suffix, model: nn.Module, map_location='cpu') -> nn.Module:

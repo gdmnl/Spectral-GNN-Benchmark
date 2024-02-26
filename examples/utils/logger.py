@@ -8,6 +8,7 @@ from typing import Tuple
 from pathlib import Path
 from logging import Logger
 
+import os
 import sys
 import logging
 import uuid
@@ -20,7 +21,6 @@ def setup_logger(logpath: Path,
                  fmt='{message}'):
     formatter = logging.Formatter(fmt, style=fmt[0])
     logger = logging.getLogger('log')
-    logger.logpath = logpath
     logger.setLevel(level)
 
     streamHandler = logging.StreamHandler(stream=sys.stdout)
@@ -29,6 +29,10 @@ def setup_logger(logpath: Path,
 
     if not quiet:
         filename = logpath.joinpath('log.txt')
+        if os.path.exists(filename):
+            logger.warning(f'Warning: Log file {filename.absolute()} already exists, will be overwritten.')
+            os.remove(filename)
+
         fileHandler = logging.FileHandler(filename, delay=True)
         fileHandler.setFormatter(formatter)
         logger.addHandler(fileHandler)
@@ -141,9 +145,15 @@ class CSVLogger(object):
 
     def __str__(self) -> str:
         result = []
+        length = 0
         for col in self.data.columns:
             if len(self.data[col]) > 1:
-                result.append(f'{col}={self.data[col].values.tolist()}')
+                resstr = f'{col}:{self.data[col].values.tolist()}'
             else:
-                result.append(f'{col}={self.data[col].values[0]}')
+                resstr = f'{col}:{self.data[col].values[0]}'
+            length += len(resstr)
+            if length > 80:
+                resstr = '\n' + resstr
+                length = 0
+            result.append(resstr)
         return ', '.join(result)

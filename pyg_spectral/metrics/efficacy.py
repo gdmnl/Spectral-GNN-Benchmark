@@ -9,7 +9,7 @@ import torch.nn as nn
 
 
 class F1Calculator(object):
-    r"""F1 score supporting incremental update.
+    r"""F1 score for tensors supporting incremental update.
 
     Args:
         num_classes (int): The number of classes in the classification task.
