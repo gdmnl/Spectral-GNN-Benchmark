@@ -17,7 +17,7 @@ class CkptLogger(object):
     stopping during training.
 
     Args:
-        logpath (Path): Path to checkpoints saving directory.
+        logpath (Path or str): Path to checkpoints saving directory.
         patience (int, optional): Patience for early stopping. Defaults no early stopping.
         period (int, optional): Periodic saving interval. Defaults to no periodic saving.
         prefix (str, optional): Prefix for the checkpoint file names.
@@ -27,13 +27,13 @@ class CkptLogger(object):
         metric_cmp (function or ['max', 'min'], optional): Comparison function for the metric.
     """
     def __init__(self,
-                 logpath: Path,
+                 logpath: Union[Path, str],
                  patience: int = -1,
                  period: int = 0,
                  prefix: str = 'model',
                  storage: str = 'state_gpu',
                  metric_cmp: Union[Callable[[float, float], bool], str]='max'):
-        self.logpath = logpath
+        self.logpath = Path(logpath)
         self.prefix = prefix
         self.filetype = 'pth'
         self.patience = patience
@@ -53,8 +53,8 @@ class CkptLogger(object):
     def set_epoch(self, epoch: int = 0):
         self.epoch_current = epoch
         self.epoch_from_best = 0
-        self.epoch_best = 0
         self.metric_best = None
+        self.last_improved = False
 
     # ===== Checkpoint file IO
     def _get_model_file(self, *suffix) -> Path:
@@ -130,7 +130,14 @@ class CkptLogger(object):
             model = copy.deepcopy(getattr(self, name))
             # model.to(map_location)
 
+        # NOTE: aggressively remove stored model memory
+        self.clear()
         return model
+
+    def clear(self):
+        for attr in list(self.__dict__):
+            if attr.startswith(self.prefix):
+                delattr(self, attr)
 
     # ===== Early stopping
     @property
@@ -138,6 +145,13 @@ class CkptLogger(object):
         if self.patience < 0:
             return False
         return self.epoch_from_best >= self.patience
+
+    @property
+    def is_period(self) -> bool:
+        return self.period > 0 and self.epoch_current % self.period == 0
+
+    def _is_improved(self, metric) -> bool:
+        return self.metric_best is None or self.cmp(metric, self.metric_best)
 
     def step(self,
              metric: float,
@@ -152,8 +166,12 @@ class CkptLogger(object):
             early_stop (bool): True if early stopping criteria is met.
         """
         self.epoch_current += 1
-        if self.metric_best is None or self.cmp(metric, self.metric_best):
-            self.epoch_best = self.epoch_current
+        if self.is_period:
+            if model is not None:
+                self.save(str(self.epoch_current), model=model)
+
+        self.last_improved = self._is_improved(metric)
+        if self.last_improved:
             self.metric_best = metric
             self.epoch_from_best = 0
             if model is not None:
@@ -161,8 +179,14 @@ class CkptLogger(object):
         else:
             self.epoch_from_best += 1
 
-        if self.period > 0 and self.epoch_current % self.period == 0:
-            if model is not None:
-                self.save(str(self.epoch_current), model=model)
+        return self.last_improved
 
-        return self.is_early_stop
+    def set_best(self, **kwargs):
+        if not self.last_improved:
+            return
+        self.best_keys = kwargs.keys()
+        for key, val in kwargs.items():
+            setattr(self, key, val)
+
+    def get_best(self) -> list:
+        return [(key, getattr(self, key)) for key in self.best_keys]

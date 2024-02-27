@@ -16,7 +16,7 @@ import torch
 
 
 # noinspection PyUnresolvedReferences
-def setup_seed(seed: int = None, cuda: bool = True):
+def setup_seed(seed: int = None, cuda: bool = True) -> int:
     if seed is None:
         seed = int(uuid.uuid4().hex, 16) % 1000000
     random.seed(seed)
@@ -32,7 +32,7 @@ def setup_seed(seed: int = None, cuda: bool = True):
     return seed
 
 
-def setup_cuda(args):
+def setup_cuda(args: argparse.Namespace) -> argparse.Namespace:
     args.cuda = args.dev >= 0 and torch.cuda.is_available()
     args.device = torch.device("cuda:{}".format(args.dev) if args.cuda else "cpu")
     if args.cuda:
@@ -45,7 +45,7 @@ def setup_argparse():
     # Logging configuration
     parser.add_argument('-s', '--seed', type=int, default=0, help='random seed')
     parser.add_argument('-v', '--dev', type=int, default=0, help='GPU id')
-    parser.add_argument('-z', '--suffix', type=str, default='', help='Save name suffix.')
+    parser.add_argument('-z', '--suffix', type=str, default=None, help='Save name suffix.')
     parser.add_argument('-q', '--quiet', type=bool, default=False, help='Quiet run without saving logs.')
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
@@ -65,7 +65,7 @@ def setup_argparse():
     return parser
 
 
-def setup_args(parser: argparse.ArgumentParser):
+def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     # Check args
     args = parser.parse_args()
     args = setup_cuda(args)
@@ -82,7 +82,7 @@ def save_args(logpath: Path, args: argparse.Namespace):
         f.write(json.dumps(dict_to_json(vars(args)), indent=4))
 
 
-def dict_to_json(dictionary):
+def dict_to_json(dictionary) -> dict:
     def is_serializable(obj):
         try:
             json.dumps(obj)
