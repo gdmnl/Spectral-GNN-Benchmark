@@ -6,49 +6,53 @@ File: logger.py
 """
 from typing import Tuple, List, Callable, Union, Any
 from pathlib import Path
-from logging import Logger
 
 import os
 import sys
 import logging
 import uuid
+from datetime import datetime
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
 
 LOGPATH = Path('../log')
+LTRN, LRES = 15, 25
 
 
 def setup_logger(logpath: Union[Path, str] = LOGPATH,
-                 level=logging.DEBUG,
+                 level: int = logging.DEBUG,
                  quiet: bool = True,
                  fmt='{message}'):
+    logging.addLevelName(LTRN, 'TRAIN')
+    logging.addLevelName(LRES, 'RESULT')
     logpath = Path(logpath)
     formatter = logging.Formatter(fmt, style=fmt[0])
     logger = logging.getLogger('log')
-    logger.setLevel(level)
+    logger.setLevel(logging.DEBUG)
 
-    streamHandler = logging.StreamHandler(stream=sys.stdout)
-    streamHandler.setFormatter(formatter)
-    logger.addHandler(streamHandler)
+    consoleHandler = logging.StreamHandler(stream=sys.stdout)
+    consoleHandler.setFormatter(formatter)
+    consoleHandler.setLevel(level)
+    logger.addHandler(consoleHandler)
 
     if not quiet:
         filename = logpath.joinpath('log.txt')
         if os.path.exists(filename):
-            logger.warning(f'Warning: Log file {filename.absolute()} already exists, will be overwritten.')
+            logger.warning(f'Warning: Log file {filename.resolve()} already exists, will be overwritten.')
             os.remove(filename)
 
         fileHandler = logging.FileHandler(filename, delay=True)
         fileHandler.setFormatter(formatter)
+        fileHandler.setLevel(LTRN)
         logger.addHandler(fileHandler)
 
-    # FEATURE: [wandb](https://github.com/pyg-team/pytorch_geometric/blob/master/torch_geometric/logging.py)
-
+    logger.info(f"[time]: {datetime.now()}")
     return logger
 
 
-def clear_logger(logger: Logger):
+def clear_logger(logger: logging.Logger):
     handlers = logger.handlers[:]
     for handler in handlers:
         logger.removeHandler(handler)
@@ -267,7 +271,7 @@ class ResLogger(object):
         for coli in self.data.columns:
             data_str[coli] = self._get(col=coli)
         with open(self.filename, 'a') as f:
-            # FEATURE: manage column difference in header
+            # FEATURE: manage column inconsistency in header
             data_str.to_csv(self.filename, index=False,
                              mode='a', header=f.tell()==0)
 

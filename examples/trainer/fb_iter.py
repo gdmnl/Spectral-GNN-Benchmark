@@ -13,10 +13,13 @@ from argparse import Namespace
 import torch
 import torch.nn as nn
 from torch_geometric.utils import is_sparse
-from torch_geometric.data import Data, InMemoryDataset
+from torch_geometric.data import Data, Dataset
 from pyg_spectral import metrics
 
 from utils import CkptLogger, ResLogger
+
+
+LTRN = 15
 
 
 class TrnBase(object):
@@ -24,7 +27,7 @@ class TrnBase(object):
 
     Args:
         model (nn.Module): Pytorch model to be trained.
-        dataset (InMemoryDataset): PyG style dataset.
+        dataset (Dataset): PyG style dataset.
         logger (Logger): Logger object.
         args (Namespace): Configuration arguments.
 
@@ -35,7 +38,7 @@ class TrnBase(object):
     """
     def __init__(self,
                  model: nn.Module,
-                 dataset: InMemoryDataset,
+                 dataset: Dataset,
                  logger: Logger,
                  args: Namespace,
                  **kwargs):
@@ -53,6 +56,10 @@ class TrnBase(object):
         self.model = model
         self.dataset = dataset
         self.criterion = nn.CrossEntropyLoss()
+
+        self.splits = ['train', 'val', 'test']
+        self.num_features = dataset.num_features
+        self.num_classes = dataset.num_classes
 
         self.logger = logger
         # assert (args.quiet or '_file' not in storage), "Storage scheme cannot be file for quiet run."
@@ -101,20 +108,19 @@ class TrnBase(object):
 class TrnFullbatchIter(TrnBase):
     def __init__(self,
                  model: nn.Module,
-                 dataset: InMemoryDataset,
+                 dataset: Dataset,
                  logger: Logger,
                  args: Namespace,
                  **kwargs):
         super(TrnFullbatchIter, self).__init__(model, dataset, logger, args, **kwargs)
-        self.splits = ['train', 'val', 'test']
-        self.mask = None
-        self.data = None
+        self.mask: dict = None
+        self.data: Data = None
 
     def _fetch_data(self) -> Data:
         data = self.dataset[0].to(self.device)
         self.data = data
         self.mask = {k: getattr(data, f'{k}_mask') for k in self.splits}
-        self.logger.debug(f"[data]: {data}")
+        self.logger.info(f"[data]: {data}")
         return self.data
 
     def _fetch_input(self) -> tuple:
@@ -151,7 +157,7 @@ class TrnFullbatchIter(TrnBase):
         input, label = self._fetch_input()
 
         # TODO: more metrics: Calcualtor -> Evaluator
-        calc = {k: metrics.F1Calculator(self.dataset.num_classes) for k in split}
+        calc = {k: metrics.F1Calculator(self.num_classes) for k in split}
         stopwatch = metrics.Stopwatch()
 
         with torch.no_grad():
@@ -172,6 +178,7 @@ class TrnFullbatchIter(TrnBase):
 
     # ===== Run block
     def train_val(self) -> ResLogger:
+        self.logger.debug('-'*20 + f" Start training: {self.epoch} " + '-'*20)
         # TODO: list of accumulators
         time_learn = metrics.Accumulator()
         res_learn = ResLogger()
@@ -188,7 +195,7 @@ class TrnFullbatchIter(TrnBase):
             metric_val = res_learn[epoch, 'metric_val']
             self.scheduler.step(metric_val)
 
-            self.logger.info(res_learn.get_str(row=epoch))
+            self.logger.log(LTRN, res_learn.get_str(row=epoch))
 
             self.ckpt_logger.step(metric_val, self.model)
             self.ckpt_logger.set_best(epoch_best=epoch)
@@ -211,6 +218,7 @@ class TrnFullbatchIter(TrnBase):
         raise NotImplementedError
 
     def test(self) -> ResLogger:
+        self.logger.debug('-'*20 + f" Start evaluating: train+val+test " + '-'*20)
         res_test = self._eval_split(['train', 'val', 'test'])
 
         return res_test.concat(

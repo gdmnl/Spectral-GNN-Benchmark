@@ -46,7 +46,8 @@ def setup_argparse():
     parser.add_argument('-s', '--seed', type=int, default=0, help='random seed')
     parser.add_argument('-v', '--dev', type=int, default=0, help='GPU id')
     parser.add_argument('-z', '--suffix', type=str, default=None, help='Save name suffix.')
-    parser.add_argument('-q', '--quiet', type=bool, default=False, help='Quiet run without saving logs.')
+    parser.add_argument('-quiet', action='store_true', help='Quiet run without saving logs.')
+    parser.add_argument('--loglevel', type=int, default=10, help='10:progress, 15:train, 20:info, 25:result')
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
     # Model configuration

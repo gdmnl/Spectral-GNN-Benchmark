@@ -6,15 +6,14 @@ File: load_model.py
 """
 from argparse import Namespace
 import torch.nn as nn
-from torch_geometric.data import InMemoryDataset
 
 from pyg_spectral.utils import load_import
 
 
 class LoaderModel(object):
-    def __init__(self, dataset: InMemoryDataset) -> None:
-        r"""For entities such as dataset."""
-        self.dataset = dataset
+    def __init__(self) -> None:
+        r"""For entities."""
+        pass
 
     def get(self,
             model: str,
@@ -22,8 +21,8 @@ class LoaderModel(object):
             args: Namespace) -> nn.Module:
         kwargs = dict(
             conv=conv,
-            in_channels=self.dataset.num_features,
-            out_channels=self.dataset.num_classes,
+            in_channels=args.num_features,
+            out_channels=args.num_classes,
             hidden_channels=args.hidden,
             num_layers=args.layer,)
         lib_model = 'pyg_spectral.nn.models'

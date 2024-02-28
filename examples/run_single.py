@@ -27,6 +27,7 @@ from utils import (
 
 
 LOGPATH, DATAPATH = Path('../log'), Path('../data')
+LTRN, LRES = 15, 25
 np.set_printoptions(linewidth=160, edgeitems=5, threshold=20,
                     formatter=dict(float=lambda x: f"{x: 9.3e}"))
 torch.set_printoptions(linewidth=160, edgeitems=5)
@@ -38,10 +39,10 @@ def main(args):
         dir=LOGPATH,
         folder_args=(args.data, args.model, args.flag),
         quiet=args.quiet)
-    logger = setup_logger(args.logpath, quiet=args.quiet)
+    logger = setup_logger(args.logpath, level=args.loglevel, quiet=args.quiet)
     csv_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
 
-    logger.debug(f"[args]: {args}")
+    logger.info(f"[args]: {args}")
     csv_logger.concat([
         ('data', args.data),
         ('model', args.model),
@@ -49,16 +50,21 @@ def main(args):
     save_args(args.logpath, args)
 
     # ========== Load data
+    logger.debug('-'*20 + f" Loading data: {args.data} " + '-'*20)
+
     # TODO: data loader
     # TODO: general graph norm transform
     dataset = Planetoid(DATAPATH, args.data,
         transform=T.Compose([
             T.NormalizeFeatures(),
             T.ToSparseTensor(),]))
+    args.num_features, args.num_classes = dataset.num_features, dataset.num_classes
 
-    logger.debug(f"[dataset]: {dataset}")
+    logger.info(f"[dataset]: {dataset}")
 
     # ========== Load model
+    logger.debug('-'*20 + f" Loading model: {args.model}:{args.conv} " + '-'*20)
+
     # TODO: model loader for checking args.model and kwargs
     # model = GCN(
     #     in_channels=dataset.num_features,
@@ -66,14 +72,13 @@ def main(args):
     #     hidden_channels=args.hidden,
     #     num_layers=args.layer,
     #     dropout=args.dp,
-    #     normalize=False,
-    # ).to(args.device)
-    model = LoaderModel(dataset=dataset)(
+    #     normalize=False,)
+    model = LoaderModel()(
         model=args.model,
         conv=args.conv,
-        args=args).to(args.device)
+        args=args)
 
-    logger.debug(f"[model]: {model}")
+    logger.log(LTRN, f"[model]: {model}")
 
     # ========== Run trainer
     # TODO: trainer loader
@@ -86,7 +91,7 @@ def main(args):
 
     csv_logger.merge(res_run)
     csv_logger.save()
-    logger.info(f"[res]: {str(csv_logger)}")
+    logger.log(LRES, f"[res]: {str(csv_logger)}")
     clear_logger(logger)
 
 
