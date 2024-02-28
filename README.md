@@ -7,6 +7,8 @@ For development
 pip install -e .
 ```
 
+Create your own branch for development and pull request.
+
 ## Experiment
 ```bash
 cd examples
@@ -22,9 +24,9 @@ Related to benchmark experiments.
 Core codes for spectral GNNs following the PyTorch Geometric structure.
 
 ### `log`
-Log files for saving the results. Ignored by git.
+Log files for saving the results. For experiment and ignored by git.
 
 ### `data`
-Ignored by git. Link to:
+PyG dataset path. For experiment and ignored by git. Link to:
 - `/Resource/dataset/PyG/` on Dell7920
 - `/share/data/dataset/PyG/` on triangle-001

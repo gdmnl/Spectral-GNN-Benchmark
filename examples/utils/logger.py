@@ -12,6 +12,7 @@ import os
 import sys
 import logging
 import uuid
+import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
@@ -104,13 +105,13 @@ class ResLogger(object):
     def guess_fmt(key: str, val) -> Callable:
         """Guesses the string format function based on its name.
         """
-        if isinstance(val, str) or isinstance(val, bool):
+        if isinstance(val, str):
             return (lambda x: x)
-        if isinstance(val, int):
+        if np.issubdtype(type(val), np.integer):
             if key.startswith(('epoch', 'iter')):
                 return (lambda x: format(x, '03d'))
             return (lambda x: format(x, 'd'))
-        if isinstance(val, float):
+        if np.issubdtype(type(val), np.floating):
             if key.startswith(('acc', 'metric', 'score')):
                 return (lambda x: format(x, '.4f'))
             if key.startswith(('loss',)):
@@ -131,22 +132,34 @@ class ResLogger(object):
         return self.data.shape[1]
 
     def __getitem__(self, key):
+        r"""Short for pandas.DataFrame.loc()"""
         return self.data.loc[key]
 
     def __str__(self) -> str:
+        r"""String for print on screen."""
         return self.get_str(maxlen=80)
 
     # ===== Input
-    def _set(self, data: DataFrame, fmt: Series):
-        # for coli in list(set(data.columns) - set(self.data.columns)):
-        #     self.data[coli] = None
-        #     self.fmt[coli] = None
+    def _set(self, data: DataFrame, fmt: Series, axis: int = 0):
+        r"""Sets the data from input DataFrame.
 
+        Args:
+            data (DataFrame): Concat on columns, inner join on index.
+            fmt (Series): Inner join on columns.
+        """
         if self.data.empty:
             self.data = data
             self.fmt = fmt
         else:
-            self.data = pd.concat([self.data, data], axis=1, join='inner', copy=False)
+            if any(col not in self.data.columns for col in data.columns):
+                # Append new columns while maintaining all index
+                self.data = pd.concat([self.data, data], axis=1, join='outer', copy=False)
+            elif any(row not in self.data.index for row in data.index):
+                # Append new rows while maintaining all columns
+                self.data = pd.concat([self.data, data], axis=0, join='outer', copy=False)
+            else:
+                # Assign empty entries
+                self.data.loc[data.index, data.columns] = data
             self.fmt = pd.concat([self.fmt, fmt], axis=0, join='inner', copy=False)
 
     def concat(self,
@@ -159,6 +172,9 @@ class ResLogger(object):
             vals (List): list of entries (key, value, formatter).
             row (int): New index in self dataframe for vals to be logged.
             suffix (str): Suffix string for input keys. Default is None.
+
+        Returns:
+            self (ResLogger)
         """
         val_dct, fmt_dct = {}, {}
         for vali in vals:
@@ -196,7 +212,18 @@ class ResLogger(object):
         return self
 
     # ===== Output
-    def _get(self, col = None, row = None) -> Union[DataFrame, Series, str]:
+    def _get(self, col=None, row=None) -> Union[DataFrame, Series, str]:
+        r"""Retrieve one or sliced data and apply string format.
+
+        Args:
+            col (str or list): Column(s) to retrieve. Defaults to all.
+            row (str or list): Row(s) to retrieve. Defaults to all.
+
+        Returns:
+            val: Formatted data.
+                - type: follows the return type of DataFrame.loc[row, col].
+                - value: formatted string in each entry.
+        """
         row = row or self.data.index
         col = col or self.data.columns
         mrow, mcol = isinstance(row, list), isinstance(col, list)
@@ -235,9 +262,20 @@ class ResLogger(object):
                              mode='a', header=f.tell()==0)
 
     def get_str(self,
-                col: Union[List, str] = None,
-                row: Union[List, int] = None,
-                maxlen: int = -1) -> str:
+                    col: Union[List, str] = None,
+                    row: Union[List, int] = None,
+                    maxlen: int = -1) -> str:
+        r"""Get formatted long string for printing of the specified columns
+        and rows.
+
+        Args:
+            col (str or list): Column(s) to retrieve. Defaults to all.
+            row (str or list): Row(s) to retrieve. Defaults to all.
+            maxlen (int): Max line length of the resulting string.
+
+        Returns:
+            s (str): Formatted string representation.
+        """
         if col is None:
             col = self.data.columns
         elif isinstance(col, str):

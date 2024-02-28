@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-"""Single model
+"""Single run
 Author: nyLiao
 File Created: 2023-08-03
 File: sfb_iter.py
@@ -12,9 +12,10 @@ import torch_geometric.transforms as T
 
 from torch_geometric.datasets import Planetoid
 from torch_geometric.nn.models import GCN
-from pyg_spectral.nn.models import FixIterSumAdj, VarIterSumAdj
 
-from trainer import TrnFullbatchIter
+from trainer import (
+    LoaderModel,
+    TrnFullbatchIter)
 from utils import (
     setup_argparse,
     setup_args,
@@ -58,7 +59,7 @@ def main(args):
     logger.debug(f"[dataset]:{dataset}")
 
     # ========== Load model
-    # TODO: model loader
+    # TODO: model loader for checking args.model and kwargs
     # model = GCN(
     #     in_channels=dataset.num_features,
     #     out_channels=dataset.num_classes,
@@ -67,15 +68,10 @@ def main(args):
     #     dropout=args.dp,
     #     normalize=False,
     # ).to(args.device)
-    model = VarIterSumAdj(
-        in_channels=dataset.num_features,
-        out_channels=dataset.num_classes,
-        hidden_channels=args.hidden,
-        num_layers=args.layer,
-        theta=('appr', 0.15),
-        dropout=args.dp,
-        K=2,
-    ).to(args.device)
+    model = LoaderModel(dataset=dataset).get(
+        model=args.model,
+        conv=args.conv,
+        args=args).to(args.device)
 
     logger.debug(f"[model]:{model}")
 
