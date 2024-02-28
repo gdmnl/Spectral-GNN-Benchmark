@@ -6,16 +6,20 @@ File: load_model.py
 """
 from argparse import Namespace
 import torch.nn as nn
-from torch_geometric.data import Data, InMemoryDataset
+from torch_geometric.data import InMemoryDataset
 
 from pyg_spectral.utils import load_import
 
 
 class LoaderModel(object):
     def __init__(self, dataset: InMemoryDataset) -> None:
+        r"""For entities such as dataset."""
         self.dataset = dataset
 
-    def get(self, model: str, conv: str, args: Namespace) -> nn.Module:
+    def get(self,
+            model: str,
+            conv: str,
+            args: Namespace) -> nn.Module:
         kwargs = dict(
             conv=conv,
             in_channels=self.dataset.num_features,
@@ -30,14 +34,17 @@ class LoaderModel(object):
                 kwargs.update(dict(
                     theta=('appr', 0.15),
                     dropout=args.dp,
-                    K=10,))
+                    K=2,))
                 return fload(kwargs)
         elif model in ['DecPostMLP']:
             if conv in ['FixSumAdj', 'VarSumAdj']:
                 kwargs.update(dict(
                     theta=('appr', 0.15),
                     dropout=args.dp,
-                    K=10,))
+                    K=5,))
                 return fload(kwargs)
 
         raise ValueError(f"Model '{model}:{conv}' not found.")
+
+    def __call__(self, *args, **kwargs):
+        return self.get(*args, **kwargs)

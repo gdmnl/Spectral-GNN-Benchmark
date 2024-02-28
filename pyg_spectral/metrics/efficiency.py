@@ -91,6 +91,9 @@ class NumFmt(object):
         unit = self.get_unit(self.data)
         return f'{self.get(unit):.2f} {unit}{self.suffix}'
 
+    def __call__(self, *args, **kwargs) -> str:
+        return self.get(*args, **kwargs)
+
 
 class MemoryRAM(NumFmt):
     r"""Memory usage of current process in RAM.

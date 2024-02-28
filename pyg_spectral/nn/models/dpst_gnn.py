@@ -8,6 +8,11 @@ from torch_geometric.nn.models import MLP
 from pyg_spectral.utils import load_import
 
 
+class myMLP(MLP):
+    def __repr__(self) -> str:
+        return super(MLP, self).__repr__()
+
+
 class DecPostMLP(nn.Module):
     r"""Post-propagation decoupled model.
 
@@ -70,7 +75,7 @@ class DecPostMLP(nn.Module):
         self.plain_last = False
         lib = kwargs.pop('lib_conv', 'pyg_spectral.nn.conv')
 
-        self.mlp = MLP(
+        self.mlp = myMLP(
             in_channels=in_channels,
             hidden_channels=hidden_channels,
             out_channels=out_channels,

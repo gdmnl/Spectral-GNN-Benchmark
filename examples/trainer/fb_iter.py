@@ -1,9 +1,12 @@
 # -*- coding:utf-8 -*-
-"""
+"""Full batch, iterative, node classification.
+    - Model input: separate edge index and node features.
+    - Run pipeline: train_val -> test.
 Author: nyLiao
 File Created: 2024-02-26
 File: fb_iter.py
 """
+from typing import List
 from logging import Logger
 from argparse import Namespace
 
@@ -17,6 +20,19 @@ from utils import CkptLogger, ResLogger
 
 
 class TrnBase(object):
+    r"""Base trainer class for general pipelines and tasks.
+
+    Args:
+        model (nn.Module): Pytorch model to be trained.
+        dataset (InMemoryDataset): PyG style dataset.
+        logger (Logger): Logger object.
+        args (Namespace): Configuration arguments.
+
+    Methods:
+        setup_optimizer: Set up the optimizer and scheduler.
+        clear: Clear self cache.
+        run: Run the training process.
+    """
     def __init__(self,
                  model: nn.Module,
                  dataset: InMemoryDataset,
@@ -48,6 +64,7 @@ class TrnBase(object):
             storage='state_gpu')
 
     def setup_optimizer(self):
+        # TODO: layer-specific wd [no wd for theta](https://github.com/seijimaekawa/empirical-study-of-GNNs/blob/main/models/train_model.py#L204)
         self.optimizer = torch.optim.Adam(
             self.model.parameters(), lr=self.lr, weight_decay=self.wd)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -55,17 +72,17 @@ class TrnBase(object):
             threshold=1e-4, patience=15, verbose=False)
 
     def _fetch_data(self) -> Data:
-        r"""Dataset to data."""
+        r"""Dataset to single graph data."""
         raise NotImplementedError
 
     def _fetch_input(self, data: Data) -> tuple:
         r"""Data to model input and label."""
         raise NotImplementedError
 
-    def _learn_split(self, split):
+    def _learn_split(self, split: List[str]) -> ResLogger:
         raise NotImplementedError
 
-    def _eval_split(self, split):
+    def _eval_split(self, split: List[str]) -> ResLogger:
         raise NotImplementedError
 
     def clear(self):
@@ -74,8 +91,11 @@ class TrnBase(object):
         del self.optimizer
         del self.scheduler
 
-    def run(self):
+    def run(self) -> ResLogger:
         raise NotImplementedError
+
+    def __call__(self, *args, **kwargs):
+        return self.run(*args, **kwargs)
 
 
 class TrnFullbatchIter(TrnBase):
@@ -86,44 +106,49 @@ class TrnFullbatchIter(TrnBase):
                  args: Namespace,
                  **kwargs):
         super(TrnFullbatchIter, self).__init__(model, dataset, logger, args, **kwargs)
+        self.splits = ['train', 'val', 'test']
+        self.mask = None
         self.data = None
 
     def _fetch_data(self) -> Data:
         data = self.dataset[0].to(self.device)
-        self.logger.debug(f"[data]:{data}")
-        return data
+        self.data = data
+        self.mask = {k: getattr(data, f'{k}_mask') for k in self.splits}
+        self.logger.debug(f"[data]: {data}")
+        return self.data
 
-    def _fetch_input(self, data: Data) -> tuple:
+    def _fetch_input(self) -> tuple:
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
-        if hasattr(data, 'adj_t') and is_sparse(data.adj_t):
-            input, label = (data.x, data.adj_t), data.y
+        if hasattr(self.data, 'adj_t') and is_sparse(self.data.adj_t):
+            input, label = (self.data.x, self.data.adj_t), self.data.y
         else:
             raise NotImplementedError
         return input, label
 
+    # ===== Epoch run
     def _learn_split(self, split: list = ['train']) -> ResLogger:
         assert len(split) == 1
         self.model.train()
-        input, label = self._fetch_input(self.data)
+        input, label = self._fetch_input()
 
         stopwatch = metrics.Stopwatch()
 
         stopwatch.start()
         self.optimizer.zero_grad()
         output = self.model(*input)
-        mask_split = getattr(self.data, f'{split[0]}_mask')
+        mask_split = self.mask[split[0]]
         loss = self.criterion(output[mask_split], label[mask_split])
         loss.backward()
         self.optimizer.step()
         stopwatch.pause()
 
-        return ResLogger().concat(
+        return ResLogger()(
             [('time_learn', stopwatch.time),
              (f'loss_{split[0]}', loss.item())])
 
     def _eval_split(self, split: list = ['test']) -> ResLogger:
         self.model.eval()
-        input, label = self._fetch_input(self.data)
+        input, label = self._fetch_input()
 
         # TODO: more metrics: Calcualtor -> Evaluator
         calc = {k: metrics.F1Calculator(self.dataset.num_classes) for k in split}
@@ -138,13 +163,14 @@ class TrnFullbatchIter(TrnBase):
             output = output.argmax(dim=1)
             label = label.cpu().detach()
             for k in split:
-                mask_split = getattr(self.data, f'{k}_mask')
-                calc[k].update(label[mask_split], output[mask_split])
+                mask_split = self.mask[k]
+                calc[k].step(label[mask_split], output[mask_split])
 
-        return ResLogger().concat(
+        return ResLogger()(
             [(f'metric_{k}', calc[k].get('micro')) for k in split] +
             [('time_eval', stopwatch.time)])
 
+    # ===== Run block
     def train_val(self) -> ResLogger:
         # TODO: list of accumulators
         time_learn = metrics.Accumulator()
@@ -165,7 +191,7 @@ class TrnFullbatchIter(TrnBase):
             self.logger.info(res_learn.get_str(row=epoch))
 
             self.ckpt_logger.step(metric_val, self.model)
-            self.ckpt_logger.set_best(epoch_best=epoch, metric_best=metric_val)
+            self.ckpt_logger.set_best(epoch_best=epoch)
             if self.ckpt_logger.is_early_stop:
                 break
 
@@ -174,8 +200,8 @@ class TrnFullbatchIter(TrnBase):
         res_train.concat(
             [('epoch', self.ckpt_logger.epoch_current),
              ('time', time_learn.data),
-             ('mem_rem', metrics.MemoryRAM().get(unit='G')),
-             ('mem_cuda', metrics.MemoryCUDA().get(unit='G')),],
+             ('mem_rem', metrics.MemoryRAM()(unit='G')),
+             ('mem_cuda', metrics.MemoryCUDA()(unit='G')),],
             suffix='learn')
         return res_train
 
@@ -188,14 +214,15 @@ class TrnFullbatchIter(TrnBase):
         res_test = self._eval_split(['train', 'val', 'test'])
 
         return res_test.concat(
-            [('mem_rem', metrics.MemoryRAM().get(unit='G')),
-             ('mem_cuda', metrics.MemoryCUDA().get(unit='G')),],
+            [('mem_rem', metrics.MemoryRAM()(unit='G')),
+             ('mem_cuda', metrics.MemoryCUDA()(unit='G')),],
             suffix='eval')
 
+    # ===== Run pipeline
     def run(self) -> ResLogger:
         res_run = ResLogger()
         self.model = self.model.to(self.device)
-        self.data = self._fetch_data()
+        self._fetch_data()
         self.setup_optimizer()
 
         with self.device:

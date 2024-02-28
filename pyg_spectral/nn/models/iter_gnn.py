@@ -1,5 +1,6 @@
 from typing import Final
 
+import torch.nn as nn
 from torch_geometric.nn.models.basic_gnn import BasicGNN
 from torch_geometric.nn.conv import MessagePassing
 
@@ -49,3 +50,9 @@ class IterConv(BasicGNN):
                   conv: str, **kwargs) -> MessagePassing:
         lib = kwargs.pop('lib_conv', 'pyg_spectral.nn.conv')
         return load_import(conv, lib)(in_channels, out_channels, **kwargs)
+
+    def _get_name(self) -> str:
+        return super().__repr__()
+
+    def __repr__(self) -> str:
+        return super(BasicGNN, self).__repr__()

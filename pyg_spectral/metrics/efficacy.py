@@ -20,7 +20,7 @@ class F1Calculator(object):
         self.FP = torch.zeros(self.num_classes)
         self.FN = torch.zeros(self.num_classes)
 
-    def update(self, y_true: torch.Tensor, y_pred: torch.Tensor):
+    def step(self, y_true: torch.Tensor, y_pred: torch.Tensor):
         r"""Update the F1 score with new samples.
 
         Args:
@@ -57,3 +57,4 @@ class F1Calculator(object):
 
 
 # TODO: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)
+# ogb.nodeproppred.Evaluator

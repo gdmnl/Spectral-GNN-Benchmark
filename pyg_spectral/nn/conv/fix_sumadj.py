@@ -22,7 +22,7 @@ def gen_theta(K: int, scheme: str, alpha: float = None) -> Tensor:
             - `mono`: Monomial, :math:`\mathbf{H} = \frac{1}{K} \sum_{k=1}^K\left((1-\alpha)\mathbf{A}^k + \alpha \mathbf{I}\right) \mathbf{X}`.
             - 'hk': Heat Kernel, :math:`\mathbf{H} = \sum_{k=0}^K e^{-\alpha k} \mathbf{A}^k \mathbf{X}`.
             - 'uniform': Random uniform distribution.
-            - 'normal': Random normal distribution.
+            - 'gaussian': Random Gaussian distribution.
         alpha (float, optional): Hyperparameter for the scheme.
             - 'khop': Only the alpha-hop, :math:`\alpha \in [0, K]`.
             - 'appr': Decay factor, :math:`\alpha \in [0, 1]`.
@@ -30,7 +30,7 @@ def gen_theta(K: int, scheme: str, alpha: float = None) -> Tensor:
             - 'mono': Decay factor, :math:`\alpha \in [0, 1]`.
             - 'hk': Decay factor, :math:`\alpha > 0`.
             - 'uniform': Distribution bound.
-            - 'normal': Distribution variance.
+            - 'gaussian': Distribution variance.
 
     Returns:
         theta (Tensor): List of hop parameters.
@@ -62,7 +62,7 @@ def gen_theta(K: int, scheme: str, alpha: float = None) -> Tensor:
         alpha = alpha if alpha is not None else np.sqrt(3/(K+1))
         theta = torch.rand(K+1) * 2 * alpha - alpha
         return theta/torch.norm(theta, p=1)
-    elif scheme == 'normal':
+    elif scheme == 'gaussian':
         alpha = alpha if alpha is not None else 1.0
         theta = torch.randn(K+1) * alpha
         return theta/torch.norm(theta, p=1)

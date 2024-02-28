@@ -28,7 +28,7 @@ from utils import (
 
 LOGPATH, DATAPATH = Path('../log'), Path('../data')
 np.set_printoptions(linewidth=160, edgeitems=5, threshold=20,
-                    formatter=dict(float=lambda x: "% 9.3e" % x))
+                    formatter=dict(float=lambda x: f"{x: 9.3e}"))
 torch.set_printoptions(linewidth=160, edgeitems=5)
 
 
@@ -41,7 +41,7 @@ def main(args):
     logger = setup_logger(args.logpath, quiet=args.quiet)
     csv_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
 
-    logger.debug(f"[args]:{args}")
+    logger.debug(f"[args]: {args}")
     csv_logger.concat([
         ('data', args.data),
         ('model', args.model),
@@ -56,7 +56,7 @@ def main(args):
             T.NormalizeFeatures(),
             T.ToSparseTensor(),]))
 
-    logger.debug(f"[dataset]:{dataset}")
+    logger.debug(f"[dataset]: {dataset}")
 
     # ========== Load model
     # TODO: model loader for checking args.model and kwargs
@@ -68,12 +68,12 @@ def main(args):
     #     dropout=args.dp,
     #     normalize=False,
     # ).to(args.device)
-    model = LoaderModel(dataset=dataset).get(
+    model = LoaderModel(dataset=dataset)(
         model=args.model,
         conv=args.conv,
         args=args).to(args.device)
 
-    logger.debug(f"[model]:{model}")
+    logger.debug(f"[model]: {model}")
 
     # ========== Run trainer
     # TODO: trainer loader
@@ -82,11 +82,11 @@ def main(args):
         dataset=dataset,
         args=args,
         logger=logger)
-    res_run = trn.run()
+    res_run = trn()
 
     csv_logger.merge(res_run)
     csv_logger.save()
-    logger.info(str(csv_logger))
+    logger.info(f"[res]: {str(csv_logger)}")
     clear_logger(logger)
 
 

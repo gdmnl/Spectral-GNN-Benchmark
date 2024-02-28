@@ -22,8 +22,8 @@ class CkptLogger(object):
         period (int, optional): Periodic saving interval. Defaults to no periodic saving.
         prefix (str, optional): Prefix for the checkpoint file names.
         storage (str, optional): Storage scheme for saving the checkpoints.
-            * 'model' vs 'state': Save model object or state_dict.
-            * '_file', '_ram', '_gpu': Save as file, RAM, or GPU memory.
+            - 'model' vs 'state': Save model object or state_dict.
+            - '_file', '_ram', '_gpu': Save as file, RAM, or GPU memory.
         metric_cmp (function or ['max', 'min'], optional): Comparison function for the metric.
     """
     def __init__(self,
@@ -44,7 +44,7 @@ class CkptLogger(object):
         # Comparison function for metric
         if isinstance(metric_cmp, str):
             assert metric_cmp in ['max', 'min']
-            self.cmp = lambda x, y: x > y if metric_cmp == 'max' else x < y
+            self.cmp = lambda x, y: (x > y) if metric_cmp == 'max' else (x < y)
         else:
             self.cmp = metric_cmp
 
@@ -57,10 +57,11 @@ class CkptLogger(object):
         self.last_improved = False
 
     # ===== Checkpoint file IO
-    def _get_model_file(self, *suffix) -> Path:
+    def _get_model_path(self, *suffix) -> Path:
         return self.logpath.joinpath(f'{self.prefix}_{"-".join(suffix)}.{self.filetype}')
 
     def get_last_epoch(self) -> int:
+        r"""Get last saved model epoch. Useful for deciding load model path."""
         if self.epoch_current == 0:
             for file in self.logpath.glob(f'{self.prefix}_*.{self.filetype}'):
                 suffix = file.stem.split('_')[1:]
@@ -77,7 +78,7 @@ class CkptLogger(object):
             model (nn.Module): The model to be saved.
         """
         name = f'{self.prefix}_{"-".join(suffix)}'
-        path = self._get_model_file(*suffix)
+        path = self._get_model_path(*suffix)
 
         if self.storage == 'state_file':
             torch.save(model.state_dict(), path)
@@ -114,7 +115,7 @@ class CkptLogger(object):
             model (nn.Module): The loaded model.
         """
         name = f'{self.prefix}_{"-".join(suffix)}'
-        path = self._get_model_file(*suffix)
+        path = self._get_model_path(*suffix)
 
         if self.storage == 'state_file':
             state_dict = torch.load(path, map_location=map_location)
@@ -142,15 +143,18 @@ class CkptLogger(object):
     # ===== Early stopping
     @property
     def is_early_stop(self) -> bool:
+        r"""Whether current epoch satisfies early stopping criteria."""
         if self.patience < 0:
             return False
         return self.epoch_from_best >= self.patience
 
     @property
     def is_period(self) -> bool:
+        r"""Whether current epoch should do periodic saving."""
         return self.period > 0 and self.epoch_current % self.period == 0
 
     def _is_improved(self, metric) -> bool:
+        r"""Whether the metric is better than previous best."""
         return self.metric_best is None or self.cmp(metric, self.metric_best)
 
     def step(self,
@@ -182,6 +186,7 @@ class CkptLogger(object):
         return self.last_improved
 
     def set_best(self, **kwargs):
+        r"""Save given args to model attributes if is the best epoch."""
         if not self.last_improved:
             return
         self.best_keys = kwargs.keys()
@@ -189,4 +194,5 @@ class CkptLogger(object):
             setattr(self, key, val)
 
     def get_best(self) -> list:
+        r"""Get saved model attributes from the best epoch."""
         return [(key, getattr(self, key)) for key in self.best_keys]

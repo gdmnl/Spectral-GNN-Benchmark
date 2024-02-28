@@ -86,7 +86,7 @@ def setup_logpath(dir: Union[Path, str] = LOGPATH,
 
 
 class ResLogger(object):
-    r"""Logger for formatting table data to strings by wrapping pd.DataFrame.
+    r"""Logger for formatting result to strings by wrapping pd.DataFrame table.
 
     Args:
         logpath (Path or str): Path to CSV file saving directory.
@@ -135,12 +135,8 @@ class ResLogger(object):
         r"""Short for pandas.DataFrame.loc()"""
         return self.data.loc[key]
 
-    def __str__(self) -> str:
-        r"""String for print on screen."""
-        return self.get_str(maxlen=80)
-
     # ===== Input
-    def _set(self, data: DataFrame, fmt: Series, axis: int = 0):
+    def _set(self, data: DataFrame, fmt: Series):
         r"""Sets the data from input DataFrame.
 
         Args:
@@ -191,6 +187,10 @@ class ResLogger(object):
         self._set(pd.DataFrame(val_dct, index=[row]), Series(fmt_dct))
         return self
 
+    def __call__(self, *args, **kwargs) -> 'ResLogger':
+        r"""Short for concat()"""
+        return self.concat(*args, **kwargs)
+
     def merge(self,
               logger: 'ResLogger',
               rows: List[int] = None,
@@ -209,6 +209,16 @@ class ResLogger(object):
             logger.data.columns = [f'{coli}_{suffix}' for coli in logger.data.columns]
 
         self._set(logger.data, logger.fmt)
+        return self
+
+    def del_col(self, col: Union[List, str]) -> 'ResLogger':
+        r"""Delete columns from data.
+
+        Args:
+            col (str or list): Column(s) to delete.
+        """
+        self.data = self.data.drop(columns=col)
+        self.fmt = self.fmt.drop(index=col)
         return self
 
     # ===== Output
@@ -262,9 +272,9 @@ class ResLogger(object):
                              mode='a', header=f.tell()==0)
 
     def get_str(self,
-                    col: Union[List, str] = None,
-                    row: Union[List, int] = None,
-                    maxlen: int = -1) -> str:
+                col: Union[List, str] = None,
+                row: Union[List, int] = None,
+                maxlen: int = -1) -> str:
         r"""Get formatted long string for printing of the specified columns
         and rows.
 
@@ -300,7 +310,11 @@ class ResLogger(object):
 
             length += len(resstr)
             if maxlen > 0 and length > maxlen:
-                resstr = '\n' + resstr
+                resstr = '\n  ' + resstr
                 length = 0
             result.append(resstr)
         return ', '.join(result)
+
+    def __str__(self) -> str:
+        r"""String for print on screen."""
+        return self.get_str(maxlen=80)

@@ -71,8 +71,8 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = parser.parse_args()
     args = setup_cuda(args)
     args.seed = setup_seed(args.seed, args.cuda)
+    # Set new args
     args.flag = f'{args.seed}'
-
     return args
 
 
