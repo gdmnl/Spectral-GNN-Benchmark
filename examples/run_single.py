@@ -4,10 +4,6 @@ Author: nyLiao
 File Created: 2023-08-03
 File: sfb_iter.py
 """
-import numpy as np
-from pathlib import Path
-import torch
-
 from trainer import (
     DataLoader,
     ModelLoader,
@@ -22,35 +18,27 @@ from utils import (
     ResLogger)
 
 
-LOGPATH = Path('../log')
 LRES = 25
-np.set_printoptions(linewidth=160, edgeitems=5, threshold=20,
-                    formatter=dict(float=lambda x: f"{x: 9.3e}"))
-torch.set_printoptions(linewidth=160, edgeitems=5)
 
 
 def main(args):
     # ========== Run configuration
     args.logpath = setup_logpath(
-        dir=LOGPATH,
         folder_args=(args.data, args.model, args.flag),
         quiet=args.quiet)
     logger = setup_logger(args.logpath, level=args.loglevel, quiet=args.quiet)
-    csv_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
+    res_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
 
     logger.info(f"[args]: {args}")
-    csv_logger.concat([
-        ('data', args.data),
-        ('model', args.model),
-        ('seed', args.seed),])
+    res_logger.concat([('seed', args.seed),])
     save_args(args.logpath, args)
 
     # ========== Load data
-    data_loader = DataLoader(args)
+    data_loader = DataLoader(args, res_logger)
     dataset = data_loader(args)
 
     # ========== Load model
-    model_loader = ModelLoader(args)
+    model_loader = ModelLoader(args, res_logger)
     model = model_loader(args)
 
     # ========== Run trainer
@@ -58,12 +46,11 @@ def main(args):
         model=model,
         dataset=dataset,
         args=args,
-        logger=logger)
-    res_run = trn()
+        res_logger=res_logger,)
+    trn()
 
-    csv_logger.merge(res_run)
-    csv_logger.save()
-    logger.log(LRES, f"[res]: {str(csv_logger)}")
+    res_logger.save()
+    logger.log(LRES, f"[res]: {str(res_logger)}")
     clear_logger(logger)
 
 

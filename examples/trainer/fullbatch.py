@@ -7,8 +7,8 @@ File Created: 2024-02-26
 File: fb_iter.py
 """
 from typing import List
-from logging import Logger
 from argparse import Namespace
+import logging
 
 import torch
 import torch.nn as nn
@@ -32,6 +32,16 @@ class TrnBase(object):
         dataset (Dataset): PyG style dataset.
         logger (Logger): Logger object.
         args (Namespace): Configuration arguments.
+            device (str): torch device.
+            epoch (int): Number of training epochs.
+            lr (float): Learning rate.
+            wd (float): Weight decay.
+            patience (int): Patience for early stopping.
+            period (int): Period for checkpoint saving.
+            suffix (str): Suffix for checkpoint saving.
+            logpath (Path): Path for logging.
+            num_features (int): Number of dataset input features.
+            num_classes (int): Number of dataset output classes.
 
     Methods:
         setup_optimizer: Set up the optimizer and scheduler.
@@ -41,8 +51,8 @@ class TrnBase(object):
     def __init__(self,
                  model: nn.Module,
                  dataset: Dataset,
-                 logger: Logger,
                  args: Namespace,
+                 res_logger: ResLogger = None,
                  **kwargs):
         # Get args
         self.device = args.device
@@ -63,7 +73,8 @@ class TrnBase(object):
         self.num_features = args.num_features
         self.num_classes = args.num_classes
 
-        self.logger = logger
+        self.logger = logging.getLogger('log')
+        self.res_logger = res_logger or ResLogger()
         # assert (args.quiet or '_file' not in storage), "Storage scheme cannot be file for quiet run."
         self.ckpt_logger = CkptLogger(
             self.logpath,
@@ -111,10 +122,9 @@ class TrnFullbatchIter(TrnBase):
     def __init__(self,
                  model: nn.Module,
                  dataset: Dataset,
-                 logger: Logger,
                  args: Namespace,
                  **kwargs):
-        super(TrnFullbatchIter, self).__init__(model, dataset, logger, args, **kwargs)
+        super(TrnFullbatchIter, self).__init__(model, dataset, args, **kwargs)
         self.mask: dict = None
         self.data: Data = None
 
@@ -249,7 +259,7 @@ class TrnFullbatchIter(TrnBase):
         res_test = self.test()
         res_run.merge(res_test)
 
-        return res_run
+        return self.res_logger.merge(res_run)
 
 
 # TODO: possible to decouple model.conv on CPU?

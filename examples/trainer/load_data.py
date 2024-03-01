@@ -13,15 +13,16 @@ from torch_geometric.data import Dataset
 import torch_geometric.transforms as T
 from torch_geometric.data.dataset import _get_flattened_data_list
 import pyg_spectral.transforms as Tspec
-
 from pyg_spectral.utils import load_import
+
+from utils import ResLogger
 
 
 DATAPATH = Path('../data')
 
 
 class DataLoader(object):
-    def __init__(self, args: Namespace) -> None:
+    def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
         r"""Assigning dataset identity.
 
         Args:
@@ -29,6 +30,7 @@ class DataLoader(object):
         """
         self.data = args.data
         self.logger = logging.getLogger('log')
+        self.res_logger = res_logger or ResLogger()
 
         self.transform = None
         self.num_features = None
@@ -103,11 +105,13 @@ class DataLoader(object):
                 root=DATAPATH,
                 name=self.data,
                 transform=self.transform,)
-        dataset = load_import(class_name, module_name)(**kwargs)
 
+        dataset = load_import(class_name, module_name)(**kwargs)
         self._get_properties(dataset)
         args.num_features, args.num_classes = self.num_features, self.num_classes
+
         self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
+        self.res_logger.concat([('data', self.data)])
         return dataset
 
     def __call__(self, *args, **kwargs):

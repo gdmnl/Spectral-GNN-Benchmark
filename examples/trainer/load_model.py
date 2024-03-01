@@ -7,15 +7,16 @@ File: load_model.py
 from argparse import Namespace
 import logging
 import torch.nn as nn
-
 from pyg_spectral.utils import load_import
+
+from utils import ResLogger
 
 
 LTRN = 25
 
 
 class ModelLoader(object):
-    def __init__(self, args: Namespace) -> None:
+    def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
         r"""Assigning model identity.
 
         Args:
@@ -25,6 +26,7 @@ class ModelLoader(object):
         self.model = args.model
         self.conv = args.conv
         self.logger = logging.getLogger('log')
+        self.res_logger = res_logger or ResLogger()
 
     def get(self, args: Namespace) -> nn.Module:
         r"""Load model with specified arguments.
@@ -49,7 +51,7 @@ class ModelLoader(object):
         )
 
         if self.model in ['GCN']:
-            # self.conv = 'GCNConv'
+            self.conv = 'GCNConv'   # Sometimes need to manually fix repr for logging
             module_name = 'torch_geometric.nn.models'
             class_name = self.model
 
@@ -66,11 +68,13 @@ class ModelLoader(object):
 
             if self.model in ['IterConv']:
                 if self.conv in ['FixLinSumAdj', 'VarLinSumAdj']:
+                    self.conv = '-'.join((self.conv, args.theta))
                     kwargs.update(dict(
                         theta=(args.theta, args.alpha),
                         K=args.K,))
             elif self.model in ['DecPostMLP']:
                 if self.conv in ['FixSumAdj', 'VarSumAdj']:
+                    self.conv = '-'.join((self.conv, args.theta))
                     kwargs.update(dict(
                         theta=(args.theta, args.alpha),
                         K=args.K,))
@@ -78,7 +82,9 @@ class ModelLoader(object):
                 raise ValueError(f"Model '{self}' not found.")
 
         model = load_import(class_name, module_name)(**kwargs)
+
         self.logger.log(LTRN, f"[model]: {model}")
+        self.res_logger.concat([('model', str(self)),])
         return model
 
     def __call__(self, *args, **kwargs):

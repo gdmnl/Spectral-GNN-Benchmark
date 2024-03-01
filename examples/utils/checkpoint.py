@@ -38,6 +38,7 @@ class CkptLogger(object):
         self.filetype = 'pth'
         self.patience = patience
         self.period = period
+        self.best_keys = None
         # Checkpoint storage scheme
         assert storage in ['model_file', 'state_file', 'model_ram', 'state_ram', 'model_gpu', 'state_gpu']
         self.storage = storage

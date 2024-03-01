@@ -41,6 +41,10 @@ def setup_cuda(args: argparse.Namespace) -> argparse.Namespace:
 
 
 def setup_argparse():
+    np.set_printoptions(linewidth=160, edgeitems=5, threshold=20,
+                        formatter=dict(float=lambda x: f"{x: 9.3e}"))
+    torch.set_printoptions(linewidth=160, edgeitems=5)
+
     parser = argparse.ArgumentParser(description='Benchmark running')
     # Logging configuration
     parser.add_argument('-s', '--seed', type=int, default=0, help='random seed')

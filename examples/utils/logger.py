@@ -48,12 +48,12 @@ def setup_logger(logpath: Union[Path, str] = LOGPATH,
         fileHandler.setLevel(LTRN)
         logger.addHandler(fileHandler)
 
-    logger.info(f"[time]: {datetime.now()}")
+    logger.log(LTRN, f"[time]: {datetime.now()}")
     return logger
 
 
 def clear_logger(logger: logging.Logger):
-    logger.info(f"[time]: {datetime.now()}")
+    logger.log(LTRN, f"[time]: {datetime.now()}")
     handlers = logger.handlers[:]
     for handler in handlers:
         logger.removeHandler(handler)
@@ -269,9 +269,9 @@ class ResLogger(object):
         """
         if self.quiet:
             return
-        data_str = DataFrame()
+        data_str = DataFrame(columns=self.data.columns, index=[0])
         for coli in self.data.columns:
-            data_str[coli] = self._get(col=coli)
+            data_str.loc[0, coli] = self._get(col=coli)
         with open(self.filename, 'a') as f:
             # FEATURE: manage column inconsistency in header
             data_str.to_csv(self.filename, index=False,
