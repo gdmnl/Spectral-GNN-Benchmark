@@ -57,7 +57,6 @@ def setup_argparse():
     parser.add_argument('-l', '--layer', type=int, default=2, help='Number of layers')
     parser.add_argument('-w', '--hidden', type=int, default=256, help='Number of hidden units')
     parser.add_argument('--dp', type=float, default=0.5, help='Dropout rate')
-    parser.add_argument('--dpe', type=float, default=0.0, help='Edge dropout rate')
     # Training configuration
     parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
@@ -65,6 +64,13 @@ def setup_argparse():
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--wd', type=float, default=1e-5, help='Weight decay')
 
+    # Model-specific
+    # - pyg_spectral
+    parser.add_argument('--dpe', type=float, default=0.0, help='Edge dropout rate')
+    parser.add_argument('-K', type=int, default=2, help='Hop of spectral convolution')
+    #     - SumAdj
+    parser.add_argument('--theta', type=str, default="appr", help='Filter name')
+    parser.add_argument('--alpha', type=float, default=0.2, help='Hyperparameter for filter')
     return parser
 
 

@@ -5,45 +5,84 @@ File Created: 2024-02-26
 File: load_model.py
 """
 from argparse import Namespace
+import logging
 import torch.nn as nn
 
 from pyg_spectral.utils import load_import
 
 
-class LoaderModel(object):
-    def __init__(self) -> None:
-        r"""For entities."""
-        pass
+LTRN = 25
 
-    def get(self,
-            model: str,
-            conv: str,
-            args: Namespace) -> nn.Module:
+
+class ModelLoader(object):
+    def __init__(self, args: Namespace) -> None:
+        r"""Assigning model identity.
+
+        Args:
+            args.model (str): Model architecture name.
+            args.conv (str): Convolution layer name.
+        """
+        self.model = args.model
+        self.conv = args.conv
+        self.logger = logging.getLogger('log')
+
+    def get(self, args: Namespace) -> nn.Module:
+        r"""Load model with specified arguments.
+
+        Args:
+            args.num_features (int): Number of input features.
+            args.num_classes (int): Number of output classes.
+            args.hidden (int): Number of hidden units.
+            args.layer (int): Number of layers.
+            args.dp (float): Dropout rate.
+        """
+        self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)
+
+        # TODO: whether to add batch norm
         kwargs = dict(
-            conv=conv,
+            conv=self.conv,
             in_channels=args.num_features,
             out_channels=args.num_classes,
             hidden_channels=args.hidden,
-            num_layers=args.layer,)
-        lib_model = 'pyg_spectral.nn.models'
-        fload = lambda kw: load_import(model, lib_model)(**kw)
+            num_layers=args.layer,
+            dropout=args.dp,
+        )
 
-        if model in ['IterConv']:
-            if conv in ['FixLinSumAdj', 'VarLinSumAdj']:
-                kwargs.update(dict(
-                    theta=('appr', 0.15),
-                    dropout=args.dp,
-                    K=2,))
-                return fload(kwargs)
-        elif model in ['DecPostMLP']:
-            if conv in ['FixSumAdj', 'VarSumAdj']:
-                kwargs.update(dict(
-                    theta=('appr', 0.15),
-                    dropout=args.dp,
-                    K=5,))
-                return fload(kwargs)
+        if self.model in ['GCN']:
+            # self.conv = 'GCNConv'
+            module_name = 'torch_geometric.nn.models'
+            class_name = self.model
 
-        raise ValueError(f"Model '{model}:{conv}' not found.")
+            kwargs.pop('conv')
+            kwargs.update(dict(
+                cached=False,
+                improved=False,
+                add_self_loops=False,
+                normalize=False,))
+        # Default to load from `pyg_spectral`
+        else:
+            module_name = 'pyg_spectral.nn.models'
+            class_name = self.model
+
+            if self.model in ['IterConv']:
+                if self.conv in ['FixLinSumAdj', 'VarLinSumAdj']:
+                    kwargs.update(dict(
+                        theta=(args.theta, args.alpha),
+                        K=args.K,))
+            elif self.model in ['DecPostMLP']:
+                if self.conv in ['FixSumAdj', 'VarSumAdj']:
+                    kwargs.update(dict(
+                        theta=(args.theta, args.alpha),
+                        K=args.K,))
+            else:
+                raise ValueError(f"Model '{self}' not found.")
+
+        model = load_import(class_name, module_name)(**kwargs)
+        self.logger.log(LTRN, f"[model]: {model}")
+        return model
 
     def __call__(self, *args, **kwargs):
         return self.get(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.model}:{self.conv}"

@@ -60,8 +60,8 @@ class TrnBase(object):
         self.criterion = nn.CrossEntropyLoss()
 
         self.splits = ['train', 'val', 'test']
-        self.num_features = dataset.num_features
-        self.num_classes = dataset.num_classes
+        self.num_features = args.num_features
+        self.num_classes = args.num_classes
 
         self.logger = logger
         # assert (args.quiet or '_file' not in storage), "Storage scheme cannot be file for quiet run."

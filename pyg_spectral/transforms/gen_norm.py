@@ -7,7 +7,6 @@ from torch_geometric.data.datapipes import functional_transform
 from torch_geometric.transforms import BaseTransform
 from torch_geometric.utils import scatter
 
-import traceback
 
 def pow_with_pinv(x: Tensor, p: float) -> Tensor:
     r"""Inplace power operation :math:`x^p` with pseudo-inverse for :math:`p<0`.
@@ -39,9 +38,6 @@ class GenNorm(BaseTransform):
 
     def forward(self, data: Data) -> Data:
         assert 'edge_index' in data or 'adj_t' in data
-        print('='*20)
-        traceback.print_stack()
-        print('='*20)
 
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
         if 'adj_t' in data and isinstance(data.adj_t, SparseTensor):

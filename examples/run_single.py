@@ -8,13 +8,9 @@ import numpy as np
 from pathlib import Path
 import torch
 
-import torch_geometric.transforms as T
-import pyg_spectral.transforms as Tspec
-from torch_geometric.datasets import Planetoid
-from torch_geometric.nn.models import GCN
-
 from trainer import (
-    LoaderModel,
+    DataLoader,
+    ModelLoader,
     TrnFullbatchIter)
 from utils import (
     setup_argparse,
@@ -26,8 +22,8 @@ from utils import (
     ResLogger)
 
 
-LOGPATH, DATAPATH = Path('../log'), Path('../data')
-LTRN, LRES = 15, 25
+LOGPATH = Path('../log')
+LRES = 25
 np.set_printoptions(linewidth=160, edgeitems=5, threshold=20,
                     formatter=dict(float=lambda x: f"{x: 9.3e}"))
 torch.set_printoptions(linewidth=160, edgeitems=5)
@@ -50,43 +46,14 @@ def main(args):
     save_args(args.logpath, args)
 
     # ========== Load data
-    logger.debug('-'*20 + f" Loading data: {args.data} " + '-'*20)
-
-    # TODO: data loader
-    dataset = Planetoid(DATAPATH, args.data,
-        transform=T.Compose([
-            T.ToUndirected(),
-            T.RemoveIsolatedNodes(),
-            T.RemoveDuplicatedEdges(reduce='mean'),
-            T.AddRemainingSelfLoops(fill_value=1.0),
-            T.NormalizeFeatures(),
-            T.ToSparseTensor(remove_edge_index=True),
-            Tspec.GenNorm(left=args.normg),
-        ]))
-    args.num_features, args.num_classes = dataset.num_features, dataset.num_classes
-
-    logger.info(f"[dataset]: {dataset}")
+    data_loader = DataLoader(args)
+    dataset = data_loader(args)
 
     # ========== Load model
-    logger.debug('-'*20 + f" Loading model: {args.model}:{args.conv} " + '-'*20)
-
-    # TODO: model loader for checking args.model and kwargs
-    # model = GCN(
-    #     in_channels=dataset.num_features,
-    #     out_channels=dataset.num_classes,
-    #     hidden_channels=args.hidden,
-    #     num_layers=args.layer,
-    #     dropout=args.dp,
-    #     normalize=False,)
-    model = LoaderModel()(
-        model=args.model,
-        conv=args.conv,
-        args=args)
-
-    logger.log(LTRN, f"[model]: {model}")
+    model_loader = ModelLoader(args)
+    model = model_loader(args)
 
     # ========== Run trainer
-    # TODO: trainer loader
     trn = TrnFullbatchIter(
         model=model,
         dataset=dataset,
