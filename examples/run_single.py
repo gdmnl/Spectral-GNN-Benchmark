@@ -1,15 +1,15 @@
 # -*- coding:utf-8 -*-
-"""Single run
+"""Run single experiment.
 Author: nyLiao
 File Created: 2023-08-03
 File: sfb_iter.py
 """
 import numpy as np
 from pathlib import Path
-
 import torch
-import torch_geometric.transforms as T
 
+import torch_geometric.transforms as T
+import pyg_spectral.transforms as Tspec
 from torch_geometric.datasets import Planetoid
 from torch_geometric.nn.models import GCN
 
@@ -53,11 +53,16 @@ def main(args):
     logger.debug('-'*20 + f" Loading data: {args.data} " + '-'*20)
 
     # TODO: data loader
-    # TODO: general graph norm transform
     dataset = Planetoid(DATAPATH, args.data,
         transform=T.Compose([
+            T.ToUndirected(),
+            T.RemoveIsolatedNodes(),
+            T.RemoveDuplicatedEdges(reduce='mean'),
+            T.AddRemainingSelfLoops(fill_value=1.0),
             T.NormalizeFeatures(),
-            T.ToSparseTensor(),]))
+            T.ToSparseTensor(remove_edge_index=True),
+            Tspec.GenNorm(left=args.normg),
+        ]))
     args.num_features, args.num_classes = dataset.num_features, dataset.num_classes
 
     logger.info(f"[dataset]: {dataset}")

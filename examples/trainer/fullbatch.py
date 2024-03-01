@@ -1,6 +1,6 @@
 # -*- coding:utf-8 -*-
-"""Full batch, iterative, node classification.
-    - Model input: separate edge index and node features.
+"""Full batch, node classification.
+    - Model forward input: separate edge index and node features.
     - Run pipeline: train_val -> test.
 Author: nyLiao
 File Created: 2024-02-26
@@ -12,8 +12,10 @@ from argparse import Namespace
 
 import torch
 import torch.nn as nn
-from torch_geometric.utils import is_sparse
 from torch_geometric.data import Data, Dataset
+import torch_geometric.transforms as T
+import torch_geometric.utils as pyg_utils
+
 from pyg_spectral import metrics
 
 from utils import CkptLogger, ResLogger
@@ -117,18 +119,21 @@ class TrnFullbatchIter(TrnBase):
         self.data: Data = None
 
     def _fetch_data(self) -> Data:
-        data = self.dataset[0].to(self.device)
-        self.data = data
-        self.mask = {k: getattr(data, f'{k}_mask') for k in self.splits}
-        self.logger.info(f"[data]: {data}")
+        t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t'])
+        self.data = t_to_device(self.dataset[0])
+
+        # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
+        if not pyg_utils.is_sparse(self.data.adj_t):
+            raise NotImplementedError
+        # if pyg_utils.contains_isolated_nodes(self.data.edge_index):
+        #     self.logger.warning(f"Graph {self.data} contains isolated nodes.")
+
+        self.mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
+        self.logger.info(f"[data]: {self.data}")
         return self.data
 
     def _fetch_input(self) -> tuple:
-        # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
-        if hasattr(self.data, 'adj_t') and is_sparse(self.data.adj_t):
-            input, label = (self.data.x, self.data.adj_t), self.data.y
-        else:
-            raise NotImplementedError
+        input, label = (self.data.x, self.data.adj_t), self.data.y
         return input, label
 
     # ===== Epoch run
@@ -245,3 +250,8 @@ class TrnFullbatchIter(TrnBase):
         res_run.merge(res_test)
 
         return res_run
+
+
+# TODO: possible to decouple model.conv on CPU?
+# class TrnFullbatchDec(TrnBase):
+#     pass

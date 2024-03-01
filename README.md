@@ -20,8 +20,8 @@ bash scripts/sfb.sh
 ### `examples`
 Related to benchmark experiments.
 
-### `spectral_gnn`
-Core codes for spectral GNNs following the PyTorch Geometric structure.
+### `pyg_spectral`
+Core codes for spectral GNNs mimicking PyTorch Geometric structure.
 
 ### `log`
 Log files for saving the results. For experiment and ignored by git.

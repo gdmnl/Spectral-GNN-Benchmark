@@ -49,7 +49,8 @@ def setup_argparse():
     parser.add_argument('-quiet', action='store_true', help='Quiet run without saving logs.')
     parser.add_argument('--loglevel', type=int, default=10, help='10:progress, 15:train, 20:info, 25:result')
     # Data configuration
-    parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
+    parser.add_argument('-d', '--data', type=str, default='Cora', help='Dataset name')
+    parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
     # Model configuration
     parser.add_argument('-m', '--model', type=str, default='IterConv', help='Model class name')
     parser.add_argument('-c', '--conv', type=str, default='FixLinSumAdj', help='Conv class name')

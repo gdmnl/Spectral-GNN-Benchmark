@@ -20,4 +20,5 @@ dependencies=[
     "torch_geometric>=2.3",
     "torch>=2.0",
     "pandas>=2.0",
+    "torch-sparse>=0.6.17",
 ]

@@ -53,10 +53,12 @@ def setup_logger(logpath: Union[Path, str] = LOGPATH,
 
 
 def clear_logger(logger: logging.Logger):
+    logger.info(f"[time]: {datetime.now()}")
     handlers = logger.handlers[:]
     for handler in handlers:
         logger.removeHandler(handler)
         handler.close()
+    logger.info(f"[time]: {datetime.now()}")
 
 
 def setup_logpath(dir: Union[Path, str] = LOGPATH,

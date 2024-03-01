@@ -1,2 +1,2 @@
-from .fb_iter import TrnFullbatchIter
+from .fullbatch import TrnFullbatchIter
 from .load_model import LoaderModel
