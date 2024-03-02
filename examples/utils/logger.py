@@ -2,7 +2,6 @@
 """
 Author: nyLiao
 File Created: 2023-03-20
-File: logger.py
 """
 from typing import Tuple, List, Callable, Union, Any
 from pathlib import Path

@@ -2,7 +2,6 @@
 """Run single experiment.
 Author: nyLiao
 File Created: 2023-08-03
-File: sfb_iter.py
 """
 from trainer import (
     DataLoader,
@@ -50,7 +49,7 @@ def main(args):
     trn()
 
     res_logger.save()
-    logger.log(LRES, f"[res]: {str(res_logger)}")
+    logger.log(LRES, f"[res]: {res_logger}")
     clear_logger(logger)
 
 

@@ -7,7 +7,7 @@ from torch_geometric.nn.conv import MessagePassing
 from pyg_spectral.utils import load_import
 
 
-class IterConv(BasicGNN):
+class IterGNN(BasicGNN):
     r"""Use module from :class:`pyg_spectral.nn.conv` as convolutional layer.
 
     Args:

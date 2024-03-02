@@ -2,7 +2,6 @@
 """
 Author: nyLiao
 File Created: 2023-03-20
-File: config.py
 """
 import os
 import json
@@ -56,7 +55,7 @@ def setup_argparse():
     parser.add_argument('-d', '--data', type=str, default='Cora', help='Dataset name')
     parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
     # Model configuration
-    parser.add_argument('-m', '--model', type=str, default='IterConv', help='Model class name')
+    parser.add_argument('-m', '--model', type=str, default='IterGNN', help='Model class name')
     parser.add_argument('-c', '--conv', type=str, default='FixLinSumAdj', help='Conv class name')
     parser.add_argument('-l', '--layer', type=int, default=2, help='Number of layers')
     parser.add_argument('-w', '--hidden', type=int, default=256, help='Number of hidden units')
@@ -65,7 +64,7 @@ def setup_argparse():
     parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
     parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
-    parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
+    parser.add_argument('--lr', type=float, default=1.0e-3, help='Learning rate')
     parser.add_argument('--wd', type=float, default=1e-5, help='Weight decay')
 
     # Model-specific

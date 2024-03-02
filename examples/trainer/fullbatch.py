@@ -4,7 +4,6 @@
     - Run pipeline: train_val -> test.
 Author: nyLiao
 File Created: 2024-02-26
-File: fb_iter.py
 """
 from typing import List
 from argparse import Namespace

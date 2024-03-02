@@ -13,8 +13,8 @@ class myMLP(MLP):
         return super(MLP, self).__repr__()
 
 
-class DecPostMLP(nn.Module):
-    r"""Post-propagation decoupled model.
+class PostMLP(nn.Module):
+    r"""Post-propagation model.
 
     Args:
         conv (str): Name of :class:`pyg_spectral.nn.conv` module.
@@ -66,7 +66,7 @@ class DecPostMLP(nn.Module):
             plain_last: bool = True,
             bias: Union[bool, List[bool]] = True,
             **kwargs):
-        super(DecPostMLP, self).__init__()
+        super(PostMLP, self).__init__()
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
         self.out_channels = out_channels
@@ -105,6 +105,37 @@ class DecPostMLP(nn.Module):
         num_sampled_nodes_per_hop: Optional[List[int]] = None,
         num_sampled_edges_per_hop: Optional[List[int]] = None,
     ) -> torch.Tensor:
+        r"""Forward pass.
+
+        Args:
+            x (torch.Tensor): The input node features.
+            edge_index (torch.Tensor or SparseTensor): The edge indices.
+            edge_weight (torch.Tensor, optional): The edge weights (if
+                supported by the underlying GNN layer). (default: :obj:`None`)
+            edge_attr (torch.Tensor, optional): The edge features (if supported
+                by the underlying GNN layer). (default: :obj:`None`)
+            batch (torch.Tensor, optional): The batch vector
+                :math:`\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N`, which assigns
+                each element to a specific example.
+                Only needs to be passed in case the underlying normalization
+                layers require the :obj:`batch` information.
+                (default: :obj:`None`)
+            batch_size (int, optional): The number of examples :math:`B`.
+                Automatically calculated if not given.
+                Only needs to be passed in case the underlying normalization
+                layers require the :obj:`batch` information.
+                (default: :obj:`None`)
+            num_sampled_nodes_per_hop (List[int], optional): The number of
+                sampled nodes per hop.
+                Useful in :class:`~torch_geometric.loader.NeighborLoader`
+                scenarios to only operate on minimal-sized representations.
+                (default: :obj:`None`)
+            num_sampled_edges_per_hop (List[int], optional): The number of
+                sampled edges per hop.
+                Useful in :class:`~torch_geometric.loader.NeighborLoader`
+                scenarios to only operate on minimal-sized representations.
+                (default: :obj:`None`)
+        """
         x = self.mlp(x)
         # TODO: if not plain_last, apply dropout
 

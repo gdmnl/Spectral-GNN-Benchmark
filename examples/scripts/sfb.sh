@@ -1,1 +1,1 @@
-python run_single.py --epoch 20 --model IterConv --conv FixLinSumAdj
+python run_single.py --epoch 20 --model IterGNN --conv FixLinSumAdj

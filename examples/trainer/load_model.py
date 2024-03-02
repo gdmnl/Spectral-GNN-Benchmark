@@ -2,7 +2,6 @@
 """
 Author: nyLiao
 File Created: 2024-02-26
-File: load_model.py
 """
 from argparse import Namespace
 import logging
@@ -66,13 +65,13 @@ class ModelLoader(object):
             module_name = 'pyg_spectral.nn.models'
             class_name = self.model
 
-            if self.model in ['IterConv']:
+            if self.model in ['IterGNN']:
                 if self.conv in ['FixLinSumAdj', 'VarLinSumAdj']:
                     self.conv = '-'.join((self.conv, args.theta))
                     kwargs.update(dict(
                         theta=(args.theta, args.alpha),
                         K=args.K,))
-            elif self.model in ['DecPostMLP']:
+            elif self.model in ['PostMLP']:
                 if self.conv in ['FixSumAdj', 'VarSumAdj']:
                     self.conv = '-'.join((self.conv, args.theta))
                     kwargs.update(dict(

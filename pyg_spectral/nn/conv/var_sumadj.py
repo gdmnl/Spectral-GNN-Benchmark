@@ -36,7 +36,10 @@ class VarSumAdj(MessagePassing):
         super(VarSumAdj, self).__init__(**kwargs)
 
         if isinstance(theta, tuple):
+            self.scheme = theta[0]
             theta = gen_theta(K, *theta)
+        else:
+            self.scheme = 'custom'
         self.theta_init = theta
         self.theta = torch.nn.Parameter(theta)
         self.K = K if K > 0 else len(theta)
@@ -81,7 +84,7 @@ class VarSumAdj(MessagePassing):
         return spmm(adj_t, x, reduce=self.aggr)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(K={self.K}, alpha={self.theta[0]:f})'
+        return f'{self.__class__.__name__}-{self.scheme}(K={self.K}, alpha={self.theta[0]:f})'
 
 
 class VarLinSumAdj(VarSumAdj):
@@ -125,5 +128,5 @@ class VarLinSumAdj(VarSumAdj):
         return self.lin(h)
 
     def __repr__(self) -> str:
-        return (f'{self.__class__.__name__}({self.in_channels}, '
+        return (f'{self.__class__.__name__}-{self.scheme}({self.in_channels}, '
                 f'{self.out_channels}, K={self.K}, alpha={self.theta[0]:f})')

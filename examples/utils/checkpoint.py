@@ -2,7 +2,6 @@
 """
 Author: nyLiao
 File Created: 2023-03-20
-File: checkpoint.py
 """
 from typing import Union, Callable
 from pathlib import Path

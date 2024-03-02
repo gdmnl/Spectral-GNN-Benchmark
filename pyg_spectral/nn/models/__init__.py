@@ -1,2 +1,2 @@
-from .iter_gnn import IterConv
-from .dpst_gnn import DecPostMLP
+from .iterative import IterGNN
+from .prop_mlp import PostMLP

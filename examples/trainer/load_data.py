@@ -2,7 +2,6 @@
 """
 Author: nyLiao
 File Created: 2024-02-26
-File: load_data.py
 """
 from pathlib import Path
 from argparse import Namespace
