@@ -70,13 +70,22 @@ class ModelLoader(object):
                     self.conv = '-'.join((self.conv, args.theta))
                     kwargs.update(dict(
                         theta=(args.theta, args.alpha),
-                        K=args.K,))
+                        K=args.K,
+                        dropedge=args.dpe,))
             elif self.model in ['PostMLP']:
                 if self.conv in ['FixSumAdj', 'VarSumAdj']:
                     self.conv = '-'.join((self.conv, args.theta))
                     kwargs.update(dict(
                         theta=(args.theta, args.alpha),
-                        K=args.K,))
+                        K=args.K,
+                        dropedge=args.dpe,))
+            elif self.model in ['PreDecMLP']:
+                if self.conv in ['FixSumAdj', 'VarSumAdj']:
+                    self.conv = '-'.join((self.conv, args.theta))
+                    kwargs.update(dict(
+                        theta=(args.theta, args.alpha),
+                        K=args.K,
+                        dropedge=args.dpe,))
             else:
                 raise ValueError(f"Model '{self}' not found.")
 

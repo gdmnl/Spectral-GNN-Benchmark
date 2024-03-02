@@ -3,6 +3,7 @@ from torch_geometric.typing import Adj, OptTensor
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch_geometric.nn.models import MLP
 
 from pyg_spectral.utils import load_import
@@ -71,7 +72,11 @@ class PostMLP(nn.Module):
         self.hidden_channels = hidden_channels
         self.out_channels = out_channels
         self.num_layers = num_layers
-        # TODO: check whether to apply act and norn at last
+        if isinstance(dropout, list):
+            self.dropout_prop = dropout[-1]
+            dropout = dropout[:-1]
+        else:
+            self.dropout_prop = dropout
         self.plain_last = False
         lib = kwargs.pop('lib_conv', 'pyg_spectral.nn.conv')
 
@@ -95,6 +100,32 @@ class PostMLP(nn.Module):
         self.mlp.reset_parameters()
         self.conv.reset_parameters()
 
+    def propagate(self,
+        x: torch.Tensor,
+        edge_index: Adj,
+        edge_weight: OptTensor = None,
+        edge_attr: OptTensor = None,
+        batch: OptTensor = None,
+        batch_size: Optional[int] = None,
+    ) -> torch.Tensor:
+        r"""Propagation step for calling the convolutional module.
+        """
+        # NOTE: [APPNP](https://github.com/pyg-team/pytorch_geometric/blob/master/benchmark/citation/appnp.py)
+        # does not have last dropout, but exists in [GPRGNN](https://github.com/jianhao2016/GPRGNN/blob/master/src/GNN_models.py)
+        # x = F.dropout(x, p=self.dropout_prop, training=self.training)
+
+        if self.supports_edge_weight and self.supports_edge_attr:
+            x = self.conv(x, edge_index, edge_weight=edge_weight,
+                          edge_attr=edge_attr)
+        elif self.supports_edge_weight:
+            x = self.conv(x, edge_index, edge_weight=edge_weight)
+        elif self.supports_edge_attr:
+            x = self.conv(x, edge_index, edge_attr=edge_attr)
+        else:
+            x = self.conv(x, edge_index)
+
+        return x
+
     def forward(self,
         x: torch.Tensor,
         edge_index: Adj,
@@ -102,8 +133,6 @@ class PostMLP(nn.Module):
         edge_attr: OptTensor = None,
         batch: OptTensor = None,
         batch_size: Optional[int] = None,
-        num_sampled_nodes_per_hop: Optional[List[int]] = None,
-        num_sampled_edges_per_hop: Optional[List[int]] = None,
     ) -> torch.Tensor:
         r"""Forward pass.
 
@@ -125,29 +154,42 @@ class PostMLP(nn.Module):
                 Only needs to be passed in case the underlying normalization
                 layers require the :obj:`batch` information.
                 (default: :obj:`None`)
-            num_sampled_nodes_per_hop (List[int], optional): The number of
-                sampled nodes per hop.
-                Useful in :class:`~torch_geometric.loader.NeighborLoader`
-                scenarios to only operate on minimal-sized representations.
-                (default: :obj:`None`)
-            num_sampled_edges_per_hop (List[int], optional): The number of
-                sampled edges per hop.
-                Useful in :class:`~torch_geometric.loader.NeighborLoader`
-                scenarios to only operate on minimal-sized representations.
-                (default: :obj:`None`)
         """
-        x = self.mlp(x)
-        # TODO: if not plain_last, apply dropout
+        x = self.mlp(x, batch=batch, batch_size=batch_size)
 
-        # TODO: if it possible to decouple prop (say on CPU)
-        if self.supports_edge_weight and self.supports_edge_attr:
-            x = self.conv(x, edge_index, edge_weight=edge_weight,
-                        edge_attr=edge_attr)
-        elif self.supports_edge_weight:
-            x = self.conv(x, edge_index, edge_weight=edge_weight)
-        elif self.supports_edge_attr:
-            x = self.conv(x, edge_index, edge_attr=edge_attr)
-        else:
-            x = self.conv(x, edge_index)
+        x = self.propagate(x, edge_index, edge_weight, edge_attr,
+                           batch, batch_size)
 
+        return x
+
+
+class PostDecMLP(PostMLP):
+    r"""Post-propagation model decouples propagation to CPU.
+    """
+    def forward(self,
+        x: torch.Tensor,
+        edge_index: Adj,
+        edge_weight: OptTensor = None,
+        edge_attr: OptTensor = None,
+        batch: OptTensor = None,
+        batch_size: Optional[int] = None,
+    ) -> torch.Tensor:
+        x = self.mlp(x, batch=batch, batch_size=batch_size)
+
+        x = x.cpu()
+        x = self.propagate(x, edge_index, edge_weight, edge_attr,
+                           batch, batch_size)
+
+        return x
+
+
+class PreDecMLP(PostMLP):
+    r"""Pre-propagation model decouples propagation to CPU.
+    """
+    def forward(self,
+        x: torch.Tensor,
+        batch: OptTensor = None,
+        batch_size: Optional[int] = None,
+    ) -> torch.Tensor:
+        x = self.mlp(x, batch=batch, batch_size=batch_size)
         return x
