@@ -291,6 +291,8 @@ class ResLogger(object):
         Returns:
             s (str): Formatted string representation.
         """
+        if self.data.empty:
+            return ''
         if col is None:
             col = self.data.columns
         elif isinstance(col, str):

@@ -185,7 +185,7 @@ class CkptLogger(object):
 
         return self.last_improved
 
-    def set_best(self, **kwargs):
+    def set_at_best(self, **kwargs):
         r"""Save given args to model attributes if is the best epoch."""
         if not self.last_improved:
             return
@@ -193,6 +193,6 @@ class CkptLogger(object):
         for key, val in kwargs.items():
             setattr(self, key, val)
 
-    def get_best(self) -> list:
+    def get_at_best(self) -> list:
         r"""Get saved model attributes from the best epoch."""
         return [(key, getattr(self, key)) for key in self.best_keys]

@@ -8,6 +8,11 @@ import time
 import resource
 import torch
 from torch.nn import Module
+from torch_geometric.profile import (
+    get_model_size,
+    get_data_size,
+    get_cpu_memory_from_gc,
+    get_gpu_memory_from_gc)
 
 
 class Stopwatch(object):
@@ -15,25 +20,32 @@ class Stopwatch(object):
         self.reset()
 
     def start(self):
-        self.start_time = time.time()
+        self.start_time = time.perf_counter()
 
     def pause(self) -> float:
         """Pause clocking and return elapsed time"""
-        self.elapsed_sec += time.time() - self.start_time
+        self.elapsed_sec += time.perf_counter() - self.start_time
         self.start_time = None
         return self.elapsed_sec
 
     def lap(self) -> float:
         """No pausing, return elapsed time"""
-        return time.time() - self.start_time + self.elapsed_sec
+        return time.perf_counter() - self.start_time + self.elapsed_sec
 
     def reset(self):
         self.start_time = None
         self.elapsed_sec = 0
 
     @property
-    def time(self) -> float:
+    def data(self) -> float:
         return self.elapsed_sec
+
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.pause()
 
 
 class Accumulator(object):
@@ -104,6 +116,8 @@ class MemoryRAM(NumFmt):
 
     def update(self):
         self.set(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 2**10)
+        # Only consider tensors
+        # self.set(get_cpu_memory_from_gc())
 
 
 class MemoryCUDA(NumFmt):
@@ -126,9 +140,9 @@ class ParamNumel(NumFmt):
             self.update(module)
 
     def update(self, module: Module):
-        num_paramst = sum([param.nelement() for param in module.parameters() if param.requires_grad])
-        # num_params = sum([param.nelement() for param in module.parameters()])
-        # num_bufs = sum([buf.nelement() for buf in module.buffers()])
+        num_paramst = sum([p.nelement() for p in module.parameters() if p.requires_grad])
+        # num_params = sum([p.nelement() for p in module.parameters()])
+        # num_bufs = sum([b.nelement() for b in module.buffers()])
         self.set(num_paramst)
 
 
@@ -141,7 +155,7 @@ class ParamMemory(NumFmt):
             self.update(module)
 
     def update(self, module: Module):
-        # mem_paramst = sum([param.nelement()*param.element_size() for param in module.parameters() if param.requires_grad])
-        mem_params = sum([param.nelement()*param.element_size() for param in module.parameters()])
-        mem_bufs = sum([buf.nelement()*buf.element_size() for buf in module.buffers()])
+        # mem_paramst = sum([p.nelement()*p.element_size() for p in module.parameters() if p.requires_grad])
+        mem_params = sum([p.nelement()*p.element_size() for p in module.parameters()])
+        mem_bufs = sum([b.nelement()*b.element_size() for b in module.buffers()])
         self.set(mem_params + mem_bufs)

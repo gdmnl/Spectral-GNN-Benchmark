@@ -90,6 +90,31 @@ class TrnBase(object):
             self.optimizer, mode='max', factor=0.5,
             threshold=1e-4, patience=15, verbose=False)
 
+    def clear(self):
+        del self.model
+        del self.dataset
+        del self.optimizer
+        del self.scheduler
+
+    @staticmethod
+    def _log_memory(split: str = None, row: int = 0):
+        def decorator(func):
+            def wrapper(self, *args, **kwargs):
+                with self.device:
+                    torch.cuda.empty_cache()
+
+                res = func(self, *args, **kwargs)
+                res.concat(
+                    [('mem_ram', metrics.MemoryRAM()(unit='G')),
+                     ('mem_cuda', metrics.MemoryCUDA()(unit='G')),],
+                    row=row, suffix=split)
+
+                with self.device:
+                    torch.cuda.empty_cache()
+                return res
+            return wrapper
+        return decorator
+
     def _fetch_data(self) -> Data:
         r"""Dataset to single graph data."""
         raise NotImplementedError
@@ -103,12 +128,6 @@ class TrnBase(object):
 
     def _eval_split(self, split: List[str]) -> ResLogger:
         raise NotImplementedError
-
-    def clear(self):
-        del self.model
-        del self.dataset
-        del self.optimizer
-        del self.scheduler
 
     def run(self) -> ResLogger:
         raise NotImplementedError
@@ -151,78 +170,72 @@ class TrnFullbatchIter(TrnBase):
         self.model.train()
         input, label = self._fetch_input()
 
-        stopwatch = metrics.Stopwatch()
-
-        stopwatch.start()
-        self.optimizer.zero_grad()
-        output = self.model(*input)
-        mask_split = self.mask[split[0]]
-        loss = self.criterion(output[mask_split], label[mask_split])
-        loss.backward()
-        self.optimizer.step()
-        stopwatch.pause()
+        with metrics.Stopwatch() as stopwatch:
+            self.optimizer.zero_grad()
+            output = self.model(*input)
+            mask_split = self.mask[split[0]]
+            loss = self.criterion(output[mask_split], label[mask_split])
+            loss.backward()
+            self.optimizer.step()
 
         return ResLogger()(
-            [('time_learn', stopwatch.time),
+            [('time_learn', stopwatch.data),
              (f'loss_{split[0]}', loss.item())])
 
+    @torch.no_grad()
     def _eval_split(self, split: list = ['test']) -> ResLogger:
         self.model.eval()
         input, label = self._fetch_input()
 
         # TODO: more metrics: Calcualtor -> Evaluator
         calc = {k: metrics.F1Calculator(self.num_classes) for k in split}
-        stopwatch = metrics.Stopwatch()
 
-        with torch.no_grad():
-            stopwatch.start()
+        with metrics.Stopwatch() as stopwatch:
             output = self.model(*input)
-            stopwatch.pause()
 
-            output = output.cpu().detach()
-            output = output.argmax(dim=1)
-            label = label.cpu().detach()
-            for k in split:
-                mask_split = self.mask[k]
-                calc[k].step(label[mask_split], output[mask_split])
+        output = output.cpu().detach()
+        output = output.argmax(dim=1)
+        label = label.cpu().detach()
+        for k in split:
+            mask_split = self.mask[k]
+            calc[k].step(label[mask_split], output[mask_split])
 
         return ResLogger()(
             [(f'metric_{k}', calc[k].get('micro')) for k in split] +
-            [('time_eval', stopwatch.time)])
+            [('time_eval', stopwatch.data)])
 
     # ===== Run block
+    @TrnBase._log_memory(split='train')
     def train_val(self) -> ResLogger:
         self.logger.debug('-'*20 + f" Start training: {self.epoch} " + '-'*20)
+
         # TODO: list of accumulators
         time_learn = metrics.Accumulator()
         res_learn = ResLogger()
-
         for epoch in range(1, self.epoch+1):
             res_learn.concat([('epoch', epoch)], row=epoch)
 
-            res_train = self._learn_split()
-            res_learn.merge(res_train, rows=[epoch])
+            res = self._learn_split()
+            res_learn.merge(res, rows=[epoch])
             time_learn.update(res_learn[epoch, 'time_learn'])
 
-            res_val = self._eval_split(['val'])
-            res_learn.merge(res_val, rows=[epoch])
+            res = self._eval_split(['val'])
+            res_learn.merge(res, rows=[epoch])
             metric_val = res_learn[epoch, 'metric_val']
             self.scheduler.step(metric_val)
 
             self.logger.log(LTRN, res_learn.get_str(row=epoch))
 
             self.ckpt_logger.step(metric_val, self.model)
-            self.ckpt_logger.set_best(epoch_best=epoch)
+            self.ckpt_logger.set_at_best(epoch_best=epoch)
             if self.ckpt_logger.is_early_stop:
                 break
 
         res_train = ResLogger()
-        res_train.concat(self.ckpt_logger.get_best())
+        res_train.concat(self.ckpt_logger.get_at_best())
         res_train.concat(
             [('epoch', self.ckpt_logger.epoch_current),
-             ('time', time_learn.data),
-             ('mem_rem', metrics.MemoryRAM()(unit='G')),
-             ('mem_cuda', metrics.MemoryCUDA()(unit='G')),],
+             ('time', time_learn.data),],
             suffix='learn')
         return res_train
 
@@ -231,14 +244,12 @@ class TrnFullbatchIter(TrnBase):
         # res_val = self._eval_split(['train', 'val', 'test'])
         raise NotImplementedError
 
+    @TrnBase._log_memory(split='eval')
     def test(self) -> ResLogger:
         self.logger.debug('-'*20 + f" Start evaluating: train+val+test " + '-'*20)
-        res_test = self._eval_split(['train', 'val', 'test'])
 
-        return res_test.concat(
-            [('mem_rem', metrics.MemoryRAM()(unit='G')),
-             ('mem_cuda', metrics.MemoryCUDA()(unit='G')),],
-            suffix='eval')
+        res_test = self._eval_split(['train', 'val', 'test'])
+        return res_test
 
     # ===== Run pipeline
     def run(self) -> ResLogger:
@@ -247,13 +258,9 @@ class TrnFullbatchIter(TrnBase):
         self._fetch_data()
         self.setup_optimizer()
 
-        with self.device:
-            torch.cuda.empty_cache()
         res_train = self.train_val()
         res_run.merge(res_train)
 
-        with self.device:
-            torch.cuda.empty_cache()
         self.model = self.ckpt_logger.load('best', model=self.model)
         res_test = self.test()
         res_run.merge(res_test)
