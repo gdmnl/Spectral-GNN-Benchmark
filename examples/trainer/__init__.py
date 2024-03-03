@@ -1,3 +1,3 @@
-from .fullbatch import TrnFullbatchIter
+from .load_data import DatasetLoader
 from .load_model import ModelLoader
-from .load_data import DataLoader
+from .fullbatch import TrnFullbatchIter

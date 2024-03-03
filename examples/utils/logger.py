@@ -17,15 +17,16 @@ from pandas import DataFrame, Series
 
 
 LOGPATH = Path('../log')
-LTRN, LRES = 15, 25
 
 
 def setup_logger(logpath: Union[Path, str] = LOGPATH,
                  level: int = logging.DEBUG,
                  quiet: bool = True,
                  fmt='{message}'):
-    logging.addLevelName(LTRN, 'TRAIN')
-    logging.addLevelName(LRES, 'RESULT')
+    logging.LTRN = 15
+    logging.LRES = 25
+    logging.addLevelName(logging.LTRN, 'TRAIN')
+    logging.addLevelName(logging.LRES, 'RESULT')
     logpath = Path(logpath)
     formatter = logging.Formatter(fmt, style=fmt[0])
     logger = logging.getLogger('log')
@@ -44,15 +45,15 @@ def setup_logger(logpath: Union[Path, str] = LOGPATH,
 
         fileHandler = logging.FileHandler(filename, delay=True)
         fileHandler.setFormatter(formatter)
-        fileHandler.setLevel(LTRN)
+        fileHandler.setLevel(logging.LTRN)
         logger.addHandler(fileHandler)
 
-    logger.log(LTRN, f"[time]: {datetime.now()}")
+    logger.log(logging.LTRN, f"[time]: {datetime.now()}")
     return logger
 
 
 def clear_logger(logger: logging.Logger):
-    logger.log(LTRN, f"[time]: {datetime.now()}")
+    logger.log(logging.LTRN, f"[time]: {datetime.now()}")
     handlers = logger.handlers[:]
     for handler in handlers:
         logger.removeHandler(handler)

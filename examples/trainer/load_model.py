@@ -11,9 +11,6 @@ from pyg_spectral.utils import load_import
 from utils import ResLogger
 
 
-LTRN = 25
-
-
 class ModelLoader(object):
     r"""Loader for nn.Module object.
 
@@ -93,7 +90,7 @@ class ModelLoader(object):
 
         model = load_import(class_name, module_name)(**kwargs)
 
-        self.logger.log(LTRN, f"[model]: {model}")
+        self.logger.log(logging.LTRN, f"[model]: {model}")
         self.res_logger.concat([('model', str(self)),])
         return model
 

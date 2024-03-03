@@ -20,7 +20,7 @@ from utils import ResLogger
 DATAPATH = Path('../data')
 
 
-class DataLoader(object):
+class DatasetLoader(object):
     r"""Loader for PyG.data.Dataset object.
 
     Args:

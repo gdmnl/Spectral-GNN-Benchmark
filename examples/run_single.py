@@ -3,8 +3,10 @@
 Author: nyLiao
 File Created: 2023-08-03
 """
+import logging
+
 from trainer import (
-    DataLoader,
+    DatasetLoader,
     ModelLoader,
     TrnFullbatchIter)
 from utils import (
@@ -15,9 +17,6 @@ from utils import (
     setup_logpath,
     clear_logger,
     ResLogger)
-
-
-LRES = 25
 
 
 def main(args):
@@ -33,7 +32,7 @@ def main(args):
     save_args(args.logpath, args)
 
     # ========== Load data
-    data_loader = DataLoader(args, res_logger)
+    data_loader = DatasetLoader(args, res_logger)
     dataset = data_loader(args)
 
     # ========== Load model
@@ -46,10 +45,11 @@ def main(args):
         dataset=dataset,
         args=args,
         res_logger=res_logger,)
+    del model, dataset
     trn()
 
     res_logger.save()
-    logger.log(LRES, f"[res]: {res_logger}")
+    logger.log(logging.LRES, f"[res]: {res_logger}")
     clear_logger(logger)
 
 
