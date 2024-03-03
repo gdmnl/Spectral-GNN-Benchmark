@@ -5,4 +5,3 @@ from .efficiency import (
     MemoryCUDA,
     ParamNumel,
     ParamMemory)
-from .efficacy import F1Calculator

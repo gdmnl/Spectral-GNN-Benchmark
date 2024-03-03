@@ -17,6 +17,7 @@ import torch_geometric.utils as pyg_utils
 
 from pyg_spectral import profile
 
+from .load_metric import metric_loader
 from utils import CkptLogger, ResLogger
 
 
@@ -39,6 +40,7 @@ class TrnBase(object):
             period (int): Period for checkpoint saving.
             suffix (str): Suffix for checkpoint saving.
             logpath (Path): Path for logging.
+            multi (bool): True for multi-label classification.
             num_features (int): Number of dataset input features.
             num_classes (int): Number of dataset output classes.
 
@@ -68,10 +70,15 @@ class TrnBase(object):
         self.dataset = dataset
         self.criterion = nn.CrossEntropyLoss()
 
+        # Evaluation metrics
         self.splits = ['train', 'val', 'test']
+        self.multi = args.multi
         self.num_features = args.num_features
         self.num_classes = args.num_classes
+        metric = metric_loader(args)
+        self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
 
+        # Loggers
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
         # assert (args.quiet or '_file' not in storage), "Storage scheme cannot be file for quiet run."
@@ -81,6 +88,7 @@ class TrnBase(object):
             period=self.period,
             prefix=(f'model-{self.suffix}' if self.suffix else 'model'),
             storage='state_gpu')
+        self.metric_ckpt = 'fimacro_val' if self.multi else 'f1micro_val'
 
     def setup_optimizer(self):
         # TODO: layer-specific wd [no wd for theta](https://github.com/seijimaekawa/empirical-study-of-GNNs/blob/main/models/train_model.py#L204)
@@ -95,6 +103,8 @@ class TrnBase(object):
         del self.dataset
         del self.optimizer
         del self.scheduler
+        for k in self.evaluator:
+            del self.evaluator[k]
 
     @staticmethod
     def _log_memory(split: str = None, row: int = 0):
@@ -146,6 +156,10 @@ class TrnFullbatchIter(TrnBase):
         self.mask: dict = None
         self.data: Data = None
 
+    def clear(self):
+        del self.mask, self.data
+        return super().clear()
+
     def _fetch_data(self) -> Data:
         t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t'])
         self.data = t_to_device(self.dataset[0])
@@ -187,21 +201,17 @@ class TrnFullbatchIter(TrnBase):
         self.model.eval()
         input, label = self._fetch_input()
 
-        # TODO: more metrics: Calcualtor -> Evaluator
-        calc = {k: profile.F1Calculator(self.num_classes) for k in split}
-
         with profile.Stopwatch() as stopwatch:
             output = self.model(*input)
 
-        output = output.cpu().detach()
-        output = output.argmax(dim=1)
-        label = label.cpu().detach()
+        res = ResLogger()
         for k in split:
             mask_split = self.mask[k]
-            calc[k].step(label[mask_split], output[mask_split])
+            self.evaluator[k](output[mask_split], label[mask_split])
+            res.concat(self.evaluator[k].compute())
+            self.evaluator[k].reset()
 
-        return ResLogger()(
-            [(f'metric_{k}', calc[k].get('micro')) for k in split] +
+        return res.concat(
             [('time_eval', stopwatch.data)])
 
     # ===== Run block
@@ -213,7 +223,7 @@ class TrnFullbatchIter(TrnBase):
         time_learn = profile.Accumulator()
         res_learn = ResLogger()
         for epoch in range(1, self.epoch+1):
-            res_learn.concat([('epoch', epoch)], row=epoch)
+            res_learn.concat([('epoch', epoch, lambda x: format(x, '03d'))], row=epoch)
 
             res = self._learn_split()
             res_learn.merge(res, rows=[epoch])
@@ -221,7 +231,7 @@ class TrnFullbatchIter(TrnBase):
 
             res = self._eval_split(['val'])
             res_learn.merge(res, rows=[epoch])
-            metric_val = res_learn[epoch, 'metric_val']
+            metric_val = res_learn[epoch, self.metric_ckpt]
             self.scheduler.step(metric_val)
 
             self.logger.log(LTRN, res_learn.get_str(row=epoch))

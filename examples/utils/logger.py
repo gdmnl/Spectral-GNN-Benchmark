@@ -3,7 +3,7 @@
 Author: nyLiao
 File Created: 2023-03-20
 """
-from typing import Tuple, List, Callable, Union, Any
+from typing import Tuple, List, Dict, Callable, Union, Any
 from pathlib import Path
 
 import os
@@ -113,8 +113,6 @@ class ResLogger(object):
         if isinstance(val, str):
             return (lambda x: x)
         if np.issubdtype(type(val), np.integer):
-            if key.startswith(('epoch', 'iter')):
-                return (lambda x: format(x, '03d'))
             return (lambda x: format(x, 'd'))
         if np.issubdtype(type(val), np.floating):
             if key.startswith(('acc', 'metric', 'score')):
@@ -148,29 +146,22 @@ class ResLogger(object):
             data (DataFrame): Concat on columns, inner join on index.
             fmt (Series): Inner join on columns.
         """
-        if self.data.empty:
-            self.data = data
-            self.fmt = fmt
-        else:
-            if any(col not in self.data.columns for col in data.columns):
-                # Append new columns while maintaining all index
-                self.data = pd.concat([self.data, data], axis=1, join='outer', copy=False)
-            elif any(row not in self.data.index for row in data.index):
-                # Append new rows while maintaining all columns
-                self.data = pd.concat([self.data, data], axis=0, join='outer', copy=False)
-            else:
-                # Assign empty entries
-                self.data.loc[data.index, data.columns] = data
-            self.fmt = pd.concat([self.fmt, fmt], axis=0, join='inner', copy=False)
+        cols_left = self.data.columns.tolist()
+        cols_right = data.columns.tolist()
+        cols = list(dict.fromkeys(cols_left + cols_right))
+
+        self.data = self.data.combine_first(data)
+        self.data = self.data.reindex(cols, axis=1)
+        self.fmt = self.fmt.combine_first(fmt)
 
     def concat(self,
-               vals: List[Tuple[str, Any, Callable]],
+               vals: Union[List[Tuple[str, Any, Callable]], Dict],
                row: int = 0,
                suffix: str = None):
         r"""Concatenate data entries of a single row to data.
 
         Args:
-            vals (List): list of entries (key, value, formatter).
+            vals (List or Dict): list of entries (key, value, formatter).
             row (int): New index in self dataframe for vals to be logged.
             suffix (str): Suffix string for input keys. Default is None.
 
@@ -178,16 +169,22 @@ class ResLogger(object):
             self (ResLogger)
         """
         val_dct, fmt_dct = {}, {}
-        for vali in vals:
-            if len(vali) == 2:
-                col, val = vali
-                fmt = None
-            else:
-                col, val, fmt = vali
-            col = f'{col}_{suffix}' if suffix else col
+        if isinstance(vals, list):
+            for vali in vals:
+                if len(vali) == 2:
+                    col, val = vali
+                    fmt = None
+                else:
+                    col, val, fmt = vali
+                col = f'{col}_{suffix}' if suffix else col
 
-            val_dct[col] = val
-            fmt_dct[col] = fmt
+                val_dct[col] = val
+                fmt_dct[col] = fmt
+        elif isinstance(vals, dict):
+            for col, val in vals.items():
+                col = f'{col}_{suffix}' if suffix else col
+                val_dct[col] = val
+                fmt_dct[col] = None
 
         self._set(pd.DataFrame(val_dct, index=[row]), Series(fmt_dct))
         return self

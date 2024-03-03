@@ -15,12 +15,14 @@ LTRN = 25
 
 
 class ModelLoader(object):
+    r"""Loader for nn.Module object.
+
+    Args:
+        args.model (str): Model architecture name.
+        args.conv (str): Convolution layer name.
+    """
     def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
         r"""Assigning model identity.
-
-        Args:
-            args.model (str): Model architecture name.
-            args.conv (str): Convolution layer name.
         """
         self.model = args.model
         self.conv = args.conv

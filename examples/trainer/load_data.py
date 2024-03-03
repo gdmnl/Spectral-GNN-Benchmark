@@ -21,11 +21,13 @@ DATAPATH = Path('../data')
 
 
 class DataLoader(object):
+    r"""Loader for PyG.data.Dataset object.
+
+    Args:
+        args.data (str): Dataset name.
+    """
     def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
         r"""Assigning dataset identity.
-
-        Args:
-            args.data (str): Dataset name.
         """
         self.data = args.data
         self.logger = logging.getLogger('log')
@@ -73,6 +75,7 @@ class DataLoader(object):
             args.normg (float): Generalized graph norm.
 
         Returns (update in args):
+            args.multi (bool): True for multi-label classification.
             args.num_features (int): Number of input features.
             args.num_classes (int): Number of output classes.
         """
@@ -108,6 +111,7 @@ class DataLoader(object):
         dataset = load_import(class_name, module_name)(**kwargs)
         self._get_properties(dataset)
         args.num_features, args.num_classes = self.num_features, self.num_classes
+        args.multi = False
 
         self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
         self.res_logger.concat([('data', self.data)])
