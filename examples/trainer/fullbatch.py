@@ -3,15 +3,16 @@
 Author: nyLiao
 File Created: 2024-02-26
 """
-import logging
+from typing import Tuple
 from argparse import Namespace
+
 import torch
 import torch.nn as nn
 from torch_geometric.data import Data, Dataset
 import torch_geometric.transforms as T
 import torch_geometric.utils as pyg_utils
 
-from pyg_spectral.profile import Stopwatch, Accumulator
+from pyg_spectral.profile import Stopwatch
 
 from .base import TrnBase
 from utils import ResLogger
@@ -35,7 +36,7 @@ class TrnFullbatchIter(TrnBase):
         del self.mask, self.data
         return super().clear()
 
-    def _fetch_data(self) -> Data:
+    def _fetch_data(self) -> Tuple[Data, dict]:
         t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t'])
         self.data = t_to_device(self.dataset[0])
 
@@ -44,10 +45,13 @@ class TrnFullbatchIter(TrnBase):
             raise NotImplementedError
         # if pyg_utils.contains_isolated_nodes(self.data.edge_index):
         #     self.logger.warning(f"Graph {self.data} contains isolated nodes.")
+        self.logger.info(f"[data]: {self.data}")
 
         self.mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
-        self.logger.info(f"[data]: {self.data}")
-        return self.data
+        split_dict = {k: v.sum().item() for k, v in self.mask.items()}
+        self.logger.info(f"[split]: {split_dict}")
+
+        return self.data, self.mask
 
     def _fetch_input(self) -> tuple:
         input, label = (self.data.x, self.data.adj_t), self.data.y
@@ -57,11 +61,12 @@ class TrnFullbatchIter(TrnBase):
     def _learn_split(self, split: list = ['train']) -> ResLogger:
         assert len(split) == 1
         self.model.train()
-        input, label = self._fetch_input()
 
+        input, label = self._fetch_input()
         with Stopwatch() as stopwatch:
             self.optimizer.zero_grad()
             output = self.model(*input)
+
             mask_split = self.mask[split[0]]
             loss = self.criterion(output[mask_split], label[mask_split])
             loss.backward()
@@ -74,73 +79,27 @@ class TrnFullbatchIter(TrnBase):
     @torch.no_grad()
     def _eval_split(self, split: list = ['test']) -> ResLogger:
         self.model.eval()
-        input, label = self._fetch_input()
+        res = ResLogger()
 
+        input, label = self._fetch_input()
         with Stopwatch() as stopwatch:
             output = self.model(*input)
 
-        res = ResLogger()
         for k in split:
             mask_split = self.mask[k]
             self.evaluator[k](output[mask_split], label[mask_split])
+
             res.concat(self.evaluator[k].compute())
             self.evaluator[k].reset()
 
         return res.concat(
             [('time_eval', stopwatch.data)])
 
-    # ===== Run block
-    @TrnBase._log_memory(split='train')
-    def train_val(self) -> ResLogger:
-        self.logger.debug('-'*20 + f" Start training: {self.epoch} " + '-'*20)
-
-        # TODO: list of accumulators
-        time_learn = Accumulator()
-        res_learn = ResLogger()
-        for epoch in range(1, self.epoch+1):
-            res_learn.concat([('epoch', epoch, lambda x: format(x, '03d'))], row=epoch)
-
-            res = self._learn_split()
-            res_learn.merge(res, rows=[epoch])
-            time_learn.update(res_learn[epoch, 'time_learn'])
-
-            res = self._eval_split(['val'])
-            res_learn.merge(res, rows=[epoch])
-            metric_val = res_learn[epoch, self.metric_ckpt]
-            self.scheduler.step(metric_val)
-
-            self.logger.log(logging.LTRN, res_learn.get_str(row=epoch))
-
-            self.ckpt_logger.step(metric_val, self.model)
-            self.ckpt_logger.set_at_best(epoch_best=epoch)
-            if self.ckpt_logger.is_early_stop:
-                break
-
-        res_train = ResLogger()
-        res_train.concat(self.ckpt_logger.get_at_best())
-        res_train.concat(
-            [('epoch', self.ckpt_logger.epoch_current),
-             ('time', time_learn.data),],
-            suffix='learn')
-        return res_train
-
-    def train_val_test(self) -> ResLogger:
-        """Run test in every training epoch, do not need to save checkpoint."""
-        # res_val = self._eval_split(['train', 'val', 'test'])
-        raise NotImplementedError
-
-    @TrnBase._log_memory(split='eval')
-    def test(self) -> ResLogger:
-        self.logger.debug('-'*20 + f" Start evaluating: train+val+test " + '-'*20)
-
-        res_test = self._eval_split(['train', 'val', 'test'])
-        return res_test
-
     # ===== Run pipeline
     def run(self) -> ResLogger:
         res_run = ResLogger()
-        self.model = self.model.to(self.device)
         self._fetch_data()
+        self.model = self.model.to(self.device)
         self.setup_optimizer()
 
         res_train = self.train_val()

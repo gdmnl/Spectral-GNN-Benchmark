@@ -55,8 +55,8 @@ def setup_argparse():
     parser.add_argument('-d', '--data', type=str, default='Cora', help='Dataset name')
     parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
     # Model configuration
-    parser.add_argument('-m', '--model', type=str, default='IterGNN', help='Model class name')
-    parser.add_argument('-c', '--conv', type=str, default='FixLinSumAdj', help='Conv class name')
+    parser.add_argument('-m', '--model', type=str, default='PreDecMLP', help='Model class name')
+    parser.add_argument('-c', '--conv', type=str, default='FixSumAdj', help='Conv class name')
     parser.add_argument('-l', '--layer', type=int, default=2, help='Number of layers')
     parser.add_argument('-w', '--hidden', type=int, default=256, help='Number of hidden units')
     parser.add_argument('--dp', type=float, default=0.5, help='Dropout rate')
@@ -64,6 +64,7 @@ def setup_argparse():
     parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
     parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
+    parser.add_argument('--batch', type=int, default=512, help='Batch size')
     parser.add_argument('--lr', type=float, default=1.0e-3, help='Learning rate')
     parser.add_argument('--wd', type=float, default=1e-5, help='Weight decay')
 

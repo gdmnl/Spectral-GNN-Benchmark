@@ -56,7 +56,7 @@ class Accumulator(object):
         return self.data
 
     @property
-    def avg(self) -> float:
+    def mean(self) -> float:
         return self.data / self.count
 
 

@@ -79,7 +79,7 @@ class ModelLoader(object):
                         K=args.K,
                         dropedge=args.dpe,))
             elif self.model in ['PreDecMLP']:
-                if self.conv in ['FixSumAdj', 'VarSumAdj']:
+                if self.conv in ['FixSumAdj']:
                     self.conv = '-'.join((self.conv, args.theta))
                     kwargs.update(dict(
                         theta=(args.theta, args.alpha),

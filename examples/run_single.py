@@ -8,7 +8,7 @@ import logging
 from trainer import (
     DatasetLoader,
     ModelLoader,
-    TrnFullbatchIter)
+    TrnFullbatchIter, TrnMinibatchDec)
 from utils import (
     setup_argparse,
     setup_args,
