@@ -15,7 +15,7 @@ from torch_geometric.data import Data, Dataset
 import torch_geometric.transforms as T
 import torch_geometric.utils as pyg_utils
 
-from pyg_spectral import metrics
+from pyg_spectral import profile
 
 from utils import CkptLogger, ResLogger
 
@@ -105,8 +105,8 @@ class TrnBase(object):
 
                 res = func(self, *args, **kwargs)
                 res.concat(
-                    [('mem_ram', metrics.MemoryRAM()(unit='G')),
-                     ('mem_cuda', metrics.MemoryCUDA()(unit='G')),],
+                    [('mem_ram', profile.MemoryRAM()(unit='G')),
+                     ('mem_cuda', profile.MemoryCUDA()(unit='G')),],
                     row=row, suffix=split)
 
                 with self.device:
@@ -170,7 +170,7 @@ class TrnFullbatchIter(TrnBase):
         self.model.train()
         input, label = self._fetch_input()
 
-        with metrics.Stopwatch() as stopwatch:
+        with profile.Stopwatch() as stopwatch:
             self.optimizer.zero_grad()
             output = self.model(*input)
             mask_split = self.mask[split[0]]
@@ -188,9 +188,9 @@ class TrnFullbatchIter(TrnBase):
         input, label = self._fetch_input()
 
         # TODO: more metrics: Calcualtor -> Evaluator
-        calc = {k: metrics.F1Calculator(self.num_classes) for k in split}
+        calc = {k: profile.F1Calculator(self.num_classes) for k in split}
 
-        with metrics.Stopwatch() as stopwatch:
+        with profile.Stopwatch() as stopwatch:
             output = self.model(*input)
 
         output = output.cpu().detach()
@@ -210,7 +210,7 @@ class TrnFullbatchIter(TrnBase):
         self.logger.debug('-'*20 + f" Start training: {self.epoch} " + '-'*20)
 
         # TODO: list of accumulators
-        time_learn = metrics.Accumulator()
+        time_learn = profile.Accumulator()
         res_learn = ResLogger()
         for epoch in range(1, self.epoch+1):
             res_learn.concat([('epoch', epoch)], row=epoch)

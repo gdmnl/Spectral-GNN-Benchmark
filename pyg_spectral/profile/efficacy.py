@@ -1,9 +1,3 @@
-# -*- coding:utf-8 -*-
-"""
-Author: nyLiao
-File Created: 2023-10-08
-File: efficiency.py
-"""
 import torch
 import torch.nn as nn
 
@@ -26,11 +20,20 @@ class F1Calculator(object):
         Args:
             y_true (Tensor): The true labels.
             y_pred (Tensor): The predicted labels.
+
+        Shapes:
+            y_true, y_pred: convert to (n_node, n_class).
         """
+        is_labeled = None
         if len(y_true.shape) == 1 or y_true.shape[1] == 1:
+            y_true = y_true.squeeze()
+            is_labeled = torch.where((y_true >= 0) & (~torch.isnan(y_true)))
+            y_true = y_true[is_labeled]
             y_true = nn.functional.one_hot(y_true, num_classes=self.num_classes)
         if len(y_pred.shape) == 1 or y_pred.shape[1] == 1:
+            y_pred = y_pred[is_labeled] if is_labeled is not None else y_pred
             y_pred = nn.functional.one_hot(y_pred, num_classes=self.num_classes)
+
         self.TP += (y_true * y_pred).sum(dim=0).cpu()
         self.FP += ((1 - y_true) * y_pred).sum(dim=0).cpu()
         self.FN += (y_true * (1 - y_pred)).sum(dim=0).cpu()

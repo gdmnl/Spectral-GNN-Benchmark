@@ -1,9 +1,3 @@
-# -*- coding:utf-8 -*-
-"""
-Author: nyLiao
-File Created: 2023-10-08
-File: efficiency.py
-"""
 import time
 import resource
 import torch
