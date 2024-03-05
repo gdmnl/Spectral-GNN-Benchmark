@@ -100,9 +100,11 @@ class ResLogger(object):
     """
     def __init__(self,
                  logpath: Union[Path, str] = LOGPATH,
+                 suffix: str = None,
                  quiet: bool = True):
-        logpath = Path(logpath)
-        self.filename = logpath.joinpath('summary.csv')
+        self.prefix = 'summary'
+        self.suffix = suffix
+        self.logpath = Path(logpath)
         self.quiet = quiet
         self.data = DataFrame()
         self.fmt = Series()
@@ -266,12 +268,16 @@ class ResLogger(object):
         """
         if self.quiet:
             return
+
         data_str = DataFrame(columns=self.data.columns, index=[0])
         for coli in self.data.columns:
             data_str.loc[0, coli] = self._get(col=coli)
-        with open(self.filename, 'a') as f:
+
+        filename = '-'.join(filter(None, [self.prefix, self.suffix])) + '.csv'
+        filename = self.logpath.joinpath(filename)
+        with open(filename, 'a') as f:
             # FEATURE: manage column inconsistency in header
-            data_str.to_csv(self.filename, index=False,
+            data_str.to_csv(filename, index=False,
                              mode='a', header=f.tell()==0)
 
     def get_str(self,

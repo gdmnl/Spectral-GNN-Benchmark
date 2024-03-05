@@ -5,10 +5,7 @@ File Created: 2023-08-03
 """
 import logging
 
-from trainer import (
-    DatasetLoader,
-    ModelLoader,
-    TrnFullbatchIter, TrnMinibatchDec)
+from trainer import DatasetLoader, ModelLoader
 from utils import (
     setup_argparse,
     setup_args,
@@ -26,10 +23,7 @@ def main(args):
         quiet=args.quiet)
     logger = setup_logger(args.logpath, level=args.loglevel, quiet=args.quiet)
     res_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
-
-    logger.info(f"[args]: {args}")
     res_logger.concat([('seed', args.seed),])
-    save_args(args.logpath, args)
 
     # ========== Load data
     data_loader = DatasetLoader(args, res_logger)
@@ -37,10 +31,11 @@ def main(args):
 
     # ========== Load model
     model_loader = ModelLoader(args, res_logger)
-    model = model_loader(args)
+    model, trn = model_loader(args)
+    res_logger.suffix = trn.name
 
     # ========== Run trainer
-    trn = TrnFullbatchIter(
+    trn = trn(
         model=model,
         dataset=dataset,
         args=args,
@@ -48,8 +43,10 @@ def main(args):
     del model, dataset
     trn()
 
-    res_logger.save()
+    logger.info(f"[args]: {args}")
     logger.log(logging.LRES, f"[res]: {res_logger}")
+    res_logger.save()
+    save_args(args.logpath, args)
     clear_logger(logger)
 
 

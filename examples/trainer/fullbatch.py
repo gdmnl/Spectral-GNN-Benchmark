@@ -23,6 +23,8 @@ class TrnFullbatchIter(TrnBase):
         - Model forward input: separate edge index and node features.
         - Run pipeline: train_val -> test.
     """
+    name: str = 'fb'
+
     def __init__(self,
                  model: nn.Module,
                  dataset: Dataset,

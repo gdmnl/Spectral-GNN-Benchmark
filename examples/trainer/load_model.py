@@ -3,11 +3,15 @@
 Author: nyLiao
 File Created: 2024-02-26
 """
+from typing import Tuple
 from argparse import Namespace
 import logging
 import torch.nn as nn
 from pyg_spectral.utils import load_import
 
+from .base import TrnBase
+from .fullbatch import TrnFullbatchIter
+from .minibatch import TrnMinibatchDec
 from utils import ResLogger
 
 
@@ -26,7 +30,7 @@ class ModelLoader(object):
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
 
-    def get(self, args: Namespace) -> nn.Module:
+    def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
         r"""Load model with specified arguments.
 
         Args:
@@ -59,6 +63,7 @@ class ModelLoader(object):
                 improved=False,
                 add_self_loops=False,
                 normalize=False,))
+            trn = TrnFullbatchIter
         # Default to load from `pyg_spectral`
         else:
             module_name = 'pyg_spectral.nn.models'
@@ -71,6 +76,7 @@ class ModelLoader(object):
                         theta=(args.theta, args.alpha),
                         K=args.K,
                         dropedge=args.dpe,))
+                    trn = TrnFullbatchIter
             elif self.model in ['PostMLP']:
                 if self.conv in ['FixSumAdj', 'VarSumAdj']:
                     self.conv = '-'.join((self.conv, args.theta))
@@ -78,6 +84,7 @@ class ModelLoader(object):
                         theta=(args.theta, args.alpha),
                         K=args.K,
                         dropedge=args.dpe,))
+                    trn = TrnFullbatchIter
             elif self.model in ['PreDecMLP']:
                 if self.conv in ['FixSumAdj']:
                     self.conv = '-'.join((self.conv, args.theta))
@@ -85,14 +92,16 @@ class ModelLoader(object):
                         theta=(args.theta, args.alpha),
                         K=args.K,
                         dropedge=args.dpe,))
+                    trn = TrnMinibatchDec
             else:
                 raise ValueError(f"Model '{self}' not found.")
 
         model = load_import(class_name, module_name)(**kwargs)
 
         self.logger.log(logging.LTRN, f"[model]: {model}")
+        self.logger.info(f"[trainer]: {trn.__name__}")
         self.res_logger.concat([('model', str(self)),])
-        return model
+        return model, trn
 
     def __call__(self, *args, **kwargs):
         return self.get(*args, **kwargs)

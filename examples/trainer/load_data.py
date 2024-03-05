@@ -3,6 +3,7 @@
 Author: nyLiao
 File Created: 2024-02-26
 """
+from typing import List
 from pathlib import Path
 from argparse import Namespace
 import logging
@@ -65,8 +66,16 @@ class DatasetLoader(object):
             dataset._data_list = dataset.len() * [None]
         self.num_classes = dataset._infer_num_classes(y)
 
-    # TODO: append transform
-    # def _T_append():
+    def _T_append(self, new_t: List[T.BaseTransform]) -> T.Compose:
+        if self.transform is None:
+            self.transform = T.Compose(new_t)
+        elif isinstance(self.transform, T.Compose):
+            self.transform.transforms.extend(new_t)
+        elif isinstance(self.transform, T.BaseTransform):
+            self.transform = T.Compose([self.transform] + new_t)
+        else:
+            raise TypeError(f"Invalid transform type: {type(self.transform)}")
+        return self.transform
 
     def get(self, args: Namespace) -> Dataset:
         r"""Load dataset based on parameters.
@@ -83,7 +92,7 @@ class DatasetLoader(object):
 
         # Always use [sparse tensor](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html) instead of edge_index
         self.transform = T.Compose([
-            T.ToUndirected(),
+            # T.ToUndirected(),
             T.RemoveIsolatedNodes(),
             T.RemoveDuplicatedEdges(reduce='mean'),
             T.AddRemainingSelfLoops(fill_value=1.0),

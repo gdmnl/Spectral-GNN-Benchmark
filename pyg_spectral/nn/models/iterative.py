@@ -1,6 +1,5 @@
 from typing import Final
 
-import torch.nn as nn
 from torch_geometric.nn.models.basic_gnn import BasicGNN
 from torch_geometric.nn.conv import MessagePassing
 

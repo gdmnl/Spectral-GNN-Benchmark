@@ -42,6 +42,8 @@ class TrnBase(object):
         clear: Clear self cache.
         run: Run the training process.
     """
+    name: str
+
     def __init__(self,
                  model: nn.Module,
                  dataset: Dataset,
@@ -129,7 +131,6 @@ class TrnBase(object):
                   split_val: List[str] = ['val']) -> ResLogger:
         self.logger.debug('-'*20 + f" Start training: {self.epoch} " + '-'*20)
 
-        # TODO: list of accumulators
         time_learn = profile.Accumulator()
         res_learn = ResLogger()
         for epoch in range(1, self.epoch+1):
@@ -139,8 +140,7 @@ class TrnBase(object):
             res_learn.merge(res, rows=[epoch])
             time_learn.update(res_learn[epoch, 'time_learn'])
 
-            """Set split_val=['train', 'val', 'test'] to run test in every
-                training epoch, and no need to save checkpoint."""
+            # Set split_val=['train','val','test'] to run test in every training epoch, and no need to save checkpoint.
             res = self._eval_split(split_val)
             res_learn.merge(res, rows=[epoch])
             metric_val = res_learn[epoch, self.metric_ckpt]
@@ -164,7 +164,7 @@ class TrnBase(object):
     @_log_memory(split='eval')
     def test(self,
              split_test: List[str] = ['train', 'val', 'test']) -> ResLogger:
-        self.logger.debug('-'*20 + f" Start evaluating: train+val+test " + '-'*20)
+        self.logger.debug('-'*20 + f" Start evaluating: {'+'.join(split_test)} " + '-'*20)
 
         res_test = self._eval_split(split_test)
         return res_test

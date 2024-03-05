@@ -11,9 +11,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from torch_geometric.data import Data, Dataset
-import torch_geometric.transforms as T
 import torch_geometric.utils as pyg_utils
 
+from pyg_spectral.nn.norm import TensorStandardScaler
 from pyg_spectral.profile import Stopwatch, Accumulator
 
 from .base import TrnBase
@@ -24,7 +24,13 @@ class TrnMinibatchDec(TrnBase):
     r"""Minibatch trainer class for node classification.
         - Model forward input: node embeddings.
         - Run pipeline: propagate -> train_val -> test.
+
+    Args:
+        args.batch (int): Batch size.
+        args.normf (str): Embedding normalization.
     """
+    name: str = 'mb'
+
     def __init__(self,
                  model: nn.Module,
                  dataset: Dataset,
@@ -32,6 +38,8 @@ class TrnMinibatchDec(TrnBase):
                  **kwargs):
         super(TrnMinibatchDec, self).__init__(model, dataset, args, **kwargs)
         self.batch = args.batch
+        if args.normf >= 0:
+            self.norm_prop = TensorStandardScaler(dim=args.normf)
 
         self.shuffle = {'train': True, 'val': False, 'test': False}
         self.data = None
@@ -107,12 +115,16 @@ class TrnMinibatchDec(TrnBase):
     # ===== Run block
     @TrnBase._log_memory(split='pre')
     def propagate(self) -> dict:
+        self.logger.debug('-'*20 + f" Start propagation: pre " + '-'*20)
+
         data, mask = self._fetch_data()
         input, label = self._fetch_input_propagate(data)
         del self.dataset
 
         embed = self.model.propagate(*input)
-        # TODO: embed normalization
+        if self.norm_prop:
+            self.norm_prop.fit(embed[mask['train']])
+            embed = self.norm_prop(embed)
 
         self.data = {}
         for k in self.splits:
@@ -121,6 +133,7 @@ class TrnMinibatchDec(TrnBase):
                                       batch_size=self.batch,
                                       shuffle=self.shuffle[k],
                                       num_workers=0)
+            self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.data[k])}")
         return ResLogger()
 
     # ===== Run pipeline

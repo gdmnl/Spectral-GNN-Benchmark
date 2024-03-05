@@ -54,6 +54,7 @@ def setup_argparse():
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='Cora', help='Dataset name')
     parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
+    parser.add_argument('--normf', type=int, default=0, help='Embedding norm dimension. 0: feat-wise, 1: node-wise')
     # Model configuration
     parser.add_argument('-m', '--model', type=str, default='PreDecMLP', help='Model class name')
     parser.add_argument('-c', '--conv', type=str, default='FixSumAdj', help='Conv class name')
@@ -64,7 +65,7 @@ def setup_argparse():
     parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
     parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
-    parser.add_argument('--batch', type=int, default=512, help='Batch size')
+    parser.add_argument('-b', '--batch', type=int, default=512, help='Batch size')
     parser.add_argument('--lr', type=float, default=1.0e-3, help='Learning rate')
     parser.add_argument('--wd', type=float, default=1e-5, help='Weight decay')
 
