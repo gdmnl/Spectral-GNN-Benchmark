@@ -53,7 +53,7 @@ def get_laplacian(
     row, col = edge_index[0], edge_index[1]
     deg = scatter(edge_weight, row, 0, dim_size=num_nodes, reduce='sum')
 
-    if normalization:
+    if normalization: ### to do: need to specify specific normalizations for each Conv.
         # L = diag * I - A.
         assert isinstance(edge_weight, Tensor)
         edge_index, edge_weight = add_self_loops(  #
