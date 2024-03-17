@@ -35,7 +35,7 @@ class ChebConv(MessagePassing):
         edge_index1, norm1 = get_laplacian(edge_index, edge_weight, normalization=True, dtype=x.dtype, num_nodes=x.size(self.node_dim))
 
         #L_tilde=L-I
-        edge_index_tilde, norm_tilde= add_self_loops(edge_index1,norm1,fill_value=-1.0,num_nodes=x.size(self.node_dim))
+        edge_index_tilde, norm_tilde= add_self_loops(edge_index1,norm1, fill_value=-1.0, num_nodes=x.size(self.node_dim))
 
         Tx_0=x
         Tx_1=self.propagate(edge_index_tilde,x=x,norm=norm_tilde,size=None)
