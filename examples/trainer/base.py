@@ -70,7 +70,7 @@ class TrnBase(object):
         self.multi = args.multi
         self.num_features = args.num_features
         self.num_classes = args.num_classes
-        metric = metric_loader(args)
+        metric = metric_loader(args).to(self.device)
         self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
 
         # Loggers

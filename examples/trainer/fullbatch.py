@@ -39,9 +39,8 @@ class TrnFullbatchIter(TrnBase):
         return super().clear()
 
     def _fetch_data(self) -> Tuple[Data, dict]:
-        t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t'])
+        t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'train_mask', 'val_mask', 'test_mask'])
         self.data = t_to_device(self.dataset[0])
-
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
         if not pyg_utils.is_sparse(self.data.adj_t):
             raise NotImplementedError
@@ -89,8 +88,9 @@ class TrnFullbatchIter(TrnBase):
 
         for k in split:
             mask_split = self.mask[k]
+            #self.evaluator[k](output[mask_split].cpu(), label[mask_split].cpu())
             self.evaluator[k](output[mask_split], label[mask_split])
-
+            
             res.concat(self.evaluator[k].compute())
             self.evaluator[k].reset()
 
