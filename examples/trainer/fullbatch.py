@@ -88,8 +88,9 @@ class TrnFullbatchIter(TrnBase):
 
         for k in split:
             mask_split = self.mask[k]
-            self.evaluator[k](output[mask_split].cpu(), label[mask_split].cpu())
-
+            #self.evaluator[k](output[mask_split].cpu(), label[mask_split].cpu())
+            self.evaluator[k](output[mask_split], label[mask_split])
+            
             res.concat(self.evaluator[k].compute())
             self.evaluator[k].reset()
 
