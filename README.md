@@ -12,7 +12,7 @@ Create your own branch for development and pull request.
 ## Experiment
 ```bash
 cd examples
-bash scripts/sfb.sh
+bash scripts/sfbiter.sh
 ```
 
 ## Structure

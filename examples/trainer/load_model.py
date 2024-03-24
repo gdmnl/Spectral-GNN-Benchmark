@@ -42,7 +42,6 @@ class ModelLoader(object):
         """
         self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)
 
-        # TODO: whether to add batch norm
         kwargs = dict(
             conv=self.conv,
             in_channels=args.num_features,

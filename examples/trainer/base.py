@@ -86,9 +86,12 @@ class TrnBase(object):
         self.metric_ckpt = 'fimacro_val' if self.multi else 'f1micro_val'
 
     def setup_optimizer(self):
-        # TODO: layer-specific wd [no wd for theta](https://github.com/seijimaekawa/empirical-study-of-GNNs/blob/main/models/train_model.py#L204)
-        self.optimizer = torch.optim.Adam(
-            self.model.parameters(), lr=self.lr, weight_decay=self.wd)
+        if hasattr(self.model, 'get_wd'):
+            self.optimizer = torch.optim.Adam(
+                self.model.get_wd(weight_decay=self.wd), lr=self.lr)
+        else:
+            self.optimizer = torch.optim.Adam(
+                self.model.parameters(), lr=self.lr, weight_decay=self.wd)
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer, mode='max', factor=0.5,
             threshold=1e-4, patience=15, verbose=False)

@@ -100,6 +100,13 @@ class PostMLP(nn.Module):
         self.mlp.reset_parameters()
         self.conv.reset_parameters()
 
+    def get_wd(self, **kwargs):
+        assert 'weight_decay' in kwargs, "Weight decay not found."
+        res = [{'params': self.mlp.parameters(), **kwargs}]
+        kwargs['weight_decay'] = 0.0
+        res.append({'params': self.conv.parameters(), **kwargs})
+        return res
+
     def propagate(self,
         x: torch.Tensor,
         edge_index: Adj,
@@ -155,6 +162,7 @@ class PostMLP(nn.Module):
                 layers require the :obj:`batch` information.
                 (default: :obj:`None`)
         """
+        # FEATURE: batch norm
         x = self.mlp(x, batch=batch, batch_size=batch_size)
 
         x = self.propagate(x, edge_index, edge_weight, edge_attr,
