@@ -1,9 +1,10 @@
 from typing import Final
-from torch_geometric.typing import Adj, OptTensor, SparseTensor
-from torch import Tensor
 
 import torch
+from torch import Tensor
 from torch.nn import Parameter
+
+from torch_geometric.typing import Adj, OptTensor, SparseTensor
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import spmm, add_self_loops
 from torch_geometric.data import Data
@@ -51,29 +52,37 @@ class ChebBase(MessagePassing):
 
         cache = self._cached_adj_t
         if cache is None:
-            # FIXME: also can support `edge_index`
-            assert isinstance(edge_index, SparseTensor)
-            row, col, edge_weight = edge_index.t().coo()
-            edge_index = torch.stack([row, col], dim=0)
+            if isinstance(edge_index, SparseTensor):
+                # A_norm -> L_norm
+                edge_index = get_laplacian(
+                    edge_index,
+                    normalization=True,
+                    dtype=x.dtype)
+                # L_norm -> L_norm - I
+                diag = edge_index.get_diag()
+                edge_index.set_diag(diag - 1.0)
+                adj_t = edge_index
 
-            # A_norm -> L_norm
-            edge_index, edge_weight = get_laplacian(
-                edge_index, edge_weight,
-                normalization=True,
-                dtype=x.dtype,
-                num_nodes=x.size(self.node_dim))
-            # L_norm -> L_norm - I
-            edge_index, edge_weight = add_self_loops(
-                edge_index, edge_weight,
-                fill_value=-1.0,
-                num_nodes=x.size(self.node_dim))
-            data = Data(edge_index=edge_index, edge_attr=edge_weight)
-            data.num_nodes = x.size(self.node_dim)
-            adj_t = T.ToSparseTensor(remove_edge_index=True)(data).adj_t
+            else:
+                # A_norm -> L_norm
+                edge_index, edge_weight = get_laplacian(
+                    edge_index, edge_weight,
+                    normalization=True,
+                    dtype=x.dtype,
+                    num_nodes=x.size(self.node_dim))
+                # L_norm -> L_norm - I
+                edge_index, edge_weight = add_self_loops(
+                    edge_index, edge_weight,
+                    fill_value=-1.0,
+                    num_nodes=x.size(self.node_dim))
+                data = Data(edge_index=edge_index, edge_attr=edge_weight)
+                data.num_nodes = x.size(self.node_dim)
+                adj_t = T.ToSparseTensor(remove_edge_index=True)(data).adj_t
+
             if self.cached:
                 self._cached_adj_t = adj_t
         else:
-            adj_t = self._cached_adj_t
+            adj_t = cache
 
         Tx_0 = x
         Tx_1 = x  # Dummy.

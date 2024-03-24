@@ -1,7 +1,7 @@
 import torch
 from torch import Tensor
 
-from torch_geometric.typing import SparseTensor, torch_sparse
+from torch_geometric.typing import SparseTensor
 from torch_geometric.data import Data
 from torch_geometric.data.datapipes import functional_transform
 from torch_geometric.transforms import BaseTransform
@@ -41,13 +41,13 @@ class GenNorm(BaseTransform):
 
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
         if 'adj_t' in data and isinstance(data.adj_t, SparseTensor):
-            deg_out = torch_sparse.sum(data.adj_t, dim=0)
+            deg_out = data.adj_t.sum(dim=0)
             deg_out = pow_with_pinv(deg_out, -self.left)
-            deg_in = torch_sparse.sum(data.adj_t, dim=1)
+            deg_in = data.adj_t.sum(dim=1)
             deg_in = pow_with_pinv(deg_in, -self.right)
 
-            data.adj_t = torch_sparse.mul(data.adj_t, deg_in.view(-1, 1))
-            data.adj_t = torch_sparse.mul(data.adj_t, deg_out.view(1, -1))
+            data.adj_t = data.adj_t.mul(deg_in.view(-1, 1))
+            data.adj_t = data.adj_t.mul(deg_out.view(1, -1))
             return data
 
         elif 'edge_index' in data:
