@@ -140,7 +140,7 @@ class TrnMinibatchDec(TrnBase):
     def run(self) -> ResLogger:
         res_run = ResLogger()
 
-        # TODO: trainable parameters in propagate
+        # TODO: check behavior of trainable parameters in propagate
         res_pre = self.propagate()
         res_run.merge(res_pre)
 

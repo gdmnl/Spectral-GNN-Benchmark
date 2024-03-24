@@ -9,6 +9,7 @@ from argparse import Namespace
 import logging
 
 import torch
+import torch_geometric
 from torch_geometric.data import Dataset
 import torch_geometric.transforms as T
 from torch_geometric.data.dataset import _get_flattened_data_list
@@ -91,6 +92,7 @@ class DatasetLoader(object):
         self.logger.debug('-'*20 + f" Loading data: {self} " + '-'*20)
 
         # Always use [sparse tensor](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html) instead of edge_index
+        assert torch_geometric.typing.WITH_TORCH_SPARSE
         self.transform = T.Compose([
             # T.ToUndirected(),
             T.RemoveIsolatedNodes(),

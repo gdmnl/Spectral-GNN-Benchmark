@@ -88,9 +88,8 @@ class TrnFullbatchIter(TrnBase):
 
         for k in split:
             mask_split = self.mask[k]
-            #self.evaluator[k](output[mask_split].cpu(), label[mask_split].cpu())
             self.evaluator[k](output[mask_split], label[mask_split])
-            
+
             res.concat(self.evaluator[k].compute())
             self.evaluator[k].reset()
 
@@ -114,6 +113,6 @@ class TrnFullbatchIter(TrnBase):
         return self.res_logger.merge(res_run)
 
 
-# TODO: possible to decouple model.conv on CPU?
+# FIXME: possible to decouple model.conv on CPU?
 # class TrnFullbatchDec(TrnBase):
 #     pass

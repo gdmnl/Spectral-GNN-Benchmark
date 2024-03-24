@@ -20,7 +20,7 @@ def cheby(i,x):
         return T2
 
 
-class ChebnetII(MessagePassing):
+class ChebConv2(MessagePassing):
 
     r"""Convolutional layer with Chebyshev II Polynomials.
 
@@ -30,8 +30,8 @@ class ChebnetII(MessagePassing):
     """
 
     def __init__(self, K, Init=False, bias=True, **kwargs):
-        super(ChebnetII, self).__init__(aggr='add', **kwargs)
-        
+        super(ChebConv2, self).__init__(aggr='add', **kwargs)
+
         self.K = K
         self.temp = Parameter(torch.Tensor(self.K+1))
         self.Init=Init
@@ -44,11 +44,11 @@ class ChebnetII(MessagePassing):
             for j in range(self.K+1):
                 x_j=math.cos((self.K-j+0.5)*math.pi/(self.K+1))
                 self.temp.data[j] = x_j**2
-        
+
     def forward(self, x, edge_index,edge_weight=None):
         coe_tmp=F.relu(self.temp)
         coe=coe_tmp.clone()
-        
+
         for i in range(self.K+1):
             coe[i]=coe_tmp[0]*cheby(i,math.cos((self.K+0.5)*math.pi/(self.K+1)))
             for j in range(1,self.K+1):
