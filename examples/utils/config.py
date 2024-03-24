@@ -56,7 +56,7 @@ def setup_argparse():
     parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
     parser.add_argument('--normf', type=int, default=0, help='Embedding norm dimension. 0: feat-wise, 1: node-wise')
     # Model configuration
-    parser.add_argument('-m', '--model', type=str, default='PreDecMLP', help='Model class name')
+    parser.add_argument('-m', '--model', type=str, default='PostMLP', help='Model class name')
     parser.add_argument('-c', '--conv', type=str, default='FixSumAdj', help='Conv class name')
     parser.add_argument('-l', '--layer', type=int, default=2, help='Number of layers')
     parser.add_argument('-w', '--hidden', type=int, default=256, help='Number of hidden units')

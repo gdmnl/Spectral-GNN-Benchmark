@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Tuple, Union, Final
 
 import numpy as np
 import torch
@@ -92,6 +92,12 @@ class FixSumAdj(MessagePassing):
           edge weights :math:`(|\mathcal{E}|)` *(optional)*
         - **output:** node features :math:`(|\mathcal{V}|, F)`
     """
+    supports_edge_weight: bool = True
+    supports_batch: bool = False
+    supports_decouple: bool = True
+    supports_norm_batch: bool = False
+    # supports_edge_attr: Final[bool] = False   # Always False
+
     def __init__(self, theta: Union[Tensor, Tuple[str, float]] = ('appr', 0.1),
                  K: int = 0, dropedge: float = 0., **kwargs):
         # FEATURE: `combine_root` as `pyg.nn.conv.SimpleConv`
@@ -162,6 +168,11 @@ class FixLinSumAdj(FixSumAdj):
         - **output:**
           node features :math:`(|\mathcal{V}|, F_{out})`
     """
+    supports_edge_weight: Final[bool] = True
+    supports_batch: Final[bool] = True
+    supports_decouple: Final[bool] = False
+    supports_norm_batch: Final[bool] = False
+
     def __init__(self, in_channels: int, out_channels: int,
                  theta: Union[Tensor, Tuple[str, float]] = ('appr', 0.1),
                  K: int = 0, dropedge: float = 0., bias: bool = True, **kwargs):

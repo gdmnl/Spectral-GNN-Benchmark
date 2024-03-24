@@ -1,58 +1,101 @@
-import math
+from typing import Final
+from torch_geometric.typing import Adj, OptTensor, SparseTensor
+from torch import Tensor
+
 import torch
 from torch.nn import Parameter
 from torch_geometric.nn.conv import MessagePassing
-from torch_geometric.utils import remove_self_loops, add_self_loops #,get_laplacian
-from pyg_spectral.utils import get_laplacian
-import torch.nn.functional as F
-import numpy as np
+from torch_geometric.utils import spmm, add_self_loops
+from torch_geometric.data import Data
+import torch_geometric.transforms as T
 
-class ChebConv(MessagePassing):
+from pyg_spectral.utils import get_laplacian
+
+
+class ChebBase(MessagePassing):
     r"""Convolutional layer with Chebyshev Polynomials.
+    paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
+    ref: https://github.com/ivam-he/ChebNetII/blob/main/main/Chebbase_pro.py
 
     Args:
         K (int, optional): Number of iterations :math:`K`.
         q (int, optional): The constant for Chebyshev Bases.
     """
+    supports_edge_weight: Final[bool] = False
+    supports_batch: Final[bool] = False
+    supports_decouple: Final[bool] = True
+    supports_norm_batch: Final[bool] = False
 
-    def __init__(self, K, q=0, **kwargs):
-        super(ChebConv, self).__init__(aggr='add', **kwargs)
-        
+    def __init__(self, K: int = 0, alpha: float = 0, cached: bool = True, **kwargs):
+        kwargs.setdefault('aggr', 'add')
+        super(ChebBase, self).__init__(**kwargs)
+
         self.K = K
-        self.temp = Parameter(torch.Tensor(self.K+1))
+        self.alpha = alpha
+        self.theta = Parameter(torch.Tensor(self.K+1))
+        self.cached = cached
+        self._cached_adj_t = None
         self.reset_parameters()
-        self.q=q #The positive constant
 
     def reset_parameters(self):
-        self.temp.data.fill_(0.0)
-        self.temp.data[0]=1.0
+        self.theta.data.fill_(0.0)
+        self.theta.data[0]=1.0
+        self._cached_adj_t = None
 
-    def forward(self, x, edge_index,edge_weight=None):
-        coe=self.temp
+    def forward(
+        self,
+        x: Tensor,
+        edge_index: Adj,
+        edge_weight: OptTensor = None,
+    ) -> Tensor:
 
-        #L
-        #original normalization is: edge_index1, norm1 = get_laplacian(edge_index, edge_weight, normalization='sym', dtype=x.dtype, num_nodes=x.size(self.node_dim))
-        edge_index1, norm1 = get_laplacian(edge_index, edge_weight, normalization=True, dtype=x.dtype, num_nodes=x.size(self.node_dim))
+        cache = self._cached_adj_t
+        if cache is None:
+            # FIXME: also can support `edge_index`
+            assert isinstance(edge_index, SparseTensor)
+            row, col, edge_weight = edge_index.t().coo()
+            edge_index = torch.stack([row, col], dim=0)
 
-        #L_tilde=L-I
-        edge_index_tilde, norm_tilde= add_self_loops(edge_index1,norm1, fill_value=-1.0, num_nodes=x.size(self.node_dim))
+            # A_norm -> L_norm
+            edge_index, edge_weight = get_laplacian(
+                edge_index, edge_weight,
+                normalization=True,
+                dtype=x.dtype,
+                num_nodes=x.size(self.node_dim))
+            # L_norm -> L_norm - I
+            edge_index, edge_weight = add_self_loops(
+                edge_index, edge_weight,
+                fill_value=-1.0,
+                num_nodes=x.size(self.node_dim))
+            data = Data(edge_index=edge_index, edge_attr=edge_weight)
+            data.num_nodes = x.size(self.node_dim)
+            adj_t = T.ToSparseTensor(remove_edge_index=True)(data).adj_t
+            if self.cached:
+                self._cached_adj_t = adj_t
+        else:
+            adj_t = self._cached_adj_t
 
-        Tx_0=x
-        Tx_1=self.propagate(edge_index_tilde,x=x,norm=norm_tilde,size=None)
+        Tx_0 = x
+        Tx_1 = x  # Dummy.
+        out = self.theta[0] * Tx_0
 
-        out=coe[0]*Tx_0+coe[1]*Tx_1
+        if self.K > 0:
+            Tx_1 = self.propagate(adj_t, x=x)
+            out += self.theta[1] * Tx_1
 
-        for i in range(2,self.K+1):
-            Tx_2=self.propagate(edge_index_tilde,x=Tx_1,norm=norm_tilde,size=None)
-            Tx_2=2*Tx_2-Tx_0
-            out=out+(coe[i]/i**self.q)*Tx_2
-            Tx_0,Tx_1 = Tx_1, Tx_2
+        for i in range(2, self.K+1):
+            Tx_2 = self.propagate(adj_t, x=Tx_1)
+            Tx_2 = 2*Tx_2 - Tx_0
+            out += (self.theta[i] / i**self.alpha) * Tx_2
+            Tx_0, Tx_1 = Tx_1, Tx_2
+
         return out
 
+    def message(self, x_j: Tensor, edge_weight: OptTensor) -> Tensor:
+        return x_j if edge_weight is None else edge_weight.view(-1, 1) * x_j
 
-    def message(self, x_j, norm):
-        return norm.view(-1, 1) * x_j
+    def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
+        return spmm(adj_t, x, reduce=self.aggr)
 
     def __repr__(self):
-        return '{}(K={}, temp={})'.format(self.__class__.__name__, self.K,
-                                          self.temp)
+        return f'{self.__class__.__name__}(K={self.K}, alpha={self.alpha})'

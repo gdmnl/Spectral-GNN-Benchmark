@@ -76,7 +76,7 @@ class ModelLoader(object):
                         theta=(args.theta, args.alpha),
                         K=args.K,
                         dropedge=args.dpe,))
-                    trn = TrnFullbatchIter
+                trn = TrnFullbatchIter
             elif self.model in ['PostMLP']:
                 if self.conv in ['FixSumAdj', 'VarSumAdj']:
                     self.conv = '-'.join((self.conv, args.theta))
@@ -84,7 +84,11 @@ class ModelLoader(object):
                         theta=(args.theta, args.alpha),
                         K=args.K,
                         dropedge=args.dpe,))
-                    trn = TrnFullbatchIter
+                elif self.conv in ['ChebBase']:
+                    kwargs.update(dict(
+                        K=args.K,
+                        alpha=args.alpha,))
+                trn = TrnFullbatchIter
             elif self.model in ['PreDecMLP']:
                 if self.conv in ['FixSumAdj']:
                     self.conv = '-'.join((self.conv, args.theta))
@@ -92,7 +96,7 @@ class ModelLoader(object):
                         theta=(args.theta, args.alpha),
                         K=args.K,
                         dropedge=args.dpe,))
-                    trn = TrnMinibatchDec
+                trn = TrnMinibatchDec
             else:
                 raise ValueError(f"Model '{self}' not found.")
 
