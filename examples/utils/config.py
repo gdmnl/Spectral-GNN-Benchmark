@@ -67,7 +67,7 @@ def setup_argparse():
     parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
     parser.add_argument('-b', '--batch', type=int, default=512, help='Batch size')
     parser.add_argument('--lr', type=float, default=1.0e-3, help='Learning rate')
-    parser.add_argument('--wd', type=float, default=1e-5, help='Weight decay')
+    parser.add_argument('--wd', type=list_float, default=1e-5, help='Weight decay')
 
     # Model-specific
     # - pyg_spectral

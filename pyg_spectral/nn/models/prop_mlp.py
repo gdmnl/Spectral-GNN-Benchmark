@@ -1,9 +1,10 @@
 from typing import Any, Callable, Dict, Final, List, Optional, Union
-from torch_geometric.typing import Adj, OptTensor
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from torch_geometric.typing import Adj, OptTensor
 from torch_geometric.nn.models import MLP
 
 from pyg_spectral.utils import load_import
@@ -102,9 +103,14 @@ class PostMLP(nn.Module):
 
     def get_wd(self, **kwargs):
         assert 'weight_decay' in kwargs, "Weight decay not found."
-        res = [{'params': self.mlp.parameters(), **kwargs}]
-        kwargs['weight_decay'] = 0.0
-        res.append({'params': self.conv.parameters(), **kwargs})
+        if isinstance(kwargs['weight_decay'], list):
+            wd = kwargs.pop('weight_decay')
+            res = [{'params': self.mlp.parameters(), 'weight_decay': wd[:-1], **kwargs},
+                   {'params': self.conv.parameters(), 'weight_decay': wd[-1], **kwargs}]
+        else:
+            res = [{'params': self.mlp.parameters(), **kwargs}]
+            kwargs['weight_decay'] = 0.0
+            res.append({'params': self.conv.parameters(), **kwargs})
         return res
 
     def propagate(self,

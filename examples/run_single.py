@@ -55,6 +55,5 @@ if __name__ == '__main__':
     # Experiment-specific arguments
     # parser.add_argument()
     args = setup_args(parser)
-    print(args)
 
     main(args)
