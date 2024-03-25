@@ -1,0 +1,1 @@
+python run_single.py --data Cora --model PostMLP --conv ChebBase --alpha 0 -K 10

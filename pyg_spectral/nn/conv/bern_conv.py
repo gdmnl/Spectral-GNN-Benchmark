@@ -1,3 +1,4 @@
+"""Referencing https://github.com/ivam-he/BernNet"""
 from typing import Optional, Tuple
 from torch_geometric.typing import Adj, OptTensor, PairTensor
 import math
@@ -21,7 +22,7 @@ class BernConv(MessagePassing):
         kwargs.setdefault('aggr', 'add')
         super(BernConv, self).__init__(**kwargs)
         assert K > 0
-        self.K=K
+        self.K = K
         self.temp = Parameter(torch.Tensor(self.K+1))
         self.reset_parameters()
     
