@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Final
+from typing import Tuple, Union, Final, List
 
 import numpy as np
 import torch
@@ -7,10 +7,12 @@ from torch import Tensor
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.dense.linear import Linear
 from torch_geometric.typing import Adj, OptTensor
-from torch_geometric.utils import spmm, dropout_edge
+from torch_geometric.utils import spmm
+
+from pyg_spectral.utils import dropout_edge
 
 
-def gen_theta(K: int, scheme: str, alpha: float = None) -> Tensor:
+def gen_theta(K: int, scheme: str, alpha: Union[float, List[float]] = None) -> Tensor:
     r"""Generate list of hop parameters based on given scheme.
 
     Args:
@@ -23,6 +25,7 @@ def gen_theta(K: int, scheme: str, alpha: float = None) -> Tensor:
             - 'hk': Heat Kernel, :math:`\mathbf{H} = \sum_{k=0}^K e^{-\alpha k} \mathbf{A}^k \mathbf{X}`.
             - 'uniform': Random uniform distribution.
             - 'gaussian': Random Gaussian distribution.
+            - 'custom': Custom list of hop parameters.
         alpha (float, optional): Hyperparameter for the scheme.
             - 'khop': Only the alpha-hop, :math:`\alpha \in [0, K]`.
             - 'appr': Decay factor, :math:`\alpha \in [0, 1]`.
@@ -31,6 +34,7 @@ def gen_theta(K: int, scheme: str, alpha: float = None) -> Tensor:
             - 'hk': Decay factor, :math:`\alpha > 0`.
             - 'uniform': Distribution bound.
             - 'gaussian': Distribution variance.
+            - 'custom': Float list of hop parameters.
 
     Returns:
         theta (Tensor): List of hop parameters.
@@ -66,6 +70,8 @@ def gen_theta(K: int, scheme: str, alpha: float = None) -> Tensor:
         alpha = alpha if alpha is not None else 1.0
         theta = torch.randn(K+1) * alpha
         return theta/torch.norm(theta, p=1)
+    elif scheme == 'custom':
+        return Tensor(alpha)
     else:
         raise NotImplementedError()
 
@@ -81,7 +87,10 @@ class FixSumAdj(MessagePassing):
         - 'hk': GDC, AGP
 
     Args:
-        theta (Tensor): List of hop parameters.
+        theta: spectral filter:
+            1. (Tensor): Custom list of hop parameters.
+            2. (Tuple[str, float]): Method to generate parameters.
+            3. (Tuple[str, List[float]]): Custom list of hop parameters.
         K (int, optional): Number of iterations :math:`K`. If K=0 then infer from p.
         dropedge (float, optional): Edge dropout. Defaults to 0.
 
@@ -111,6 +120,7 @@ class FixSumAdj(MessagePassing):
             self.scheme = 'custom'
         self.theta = theta
         self.K = K if K > 0 else len(theta)
+        assert len(theta) >= self.K, f'Hop K={self.K} larger than {len(self.theta)} hop parameters!'
         self.dropedge = dropedge
 
     def forward(
@@ -127,9 +137,6 @@ class FixSumAdj(MessagePassing):
         for k in range(1, self.K+1):
             # Edge dropout
             if self.dropedge > 0:
-                assert isinstance(edge_index, Tensor) and \
-                    edge_index.size(0) == 2, \
-                    'DropEdge only supports tensor format edge_index'
                 edge_index, edge_mask = dropout_edge(
                     edge_index, p=self.dropedge, training=self.training)
                 if edge_weight is not None:

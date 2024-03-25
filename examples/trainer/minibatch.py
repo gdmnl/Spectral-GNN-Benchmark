@@ -27,7 +27,7 @@ class TrnMinibatchDec(TrnBase):
 
     Args:
         args.batch (int): Batch size.
-        args.normf (str): Embedding normalization.
+        args.normf (int): Embedding normalization.
     """
     name: str = 'mb'
 
@@ -38,7 +38,8 @@ class TrnMinibatchDec(TrnBase):
                  **kwargs):
         super(TrnMinibatchDec, self).__init__(model, dataset, args, **kwargs)
         self.batch = args.batch
-        if args.normf >= 0:
+        if args.normf:
+            assert isinstance(args.normf, int)
             self.norm_prop = TensorStandardScaler(dim=args.normf)
 
         self.shuffle = {'train': True, 'val': False, 'test': False}

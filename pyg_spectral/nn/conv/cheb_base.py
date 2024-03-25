@@ -2,7 +2,6 @@ from typing import Final
 
 import torch
 from torch import Tensor
-from torch.nn import Parameter
 
 from torch_geometric.typing import Adj, OptTensor, SparseTensor
 from torch_geometric.nn.conv import MessagePassing
@@ -33,7 +32,7 @@ class ChebBase(MessagePassing):
 
         self.K = K
         self.alpha = alpha
-        self.theta = Parameter(torch.Tensor(self.K+1))
+        self.theta = torch.nn.Parameter(Tensor(self.K+1))
         self.cached = cached
         self._cached_adj_t = None
         self.reset_parameters()

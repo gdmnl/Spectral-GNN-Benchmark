@@ -119,7 +119,7 @@ class PostMLP(nn.Module):
         """
         # NOTE: [APPNP](https://github.com/pyg-team/pytorch_geometric/blob/master/benchmark/citation/appnp.py)
         # does not have last dropout, but exists in [GPRGNN](https://github.com/jianhao2016/GPRGNN/blob/master/src/GNN_models.py)
-        # x = F.dropout(x, p=self.dropout_prop, training=self.training)
+        x = F.dropout(x, p=self.dropout_prop, training=self.training)
 
         if self.supports_edge_weight and self.supports_edge_attr:
             x = self.conv(x, edge_index, edge_weight=edge_weight,
