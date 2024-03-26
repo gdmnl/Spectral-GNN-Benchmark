@@ -80,9 +80,21 @@ class PostMLP(nn.Module):
             self.dropout_prop = dropout
         self.plain_last = False
         lib = kwargs.pop('lib_conv', 'pyg_spectral.nn.conv')
-
         self.mlp = myMLP(
             in_channels=in_channels,
+            hidden_channels=hidden_channels,
+            out_channels=out_channels,
+            num_layers=num_layers,
+            dropout=dropout,
+            act=act,
+            act_first=act_first,
+            act_kwargs=act_kwargs,
+            norm=norm,
+            norm_kwargs=norm_kwargs,
+            plain_last=self.plain_last,
+            bias=bias,)
+        self.hiddenmlp = myMLP(
+            in_channels=hidden_channels,
             hidden_channels=hidden_channels,
             out_channels=out_channels,
             num_layers=num_layers,
@@ -196,7 +208,24 @@ class PostDecMLP(PostMLP):
 
         return x
 
+class PreMLP(PostMLP):
+    r"""Pre-propagation model for Adagnn.
+    """
+    def forward(self,
+        x: torch.Tensor,
+        edge_index: Adj,
+        edge_weight: OptTensor = None,
+        edge_attr: OptTensor = None,
+        batch: OptTensor = None,
+        batch_size: Optional[int] = None,
+    ) -> torch.Tensor:
+        
+        x = self.propagate(x, edge_index, edge_weight, edge_attr,
+                           batch, batch_size)
+        x = self.hiddenmlp(x, batch=batch, batch_size=batch_size)
 
+        return x
+    
 class PreDecMLP(PostMLP):
     r"""Pre-propagation model decouples propagation to CPU.
     """
@@ -205,5 +234,6 @@ class PreDecMLP(PostMLP):
         batch: OptTensor = None,
         batch_size: Optional[int] = None,
     ) -> torch.Tensor:
+        
         x = self.mlp(x, batch=batch, batch_size=batch_size)
         return x
