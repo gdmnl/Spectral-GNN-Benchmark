@@ -62,7 +62,7 @@ def setup_argparse():
     parser.add_argument('-w', '--hidden', type=int, default=256, help='Number of hidden units')
     parser.add_argument('--dp', type=list_float, default=0.5, help='Dropout rate')
     # Training configuration
-    parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
+    parser.add_argument('-e', '--epoch', type=int, default=100, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
     parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
     parser.add_argument('-b', '--batch', type=int, default=512, help='Batch size')
