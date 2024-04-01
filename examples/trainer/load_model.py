@@ -50,7 +50,7 @@ class ModelLoader(object):
             num_layers=args.layer,
             dropout=args.dp,
         )
-
+        
         if self.model in ['GCN']:
             self.conv = 'GCNConv'   # Sometimes need to manually fix repr for logging
             module_name = 'torch_geometric.nn.models'
@@ -96,12 +96,23 @@ class ModelLoader(object):
                         theta=(args.theta, args.alpha),
                         K=args.K,
                         dropedge=args.dpe,))
+                elif self.conv in ['Adagnn']:
+                    kwargs.update(dict(
+                        K=args.K,
+                        in_features=args.num_features,
+                        hidden_dimension=args.hidden,))
                 trn = TrnMinibatchDec
+            elif self.model in ['PreMLP']:
+                if self.conv in ['Adagnn']:
+                    kwargs.update(dict(
+                        K=args.K,
+                        in_features=args.num_features,
+                        hidden_dimension=args.hidden,))           
+                trn = TrnFullbatchIter    
             else:
                 raise ValueError(f"Model '{self}' not found.")
-
         model = load_import(class_name, module_name)(**kwargs)
-
+        
         self.logger.log(logging.LTRN, f"[model]: {model}")
         self.logger.info(f"[trainer]: {trn.__name__}")
         self.res_logger.concat([('model', str(self)),])
