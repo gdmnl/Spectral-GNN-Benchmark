@@ -76,6 +76,7 @@ class ModelLoader(object):
                         K=args.K,
                         dropedge=args.dpe,))
                 trn = TrnFullbatchIter
+
             elif self.model in ['PostMLP']:
                 if self.conv in ['FixSumAdj', 'VarSumAdj']:
                     self.conv = '-'.join((self.conv, args.theta))
