@@ -50,6 +50,7 @@ class TrnFullbatchIter(TrnBase):
 
         self.mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
         split_dict = {k: v.sum().item() for k, v in self.mask.items()}
+        
         self.logger.info(f"[split]: {split_dict}")
 
         return self.data, self.mask

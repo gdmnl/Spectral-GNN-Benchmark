@@ -84,10 +84,14 @@ class ModelLoader(object):
                         theta=(args.theta, args.alpha),
                         K=args.K,
                         dropedge=args.dpe,))
-                elif self.conv in ['ChebBase']:
+                elif self.conv in ['ChebBase', 'BernConv']:
                     kwargs.update(dict(
                         K=args.K,
                         alpha=args.alpha,))
+                elif self.conv in ['ChebConv2']:
+                    kwargs.update(dict(
+                        K=args.K,
+                        Init=True,))
                 trn = TrnFullbatchIter
             elif self.model in ['PreDecMLP']:
                 if self.conv in ['FixSumAdj']:

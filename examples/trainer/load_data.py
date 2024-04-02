@@ -34,16 +34,17 @@ class DatasetLoader(object):
         self.data = args.data.lower()
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
+        self.split = args.split
 
         self.transform = None
         self.num_features = None
         self.num_classes = None
 
-    def _get_properties(self, dataset: Dataset, idx: int = 0) -> None:
+    def _get_properties(self, dataset: Dataset, split: int = 0) -> None:
         r"""Avoid triggering transform when getting simple properties."""
 
         """See `pyg.data.dataset.num_node_features`"""
-        data = dataset.get(dataset.indices()[idx])
+        data = dataset.get(dataset.indices()[split])
         # Do not fill cache for `InMemoryDataset`:
         if hasattr(dataset, '_data_list') and dataset._data_list is not None:
             dataset._data_list[0] = None
@@ -111,6 +112,10 @@ class DatasetLoader(object):
             module_name = 'torch_geometric.datasets'
             if self.data in ['cora', 'citeseer', 'pubmed']:
                 class_name = 'Planetoid'
+            elif self.data in ["Chameleon", "Squirrel"]:
+                class_name = 'WikipediaNetwork'
+            elif self.data in ["Cornell", "Texas", "Wisconsin"]:
+                class_name = 'WebKB'
             else:
                 raise ValueError(f"Dataset '{self}' not found.")
 
@@ -120,12 +125,19 @@ class DatasetLoader(object):
                 transform=self.transform,)
 
         dataset = load_import(class_name, module_name)(**kwargs)
-        self._get_properties(dataset)
+        print(dataset.train_mask.shape)
+        self._get_properties(dataset, self.split)
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
 
+        if len(dataset.train_mask.shape) > 1: # multiple splits, use single one.
+            dataset.data.train_mask = dataset.train_mask[:, self.split]
+            dataset.data.val_mask = dataset.val_mask[:, self.split]
+            dataset.data.test_mask = dataset.test_mask[:, self.split]
+
         self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
         self.res_logger.concat([('data', self.data)])
+        print(dataset.train_mask.shape)
         return dataset
 
     def __call__(self, *args, **kwargs):
