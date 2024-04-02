@@ -106,11 +106,44 @@ class PostMLP(nn.Module):
             norm_kwargs=norm_kwargs,
             plain_last=self.plain_last,
             bias=bias,)
+        
+        '''
+        self.mlp1 = myMLP(
+            in_channels=in_channels,
+            # hidden_channels=hidden_channels,
+            out_channels=hidden_channels,
+            num_layers=1,
+            dropout=dropout,
+            act=act,
+            act_first=act_first,
+            act_kwargs=act_kwargs,
+            norm=norm,
+            norm_kwargs=norm_kwargs,
+            plain_last=self.plain_last,
+            bias=bias,)
+        
+        self.mlp2 = myMLP(
+            in_channels=hidden_channels,
+            # hidden_channels=hidden_channels,
+            out_channels=out_channels,
+            num_layers=1,
+            dropout=dropout,
+            act=act,
+            act_first=act_first,
+            act_kwargs=act_kwargs,
+            norm=norm,
+            norm_kwargs=norm_kwargs,
+            plain_last=self.plain_last,
+            bias=bias,)
+        '''
+
         self.conv = load_import(conv, lib)(**kwargs)
         self.reset_parameters()
 
     def reset_parameters(self):
         self.mlp.reset_parameters()
+        #self.mlp1.reset_parameters()
+        #self.mlp2.reset_parameters()
         self.conv.reset_parameters()
 
     def get_wd(self, **kwargs):
@@ -182,10 +215,13 @@ class PostMLP(nn.Module):
         """
         # FEATURE: batch norm
         x = self.mlp(x, batch=batch, batch_size=batch_size)
-
+        # x = self.mlp1(x, batch=batch, batch_size=batch_size)
+        # x = F.relu(self.propagate(x, edge_index, edge_weight, edge_attr,
+        #                   batch, batch_size))
+        #x = F.dropout(x, p=self.dropout_prop, training=self.training)
+        #x = self.mlp2(x, batch=batch, batch_size=batch_size)
         x = self.propagate(x, edge_index, edge_weight, edge_attr,
                            batch, batch_size)
-
         return x
 
 
