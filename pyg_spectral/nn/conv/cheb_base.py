@@ -90,7 +90,7 @@ class ChebBase(MessagePassing):
         if self.K > 0:
             Tx_1 = self.propagate(adj_t, x=x)
             out += self.theta[1] * Tx_1
-        print("e1.shape111111111111111111111111111", x.shape)
+        
         for i in range(2, self.K+1):
             Tx_2 = self.propagate(adj_t, x=Tx_1)
             Tx_2 = 2*Tx_2 - Tx_0

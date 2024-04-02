@@ -41,9 +41,9 @@ def gen_theta(K: int, scheme: str, alpha: Union[float, List[float]] = None) -> T
     """
     assert K > 0, 'K should be a positive integer'
     if scheme == 'khop':
-        alpha = alpha if alpha is not None else K
+        # alpha = alpha if alpha is not None else K
         theta = torch.zeros(K+1)
-        theta[alpha] = 1
+        theta[K] = 1
         return theta
     elif scheme == 'appr':
         alpha = alpha if alpha is not None else 0.5
