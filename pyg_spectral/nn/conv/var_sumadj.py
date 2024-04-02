@@ -6,9 +6,10 @@ from torch import Tensor
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.dense.linear import Linear
 from torch_geometric.typing import Adj, OptTensor
-from torch_geometric.utils import spmm, dropout_edge
+from torch_geometric.utils import spmm
 
 from pyg_spectral.nn.conv.fix_sumadj import gen_theta
+from pyg_spectral.utils import dropout_edge
 
 
 class VarSumAdj(MessagePassing):
@@ -19,7 +20,10 @@ class VarSumAdj(MessagePassing):
         - 'appr': GPRGNN
 
     Args:
-        theta (Tensor): List of initial hop parameters.
+        theta: spectral filter:
+            1. (Tensor): Custom list of hop parameters.
+            2. (Tuple[str, float]): Method to generate parameters.
+            3. (Tuple[str, List[float]]): Custom list of hop parameters.
         K (int, optional): Number of iterations :math:`K`. If K=0 then infer from p.
         dropedge (float, optional): Edge dropout. Defaults to 0.
 
@@ -49,6 +53,7 @@ class VarSumAdj(MessagePassing):
         self.theta_init = theta
         self.theta = torch.nn.Parameter(theta)
         self.K = K if K > 0 else len(theta)
+        assert len(theta) >= self.K, f'Hop K={self.K} larger than {len(self.theta)} hop parameters!'
         self.dropedge = dropedge
 
         if self.__class__ == VarSumAdj:
@@ -72,7 +77,8 @@ class VarSumAdj(MessagePassing):
         for k in range(1, self.K+1):
             # Edge dropout
             if self.dropedge > 0:
-                edge_index, edge_mask = dropout_edge(edge_index, p=self.dropedge, training=self.training)
+                edge_index, edge_mask = dropout_edge(
+                    edge_index, p=self.dropedge, training=self.training)
                 if edge_weight is not None:
                     edge_weight = edge_weight[edge_mask]
 

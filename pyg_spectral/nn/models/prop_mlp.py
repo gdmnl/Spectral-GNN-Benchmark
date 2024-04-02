@@ -1,9 +1,10 @@
 from typing import Any, Callable, Dict, Final, List, Optional, Union
-from torch_geometric.typing import Adj, OptTensor
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from torch_geometric.typing import Adj, OptTensor
 from torch_geometric.nn.models import MLP
 
 from pyg_spectral.utils import load_import
@@ -79,9 +80,21 @@ class PostMLP(nn.Module):
             self.dropout_prop = dropout
         self.plain_last = False
         lib = kwargs.pop('lib_conv', 'pyg_spectral.nn.conv')
-
         self.mlp = myMLP(
             in_channels=in_channels,
+            hidden_channels=hidden_channels,
+            out_channels=out_channels,
+            num_layers=num_layers,
+            dropout=dropout,
+            act=act,
+            act_first=act_first,
+            act_kwargs=act_kwargs,
+            norm=norm,
+            norm_kwargs=norm_kwargs,
+            plain_last=self.plain_last,
+            bias=bias,)
+        self.hiddenmlp = myMLP(
+            in_channels=hidden_channels,
             hidden_channels=hidden_channels,
             out_channels=out_channels,
             num_layers=num_layers,
@@ -102,9 +115,14 @@ class PostMLP(nn.Module):
 
     def get_wd(self, **kwargs):
         assert 'weight_decay' in kwargs, "Weight decay not found."
-        res = [{'params': self.mlp.parameters(), **kwargs}]
-        kwargs['weight_decay'] = 0.0
-        res.append({'params': self.conv.parameters(), **kwargs})
+        if isinstance(kwargs['weight_decay'], list):
+            wd = kwargs.pop('weight_decay')
+            res = [{'params': self.mlp.parameters(), 'weight_decay': wd[:-1], **kwargs},
+                   {'params': self.conv.parameters(), 'weight_decay': wd[-1], **kwargs}]
+        else:
+            res = [{'params': self.mlp.parameters(), **kwargs}]
+            kwargs['weight_decay'] = 0.0
+            res.append({'params': self.conv.parameters(), **kwargs})
         return res
 
     def propagate(self,
@@ -119,7 +137,7 @@ class PostMLP(nn.Module):
         """
         # NOTE: [APPNP](https://github.com/pyg-team/pytorch_geometric/blob/master/benchmark/citation/appnp.py)
         # does not have last dropout, but exists in [GPRGNN](https://github.com/jianhao2016/GPRGNN/blob/master/src/GNN_models.py)
-        # x = F.dropout(x, p=self.dropout_prop, training=self.training)
+        x = F.dropout(x, p=self.dropout_prop, training=self.training)
 
         if self.supports_edge_weight and self.supports_edge_attr:
             x = self.conv(x, edge_index, edge_weight=edge_weight,
@@ -190,7 +208,24 @@ class PostDecMLP(PostMLP):
 
         return x
 
+class PreMLP(PostMLP):
+    r"""Pre-propagation model for Adagnn.
+    """
+    def forward(self,
+        x: torch.Tensor,
+        edge_index: Adj,
+        edge_weight: OptTensor = None,
+        edge_attr: OptTensor = None,
+        batch: OptTensor = None,
+        batch_size: Optional[int] = None,
+    ) -> torch.Tensor:
+        
+        x = self.propagate(x, edge_index, edge_weight, edge_attr,
+                           batch, batch_size)
+        x = self.hiddenmlp(x, batch=batch, batch_size=batch_size)
 
+        return x
+    
 class PreDecMLP(PostMLP):
     r"""Pre-propagation model decouples propagation to CPU.
     """
@@ -199,5 +234,6 @@ class PreDecMLP(PostMLP):
         batch: OptTensor = None,
         batch_size: Optional[int] = None,
     ) -> torch.Tensor:
+        
         x = self.mlp(x, batch=batch, batch_size=batch_size)
         return x

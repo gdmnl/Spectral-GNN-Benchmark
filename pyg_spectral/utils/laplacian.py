@@ -51,7 +51,7 @@ def get_laplacian(
             edge_index = edge_index.fill_diag(diag)
         else:
             # L = D - A
-            deg = edge_index.sum(dim=0)
+            deg = -edge_index.sum(dim=0)
             edge_index = edge_index.set_diag(deg)
         return edge_index
 

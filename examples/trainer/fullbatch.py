@@ -97,6 +97,30 @@ class TrnFullbatchIter(TrnBase):
         return res.concat(
             [('time_eval', stopwatch.data)])
 
+    # ===== Run block
+    def test_deg(self) -> ResLogger:
+        import logging
+
+        adj_t = self.data.adj_t
+        deg = adj_t.sum(dim=0).cpu()
+        _, idx_high = torch.topk(deg, k=int(0.2*deg.size(0)))
+        mask_high = torch.zeros_like(deg, dtype=torch.bool, device=self.device)
+        mask_high[idx_high] = True
+
+        self.mask['test_high'] = mask_high & self.mask['test']
+        self.mask['test_low'] = (~mask_high) & self.mask['test']
+        self.evaluator['test_high'] = self.evaluator['test'].clone(postfix='_high')
+        self.evaluator['test_high'].reset()
+        self.evaluator['test_low'] = self.evaluator['test'].clone(postfix='_low')
+        self.evaluator['test_low'].reset()
+
+        res_test = self._eval_split(['test_high', 'test_low'])
+        res_test.concat([
+            ('num_high', self.mask['test_high'].sum().item()),
+            ('num_low', self.mask['test_low'].sum().item())])
+        self.logger.log(logging.LTRN, res_test.get_str())
+        return res_test
+
     # ===== Run pipeline
     def run(self) -> ResLogger:
         res_run = ResLogger()
@@ -110,6 +134,8 @@ class TrnFullbatchIter(TrnBase):
         self.model = self.ckpt_logger.load('best', model=self.model)
         res_test = self.test()
         res_run.merge(res_test)
+
+        self.test_deg()
 
         return self.res_logger.merge(res_run)
 

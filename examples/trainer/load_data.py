@@ -31,7 +31,7 @@ class DatasetLoader(object):
     def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
         r"""Assigning dataset identity.
         """
-        self.data = args.data
+        self.data = args.data.lower()
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
         self.split = args.split
@@ -110,7 +110,7 @@ class DatasetLoader(object):
         # Default to load from PyG
         else:
             module_name = 'torch_geometric.datasets'
-            if self.data in ['Cora', 'CiteSeer', 'PubMed']:
+            if self.data in ['cora', 'citeseer', 'pubmed']:
                 class_name = 'Planetoid'
             elif self.data in ["Chameleon", "Squirrel"]:
                 class_name = 'WikipediaNetwork'
