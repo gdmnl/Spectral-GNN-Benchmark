@@ -68,6 +68,7 @@ def setup_argparse():
     parser.add_argument('-b', '--batch', type=int, default=512, help='Batch size')
     parser.add_argument('--lr', type=float, default=1.0e-3, help='Learning rate')
     parser.add_argument('--wd', type=float, default=1e-5, help='Weight decay')
+    parser.add_argument('--split', type=int, default=0, help='Training test split')
 
     # Model-specific
     # - pyg_spectral
