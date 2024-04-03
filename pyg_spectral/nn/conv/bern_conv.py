@@ -9,7 +9,7 @@ from torch.nn import Parameter
 from torch_scatter import scatter_add
 from torch_sparse import SparseTensor, matmul, fill_diag, sum, mul
 from torch_geometric.nn.conv import MessagePassing
-from torch_geometric.utils import add_self_loops, remove_self_loops #,get_laplacian
+from torch_geometric.utils import spmm, add_self_loops, remove_self_loops #,get_laplacian
 from pyg_spectral.utils import get_laplacian
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 from torch_geometric.nn.conv.gcn_conv import gcn_norm
