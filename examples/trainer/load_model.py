@@ -84,10 +84,13 @@ class ModelLoader(object):
                         theta=(args.theta, args.alpha),
                         K=args.K,
                         dropedge=args.dpe,))
-                elif self.conv in ['ChebBase', 'BernConv']:
+                elif self.conv in ['ChebBase']:
                     kwargs.update(dict(
                         K=args.K,
                         alpha=args.alpha,))
+                elif self.conv in ['BernConv']:
+                    kwargs.update(dict(
+                        K=args.K))
                 elif self.conv in ['ChebConv2']:
                     kwargs.update(dict(
                         K=args.K,
