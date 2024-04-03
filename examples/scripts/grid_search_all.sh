@@ -1,5 +1,6 @@
 # Define the list of datasets
-datasets=("Cora" "CiteSeer" "PubMed")
+# datasets=("Cora" "CiteSeer" "PubMed")
+datasets=("texas" "squirrel" "chameleon")
 
 # Loop through each dataset and run the Python script with the parameters
 for graph in "${datasets[@]}"; do
