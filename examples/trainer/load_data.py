@@ -112,9 +112,9 @@ class DatasetLoader(object):
             module_name = 'torch_geometric.datasets'
             if self.data in ['cora', 'citeseer', 'pubmed']:
                 class_name = 'Planetoid'
-            elif self.data in ["Chameleon", "Squirrel"]:
+            elif self.data in ["chameleon", "squirrel"]:
                 class_name = 'WikipediaNetwork'
-            elif self.data in ["Cornell", "Texas", "Wisconsin"]:
+            elif self.data in ["cornell", "texas", "wisconsin"]:
                 class_name = 'WebKB'
             else:
                 raise ValueError(f"Dataset '{self}' not found.")
