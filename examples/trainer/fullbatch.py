@@ -135,7 +135,7 @@ class TrnFullbatchIter(TrnBase):
         res_test = self.test()
         res_run.merge(res_test)
 
-        self.test_deg()
+        res_run.merge(self.test_deg())
 
         return self.res_logger.merge(res_run)
 

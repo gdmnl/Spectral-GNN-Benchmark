@@ -4,6 +4,8 @@
 import logging
 from itertools import product
 import os
+import json
+import argparse
 import pandas as pd
 from trainer import DatasetLoader, ModelLoader
 from pathlib import Path
@@ -72,7 +74,9 @@ def update_results_csv(result_path, model_name, dataset_name, new_result):
 
     print(f"Updated CSV file at {result_path} with new results for model '{model_name}' and dataset '{dataset_name}'.")
 
-def search_hyperparameters(parser, method, model):
+def search_hyperparameters(args, method, model):
+    setattr(args, 'grid_search_flag', True)
+    setattr(args, 'degree_flag', False)
     # Ensure method and model are valid
     if method in method_model_configs and model in method_model_configs[method]:
         # Get hyperparameters for the specific method and model
@@ -96,7 +100,29 @@ def search_hyperparameters(parser, method, model):
     else:
         print("Invalid method or model configuration.")
 
+def get_degree_accuracy(args, method, model):
+    setattr(args, 'grid_search_flag', False)
+    setattr(args, 'degree_flag', True)
+    args.logpath = setup_logpath(
+        folder_args=(args.data, args.model, args.flag),
+        quiet=args.quiet)
+    # Ensure method and model are valid
+    if method in method_model_configs and model in method_model_configs[method]:
+        optimal_path = os.path.join(args.logpath, args.conv+ "_optimal/config.json")
+        hyperparams = method_model_configs[method][model]
+        with open(optimal_path, 'r') as file:
+            config_dict = json.load(file)
 
+            # Convert the dictionary to a namespace object
+            for param in hyperparams:
+                setattr(args, param, int(config_dict[param])) if isinstance(config_dict[param], int) else setattr(args, param, float(config_dict[param]))
+            # args = argparse.Namespace(**config_dict)
+            print('args:',args.data)
+            main(args)
+
+
+    else:
+        print("Invalid method or model configuration.")
 
 def main(args):
     # ========== Run configuration
@@ -129,12 +155,17 @@ def main(args):
     logger.log(logging.LRES, f"[res]: {res_logger}")
     current_accuracy = float(res_logger.get_str("f1micro_test", 0).split(":")[1])
     print("result:", current_accuracy)
+    f1micro_high = float(res_logger.get_str("f1micro_high", 0).split(":")[1])
+    f1micro_low = float(res_logger.get_str("f1micro_low", 0).split(":")[1])
+    print("f1micro_high:", f1micro_high, " f1micro_low", f1micro_low)
+
     
     res_logger.save()
     clear_logger(logger)
     global best_accuracy
     table_path = Path('../log/sum_table.csv')
-    if current_accuracy>best_accuracy:
+    degree_table_path = Path('../log/degree_table.csv')
+    if current_accuracy>best_accuracy and args.grid_search_flag:
         setattr(args, 'optimal_accuracy', current_accuracy)
         optimal_path = os.path.join(args.logpath, args.conv+ "_optimal")
         if not os.path.exists(optimal_path):
@@ -143,7 +174,10 @@ def main(args):
         best_accuracy = current_accuracy
         update_results_csv(table_path, args.model + "-" + args.conv+ "-" +args.theta, args.data, best_accuracy)
 
-
+    if args.degree_flag:
+        #Just output the degree accuracy using the optimal config
+        update_results_csv(degree_table_path, args.model + "-" + args.conv+ "-" +args.theta, args.data+'-'+'high', f1micro_high) 
+        update_results_csv(degree_table_path, args.model + "-" + args.conv+ "-" +args.theta, args.data+'-'+'low', f1micro_low)
 
 if __name__ == '__main__':
     parser = setup_argparse()
@@ -151,8 +185,13 @@ if __name__ == '__main__':
     # parser.add_argument()
     args = setup_args(parser)
  
-    # Example usage
-    search_hyperparameters(args, args.model, args.conv)
+    # Example usage for grid search
+    # search_hyperparameters(args, args.model, args.conv)
+
+    # Get the degree accuracy when you have an optimal config
+    get_degree_accuracy(args, args.model, args.conv)
+
+
 
 
 

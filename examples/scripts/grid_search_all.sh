@@ -1,5 +1,6 @@
 # Define the list of datasets
-# datasets=("Cora" "CiteSeer" "PubMed")
+# datasets=("Cora" "CiteSeer" "PubMed" "Texas" "Squirrel" "Chameleon")
+
 datasets=("texas" "squirrel" "chameleon")
 
 # Loop through each dataset and run the Python script with the parameters
@@ -8,15 +9,15 @@ for graph in "${datasets[@]}"; do
     #fixed-linear
     python run_grid_search.py --model IterGNN --conv FixLinSumAdj --data $graph --theta khop
     #fixed-Impulse 
-    python run_grid_search.py --model PreDecMLP --conv FixSumAdj --data $graph --theta khop
-    #fixed-Monomial
-    python run_grid_search.py --model PreDecMLP --conv FixSumAdj --data $graph --theta mono
-    #fixed-ppr
-    python run_grid_search.py --model PostMLP --conv FixSumAdj --data $graph --theta appr
-    #fixed-heart kernel
-    python run_grid_search.py --model PreDecMLP --conv FixSumAdj --data $graph --theta hk
-    #fixed-guassian
-    python run_grid_search.py --model PreDecMLP --conv FixSumAdj --data $graph --theta gaussian
+    # python run_grid_search.py --model PreDecMLP --conv FixSumAdj --data $graph --theta khop
+    # #fixed-Monomial
+    # python run_grid_search.py --model PreDecMLP --conv FixSumAdj --data $graph --theta mono
+    # #fixed-ppr
+    # python run_grid_search.py --model PreDecMLP --conv FixSumAdj --data $graph --theta appr
+    # #fixed-heart kernel
+    # python run_grid_search.py --model PreDecMLP --conv FixSumAdj --data $graph --theta hk
+    # #fixed-guassian
+    # python run_grid_search.py --model PreDecMLP --conv FixSumAdj --data $graph --theta gaussian
     
     #var-Linear-unfinished
     # python run_grid_search.py --model IterGNN --conv VarSumAdj --data $graph --theta khop
@@ -28,7 +29,7 @@ for graph in "${datasets[@]}"; do
     python run_grid_search.py --model PostMLP --conv ChebBase --data $graph
     #var-Chebyshev2
     python run_grid_search.py --model PostMLP --conv ChebConv2 --data $graph
-    #var-Bernstein
+    var-Bernstein
     python run_grid_search.py --model PostMLP --conv BernConv --data $graph
 
     #bank-linear
