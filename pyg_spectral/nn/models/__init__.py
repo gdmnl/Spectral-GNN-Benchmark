@@ -1,2 +1,2 @@
-from .iterative import IterGNN
-from .prop_mlp import PostMLP, PreDecMLP, PreMLP
+from .iterative import Iterative
+from .decoupled import DecoupledFixed, DecoupledVar

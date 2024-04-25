@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-"""Minibatch, node classification.
+"""Minibatch with random sampling for precompute models, transductive node classification.
 Author: nyLiao
 File Created: 2024-03-03
 """
@@ -20,7 +20,7 @@ from .base import TrnBase
 from utils import ResLogger
 
 
-class TrnMinibatchDec(TrnBase):
+class TrnMinibatch(TrnBase):
     r"""Minibatch trainer class for node classification.
         - Model forward input: node embeddings.
         - Run pipeline: propagate -> train_val -> test.
@@ -36,10 +36,10 @@ class TrnMinibatchDec(TrnBase):
                  dataset: Dataset,
                  args: Namespace,
                  **kwargs):
-        super(TrnMinibatchDec, self).__init__(model, dataset, args, **kwargs)
+        super(TrnMinibatch, self).__init__(model, dataset, args, **kwargs)
         self.batch = args.batch
-        assert isinstance(args.normf, int)
-        if isinstance(args.normf, int):
+        if args.normf is not None:
+            assert isinstance(args.normf, int)
             self.norm_prop = TensorStandardScaler(dim=args.normf)
 
         self.shuffle = {'train': True, 'val': False, 'test': False}
@@ -139,6 +139,7 @@ class TrnMinibatchDec(TrnBase):
 
     # ===== Run pipeline
     def run(self) -> ResLogger:
+        raise DeprecationWarning
         res_run = ResLogger()
 
         # TODO: check behavior of trainable parameters in propagate
