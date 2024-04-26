@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-"""Run single experiment.
+"""Run experiments with a single data+model+conv+hyperparam with list of seeds.
 Author: nyLiao
 File Created: 2023-08-03
 """
@@ -7,6 +7,7 @@ import logging
 
 from trainer import DatasetLoader, ModelLoader
 from utils import (
+    setup_seed,
     setup_argparse,
     setup_args,
     save_args,
@@ -19,9 +20,9 @@ from utils import (
 def main(args):
     # ========== Run configuration
     args.logpath = setup_logpath(
-        folder_args=(args.data, args.model, args.flag),
+        folder_args=(args.model, args.data, args.conv, args.flag),
         quiet=args.quiet)
-    logger = setup_logger(args.logpath, level=args.loglevel, quiet=args.quiet)
+    logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
     res_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
     res_logger.concat([('seed', args.seed),])
 
@@ -56,4 +57,9 @@ if __name__ == '__main__':
     # parser.add_argument()
     args = setup_args(parser)
 
-    main(args)
+    seed_lst = args.seed.copy()
+    for seed in seed_lst:
+        args.seed = setup_seed(seed, args.cuda)
+        args.flag = f'{args.seed}'
+
+        main(args)

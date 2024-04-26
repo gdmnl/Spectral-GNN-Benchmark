@@ -1,1 +1,0 @@
-python run_single.py --data Cora --model PostMLP --conv ChebConv2 --alpha 0 -K 2 --epoch 1000 --hidden 32 --patience 200 --lr 0.01 --wd 0.005 --dp 0.7

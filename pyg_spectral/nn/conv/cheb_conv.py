@@ -32,7 +32,7 @@ class ChebConv(MessagePassing):
         num_hops: int = 0,
         hop: int = 0,
         theta: Union[nn.Parameter, nn.Module] = None,
-        alpha: float = 0.,
+        alpha: float = -1.0,
         cached: bool = True,
         **kwargs
     ):
@@ -43,7 +43,7 @@ class ChebConv(MessagePassing):
         self.num_hops = num_hops
         self.hop = hop
         self.theta = theta
-        self.alpha = alpha
+        self.alpha = 0.0 if alpha < 0 else alpha  #NOTE: set actual alpha default here
 
         self.cached = cached
         self._cache = None

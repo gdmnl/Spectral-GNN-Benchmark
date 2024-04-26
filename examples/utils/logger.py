@@ -20,7 +20,8 @@ LOGPATH = Path('../log')
 
 
 def setup_logger(logpath: Union[Path, str] = LOGPATH,
-                 level: int = logging.DEBUG,
+                 level_console: int = logging.DEBUG,
+                 level_file: int = 15,
                  quiet: bool = True,
                  fmt='{message}'):
     logging.LTRN = 15
@@ -34,7 +35,7 @@ def setup_logger(logpath: Union[Path, str] = LOGPATH,
 
     consoleHandler = logging.StreamHandler(stream=sys.stdout)
     consoleHandler.setFormatter(formatter)
-    consoleHandler.setLevel(level)
+    consoleHandler.setLevel(level_console)
     logger.addHandler(consoleHandler)
 
     if not quiet:
@@ -45,7 +46,7 @@ def setup_logger(logpath: Union[Path, str] = LOGPATH,
 
         fileHandler = logging.FileHandler(filename, delay=True)
         fileHandler.setFormatter(formatter)
-        fileHandler.setLevel(logging.LTRN)
+        fileHandler.setLevel(level_file)
         logger.addHandler(fileHandler)
 
     logger.log(logging.LTRN, f"[time]: {datetime.now()}")
@@ -100,9 +101,10 @@ class ResLogger(object):
     """
     def __init__(self,
                  logpath: Union[Path, str] = LOGPATH,
+                 prefix: str = 'summary',
                  suffix: str = None,
                  quiet: bool = True):
-        self.prefix = 'summary'
+        self.prefix = prefix
         self.suffix = suffix
         self.logpath = Path(logpath)
         self.quiet = quiet
@@ -118,8 +120,8 @@ class ResLogger(object):
         if np.issubdtype(type(val), np.integer):
             return (lambda x: format(x, 'd'))
         if np.issubdtype(type(val), np.floating):
-            if key.startswith(('acc', 'metric', 'score')):
-                return (lambda x: format(x, '.4f'))
+            if key.startswith(('acc', 'f1', 'metric', 'score')):
+                return (lambda x: format(x*100, '.3f'))
             if key.startswith(('loss',)):
                 return (lambda x: format(x, '.6f'))
             if key.startswith(('time',)):

@@ -74,7 +74,7 @@ class ModelLoader(object):
             if self.model in ['Iterative']:
                 trn = TrnFullbatch
             elif self.model in ['DecoupledFixed', 'DecoupledVar']:
-                self.conv = '-'.join(self.conv, args.theta_scheme)
+                self.conv = '-'.join([self.conv, args.theta_scheme])
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,))
@@ -83,9 +83,9 @@ class ModelLoader(object):
                 raise ValueError(f"Model '{self}' not found.")
         model = load_import(class_name, module_name)(**kwargs)
 
-        self.logger.log(logging.LTRN, f"[model]: {model}")
+        self.logger.log(logging.LTRN, f"[model]: {str(self)}")
         self.logger.info(f"[trainer]: {trn.__name__}")
-        self.res_logger.concat([('model', str(self)),])
+        self.res_logger.concat([('model', self.model), ('conv', self.conv)])
         return model, trn
 
     def __call__(self, *args, **kwargs):
