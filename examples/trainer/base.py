@@ -9,7 +9,7 @@ from argparse import Namespace
 
 import torch
 import torch.nn as nn
-from torch_geometric.data import Dataset
+from torch_geometric.data import Data
 
 from pyg_spectral import profile
 
@@ -22,7 +22,7 @@ class TrnBase(object):
 
     Args:
         model (nn.Module): Pytorch model to be trained.
-        dataset (Dataset): PyG style dataset.
+        data (Data): PyG style data.
         logger (Logger): Logger object.
         args (Namespace): Configuration arguments.
             device (str): torch device.
@@ -34,8 +34,8 @@ class TrnBase(object):
             suffix (str): Suffix for checkpoint saving.
             logpath (Path): Path for logging.
             multi (bool): True for multi-label classification.
-            num_features (int): Number of dataset input features.
-            num_classes (int): Number of dataset output classes.
+            num_features (int): Number of data input features.
+            num_classes (int): Number of data output classes.
 
     Methods:
         setup_optimizer: Set up the optimizer and scheduler.
@@ -46,7 +46,7 @@ class TrnBase(object):
 
     def __init__(self,
                  model: nn.Module,
-                 dataset: Dataset,
+                 data: Data,
                  args: Namespace,
                  res_logger: ResLogger = None,
                  **kwargs):
@@ -62,7 +62,7 @@ class TrnBase(object):
 
         # Get entities
         self.model = model
-        self.dataset = dataset
+        self.data = data
         self.criterion = nn.CrossEntropyLoss()
 
         # Evaluation metrics
@@ -106,7 +106,7 @@ class TrnBase(object):
         if self.scheduler: del self.scheduler
         if self.optimizer: del self.optimizer
         if self.model: del self.model
-        if self.dataset: del self.dataset
+        if self.data: del self.data
 
     @staticmethod
     def _log_memory(split: str = None, row: int = 0):

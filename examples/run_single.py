@@ -5,7 +5,7 @@ File Created: 2023-08-03
 """
 import logging
 
-from trainer import DatasetLoader, ModelLoader
+from trainer import SingleGraphLoader, ModelLoader
 from utils import (
     setup_seed,
     setup_argparse,
@@ -27,8 +27,8 @@ def main(args):
     res_logger.concat([('seed', args.seed),])
 
     # ========== Load data
-    data_loader = DatasetLoader(args, res_logger)
-    dataset = data_loader(args)
+    data_loader = SingleGraphLoader(args, res_logger)
+    data = data_loader(args)
 
     # ========== Load model
     model_loader = ModelLoader(args, res_logger)
@@ -38,10 +38,10 @@ def main(args):
     # ========== Run trainer
     trn = trn(
         model=model,
-        dataset=dataset,
+        data=data,
         args=args,
         res_logger=res_logger,)
-    del model, dataset
+    del model, data
     trn()
 
     logger.info(f"[args]: {args}")

@@ -8,7 +8,7 @@ from copy import deepcopy
 from pathlib import Path
 import json
 
-from trainer import DatasetLoader, ModelLoader
+from trainer import SingleGraphLoader, ModelLoader
 from utils import (
     force_list_str,
     setup_seed,
@@ -61,8 +61,8 @@ def main(args):
 def recursive_param(args, param, logger, res_logger, res_summary):
     if len(param) == 0:
         # ========== Load data
-        data_loader = DatasetLoader(args, res_logger)
-        dataset = data_loader(args)
+        data_loader = SingleGraphLoader(args, res_logger)
+        data = data_loader(args)
 
         # ========== Load model
         model_loader = ModelLoader(args, res_logger)
@@ -71,10 +71,10 @@ def recursive_param(args, param, logger, res_logger, res_summary):
         # ========== Run trainer
         trn = trn(
             model=model,
-            dataset=dataset,
+            data=data,
             args=args,
             res_logger=res_logger,)
-        del model, dataset
+        del model, data
         trn()
 
         logger.log(logging.LRES, f"[res]: {res_logger}")

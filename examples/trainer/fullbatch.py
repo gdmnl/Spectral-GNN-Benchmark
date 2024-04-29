@@ -27,12 +27,11 @@ class TrnFullbatch(TrnBase):
 
     def __init__(self,
                  model: nn.Module,
-                 dataset: Dataset,
+                 data: Dataset,
                  args: Namespace,
                  **kwargs):
-        super(TrnFullbatch, self).__init__(model, dataset, args, **kwargs)
+        super(TrnFullbatch, self).__init__(model, data, args, **kwargs)
         self.mask: dict = None
-        self.data: Data = None
 
     def clear(self):
         del self.mask, self.data
@@ -40,7 +39,7 @@ class TrnFullbatch(TrnBase):
 
     def _fetch_data(self) -> Tuple[Data, dict]:
         t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'train_mask', 'val_mask', 'test_mask'])
-        self.data = t_to_device(self.dataset[0])
+        self.data = t_to_device(self.data)
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
         if not pyg_utils.is_sparse(self.data.adj_t):
             raise NotImplementedError

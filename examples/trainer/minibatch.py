@@ -43,14 +43,14 @@ class TrnMinibatch(TrnBase):
             self.norm_prop = TensorStandardScaler(dim=args.normf)
 
         self.shuffle = {'train': True, 'val': False, 'test': False}
-        self.data = None
+        self.embed = None
 
     def clear(self):
         del self.data
         return super().clear()
 
     def _fetch_data(self) -> Tuple[Data, dict]:
-        data = self.dataset[0]
+        data = self.data
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
         if not pyg_utils.is_sparse(data.adj_t):
             raise NotImplementedError
@@ -64,12 +64,14 @@ class TrnMinibatch(TrnBase):
 
         return data, mask
 
-    def _fetch_input_propagate(self, data: Data) -> tuple:
+    def _fetch_preprocess(self, data: Data) -> tuple:
         input, label = (data.x, data.adj_t), data.y
+        if hasattr(self.model, 'preprocess'):
+            self.model.preprocess(*input)
         return input, label
 
     def _fetch_input(self, split: str) -> Generator:
-        for input, label in self.data[split]:
+        for input, label in self.embed[split]:
             yield input.to(self.device), label.to(self.device)
 
     # ===== Epoch run
@@ -115,22 +117,22 @@ class TrnMinibatch(TrnBase):
 
     # ===== Run block
     @TrnBase._log_memory(split='pre')
-    def propagate(self) -> dict:
+    def preprocess(self) -> dict:
         self.logger.debug('-'*20 + f" Start propagation: pre " + '-'*20)
 
         data, mask = self._fetch_data()
-        input, label = self._fetch_input_propagate(data)
-        del self.dataset
+        input, label = self._fetch_preprocess(data)
+        del self.data
 
-        embed = self.model.propagate(*input)
+        embed = self.model.convolute(*input)
         if self.norm_prop:
             self.norm_prop.fit(embed[mask['train']])
             embed = self.norm_prop(embed)
 
-        self.data = {}
+        self.embed = {}
         for k in self.splits:
             dataset = TensorDataset(embed[mask[k]], label[mask[k]])
-            self.data[k] = DataLoader(dataset,
+            self.embed[k] = DataLoader(dataset,
                                       batch_size=self.batch,
                                       shuffle=self.shuffle[k],
                                       num_workers=0)
@@ -143,7 +145,7 @@ class TrnMinibatch(TrnBase):
         res_run = ResLogger()
 
         # TODO: check behavior of trainable parameters in propagate
-        res_pre = self.propagate()
+        res_pre = self.preprocess()
         res_run.merge(res_pre)
 
         self.model = self.model.to(self.device)
