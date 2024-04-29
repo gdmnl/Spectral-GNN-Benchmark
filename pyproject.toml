@@ -26,4 +26,5 @@ dependencies=[
     "torch-scatter>=2.1.1",
     "pandas>=2.0",
     "torchmetrics>=1.0",
+    "optuna>=3.4",
 ]

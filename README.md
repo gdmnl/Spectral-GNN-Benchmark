@@ -12,7 +12,7 @@ Create your own branch for development and pull request.
 ## Experiment
 ```bash
 cd examples
-bash scripts/pfb_var.sh
+bash scripts/pfb_var_s.sh
 ```
 
 ## Structure

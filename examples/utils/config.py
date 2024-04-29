@@ -62,7 +62,7 @@ def setup_argparse():
     parser.add_argument('-k', '--num_hops', type=list_int, default=10, help='Number of conv hops')
     parser.add_argument('-l1', '--in_layers',  type=list_int, default=1, help='Number of MLP layers before conv')
     parser.add_argument('-l2', '--out_layers', type=list_int, default=1, help='Number of MLP layers after conv')
-    parser.add_argument('-w', '--hidden', type=list_int, default=256, help='Number of hidden width')
+    parser.add_argument('-w', '--hidden', type=list_int, default=64, help='Number of hidden width')
     parser.add_argument('--dp', type=list_float, default=0.5, help='Dropout rate') # support list
     # Training configuration
     parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
