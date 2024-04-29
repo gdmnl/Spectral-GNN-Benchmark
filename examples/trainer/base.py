@@ -10,7 +10,7 @@ from argparse import Namespace
 import torch
 import torch.nn as nn
 from torch_geometric.data import Data
-
+import optuna
 from pyg_spectral import profile
 
 from .load_metric import metric_loader
@@ -192,3 +192,54 @@ class TrnBase(object):
 
     def __call__(self, *args, **kwargs):
         return self.run(*args, **kwargs)
+
+
+class TrnBase_Trial(TrnBase):
+    r"""Trainer supporting optuna.pruners in training.
+    """
+    def clear(self):
+        if self.evaluator:
+            for k in self.splits:
+                if self.evaluator[k]:
+                    self.evaluator[k].reset()
+                    del self.evaluator[k]
+            del self.evaluator
+        if self.scheduler: del self.scheduler
+        if self.optimizer: del self.optimizer
+
+    def train_val(self,
+                  split_train: List[str] = ['train'],
+                  split_val: List[str] = ['val']) -> ResLogger:
+
+        time_learn = profile.Accumulator()
+        res_learn = ResLogger()
+        for epoch in range(1, self.epoch+1):
+            res_learn.concat([('epoch', epoch, lambda x: format(x, '03d'))], row=epoch)
+
+            res = self._learn_split(split_train)
+            res_learn.merge(res, rows=[epoch])
+            time_learn.update(res_learn[epoch, 'time_learn'])
+
+            res = self._eval_split(split_val)
+            res_learn.merge(res, rows=[epoch])
+            metric_val = res_learn[epoch, self.metric_ckpt]
+            self.scheduler.step(metric_val)
+
+            self.logger.log(logging.LTRN, res_learn.get_str(row=epoch))
+
+            self.ckpt_logger.step(metric_val, self.model)
+            self.ckpt_logger.set_at_best(epoch_best=epoch)
+            if self.ckpt_logger.is_early_stop:
+                break
+
+            self.trial.report(metric_val, epoch-1)
+            if self.trial.should_prune():
+                raise optuna.TrialPruned()
+
+        res_train = ResLogger()
+        res_train.concat(self.ckpt_logger.get_at_best())
+        res_train.concat(
+            [('epoch', self.ckpt_logger.epoch_current),
+             ('time', time_learn.data),],
+            suffix='learn')
+        return res_train

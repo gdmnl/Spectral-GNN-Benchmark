@@ -54,32 +54,32 @@ def setup_argparse():
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
     parser.add_argument('--data_split', type=str, default='60/20/20', help='Index or percentage of dataset split')
-    parser.add_argument('--normg', type=list_float, default=0.5, help='Generalized graph norm')
+    parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
     parser.add_argument('--normf', type=int, nargs='?', default=0, const=None, help='Embedding norm dimension. 0: feat-wise, 1: node-wise, None: disable')
     # Model configuration
     parser.add_argument('-m', '--model', type=str, default='Iterative', help='Model class name')
     parser.add_argument('-c', '--conv', type=str, default='AdjConv', help='Conv class name')
-    parser.add_argument('-k', '--num_hops', type=list_int, default=10, help='Number of conv hops')
-    parser.add_argument('-l1', '--in_layers',  type=list_int, default=1, help='Number of MLP layers before conv')
-    parser.add_argument('-l2', '--out_layers', type=list_int, default=1, help='Number of MLP layers after conv')
-    parser.add_argument('-w', '--hidden', type=list_int, default=64, help='Number of hidden width')
-    parser.add_argument('--dp', type=list_float, default=0.5, help='Dropout rate') # support list
+    parser.add_argument('-k', '--num_hops', type=int, default=10, help='Number of conv hops')
+    parser.add_argument('-l1', '--in_layers',  type=int, default=0, help='Number of MLP layers before conv')
+    parser.add_argument('-l2', '--out_layers', type=int, default=2, help='Number of MLP layers after conv')
+    parser.add_argument('-w', '--hidden', type=int, default=64, help='Number of hidden width')
+    parser.add_argument('--dp', type=list_float, default=0.5, help='Dropout rate')
     # Training configuration
     parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
     parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
     parser.add_argument('-b', '--batch', type=int, default=512, help='Batch size')
-    parser.add_argument('--lr', type=list_float, default=1.0e-3, help='Learning rate')
-    parser.add_argument('--wd', type=list_float, default=1e-5, help='Weight decay')
+    parser.add_argument('--lr', type=float, default=1.0e-3, help='Learning rate')
+    parser.add_argument('--wd', type=float, default=1e-5, help='Weight decay')
 
     # Model-specific
     # - Decoupled
-    parser.add_argument('--theta_scheme', type=list_str, default="appr", help='Filter name')
-    parser.add_argument('--theta_param', type=list_float, default=0.2, help='Hyperparameter for filter') # support list
+    parser.add_argument('--theta_scheme', type=str, default="appr", help='Filter name')
+    parser.add_argument('--theta_param', type=list_float, default=0.2, help='Hyperparameter for filter')
 
     # Conv-specific
     # - AdjConv, ChebConv
-    parser.add_argument('--alpha', type=list_float, default=-1.0, help='Decay factor')
+    parser.add_argument('--alpha', type=float, default=-1.0, help='Decay factor')
     return parser
 
 

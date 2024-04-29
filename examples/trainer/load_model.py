@@ -27,23 +27,11 @@ class ModelLoader(object):
         """
         self.model = args.model
         self.conv = args.conv
+        self.conv_str = args.conv
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
 
-    def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
-        r"""Load model with specified arguments.
-
-        Args:
-            args.num_hops (int): Number of conv hops.
-            args.in_layers (int): Number of MLP layers before conv.
-            args.out_layers (int): Number of MLP layers after conv.
-            args.num_features (int): Number of input features.
-            args.num_classes (int): Number of output classes.
-            args.hidden (int): Number of hidden units.
-            args.dp (float): Dropout rate.
-        """
-        self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)
-
+    def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict, TrnBase]:
         kwargs = dict(
             conv=self.conv,
             num_hops=args.num_hops,
@@ -56,7 +44,7 @@ class ModelLoader(object):
         )
 
         if self.model in ['GCN']:
-            self.conv = 'GCNConv'   # Sometimes need to manually fix repr for logging
+            self.conv_str = 'GCNConv'   # Sometimes need to manually fix repr for logging
             module_name = 'torch_geometric.nn.models'
             raise DeprecationWarning
 
@@ -74,22 +62,74 @@ class ModelLoader(object):
             if self.model in ['Iterative']:
                 trn = TrnFullbatch
             elif self.model in ['DecoupledFixed', 'DecoupledVar']:
-                self.conv = '-'.join([self.conv, args.theta_scheme])
+                self.conv_str = '-'.join([self.conv, args.theta_scheme])
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,))
                 trn = TrnFullbatch
             else:
                 raise ValueError(f"Model '{self}' not found.")
+        return class_name, module_name, kwargs, trn
+
+    def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
+        r"""Load model with specified arguments.
+
+        Args:
+            args.num_hops (int): Number of conv hops.
+            args.in_layers (int): Number of MLP layers before conv.
+            args.out_layers (int): Number of MLP layers after conv.
+            args.num_features (int): Number of input features.
+            args.num_classes (int): Number of output classes.
+            args.hidden (int): Number of hidden units.
+            args.dp (float): Dropout rate.
+        """
+        self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)
+
+        class_name, module_name, kwargs, trn = self._resolve_import(args)
         model = load_import(class_name, module_name)(**kwargs)
+        if hasattr(model, 'reset_parameters'):
+            model.reset_parameters()
+        if hasattr(model, 'reset_cache'):
+            model.reset_cache()
 
         self.logger.log(logging.LTRN, f"[model]: {str(self)}")
         self.logger.info(f"[trainer]: {trn.__name__}")
-        self.res_logger.concat([('model', self.model), ('conv', self.conv)])
+        self.res_logger.concat([('model', self.model), ('conv', self.conv_str)])
         return model, trn
 
     def __call__(self, *args, **kwargs):
         return self.get(*args, **kwargs)
 
     def __str__(self) -> str:
-        return f"{self.model}:{self.conv}"
+        return f"{self.model}:{self.conv_str}"
+
+
+class ModelLoader_Trial(ModelLoader):
+    r"""Reuse necessary data for multiple runs.
+    """
+    def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
+        self.signature_lst = ['num_hops', 'in_layers', 'out_layers', 'hidden', 'dp']
+        self.signature = {key: args.__dict__[key] for key in self.signature_lst}
+
+        class_name, module_name, kwargs, trn = self._resolve_import(args)
+        model = load_import(class_name, module_name)(**kwargs)
+        if hasattr(model, 'reset_parameters'):
+            model.reset_parameters()
+        if hasattr(model, 'reset_cache'):
+            model.reset_cache()
+
+        self.logger.log(logging.LTRN, f"[model]: {str(self)}")
+        self.logger.info(f"[trainer]: {trn.__name__}")
+        self.res_logger.concat([('model', self.model), ('conv', self.conv_str)])
+        return model, trn
+
+    def update(self, args: Namespace, model: nn.Module) -> nn.Module:
+        signature = {key: args.__dict__[key] for key in self.signature_lst}
+        if self.signature != signature:
+            self.signature = signature
+            model, _ = self.get(args)
+            return model
+
+        if hasattr(model, 'reset_parameters'):
+            model.reset_parameters()
+        return model

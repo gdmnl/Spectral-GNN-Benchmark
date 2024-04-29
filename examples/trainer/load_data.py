@@ -3,7 +3,7 @@
 Author: nyLiao
 File Created: 2024-02-26
 """
-from typing import List
+from typing import List, Tuple
 from pathlib import Path
 from argparse import Namespace
 import logging
@@ -63,10 +63,20 @@ class SingleGraphLoader(object):
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
 
-        self.transform = None
+        # Always use [sparse tensor](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html) instead of edge_index
+        assert torch_geometric.typing.WITH_TORCH_SPARSE
+        self.transform = T.Compose([
+            # T.ToUndirected(),
+            T.RemoveIsolatedNodes(),
+            T.RemoveDuplicatedEdges(reduce='mean'),
+            T.AddRemainingSelfLoops(fill_value=1.0),
+            T.NormalizeFeatures(),
+            T.ToSparseTensor(remove_edge_index=True),
+        ])
         self.num_features = None
         self.num_classes = None
 
+    # ===== Data processing
     def _resolve_split(self, data: Data) -> None:
         if type(self.data_split) is str:
             (r_train, r_val, r_test) = map(int, self.data_split.split('/'))
@@ -124,31 +134,8 @@ class SingleGraphLoader(object):
             raise TypeError(f"Invalid transform type: {type(self.transform)}")
         return self.transform
 
-    def get(self, args: Namespace) -> Data:
-        r"""Load data based on parameters.
-
-        Args:
-            args.normg (float): Generalized graph norm.
-
-        Returns (update in args):
-            args.multi (bool): True for multi-label classification.
-            args.num_features (int): Number of input features.
-            args.num_classes (int): Number of output classes.
-        """
-        self.logger.debug('-'*20 + f" Loading data: {self} " + '-'*20)
-
-        # Always use [sparse tensor](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html) instead of edge_index
-        assert torch_geometric.typing.WITH_TORCH_SPARSE
-        self.transform = T.Compose([
-            # T.ToUndirected(),
-            T.RemoveIsolatedNodes(),
-            T.RemoveDuplicatedEdges(reduce='mean'),
-            T.AddRemainingSelfLoops(fill_value=1.0),
-            T.NormalizeFeatures(),
-            T.ToSparseTensor(remove_edge_index=True),
-            Tspec.GenNorm(left=args.normg),
-        ])
-
+    # ===== Data acquisition
+    def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
         if self.data.startswith('ogb'):
             module_name = 'ogb'
             pass
@@ -169,6 +156,23 @@ class SingleGraphLoader(object):
                 root=DATAPATH,
                 name=self.data,
                 transform=self.transform,)
+        return module_name, class_name, kwargs
+
+    def get(self, args: Namespace) -> Data:
+        r"""Load data based on parameters.
+
+        Args:
+            args.normg (float): Generalized graph norm.
+
+        Returns (update in args):
+            args.multi (bool): True for multi-label classification.
+            args.num_features (int): Number of input features.
+            args.num_classes (int): Number of output classes.
+        """
+        self.logger.debug('-'*20 + f" Loading data: {self} " + '-'*20)
+
+        self._T_append([Tspec.GenNorm(left=args.normg),])
+        module_name, class_name, kwargs = self._resolve_import(args)
 
         dataset = load_import(class_name, module_name)(**kwargs)
         data = dataset[0]
@@ -188,3 +192,28 @@ class SingleGraphLoader(object):
 
     def __str__(self) -> str:
         return self.data
+
+
+class SingleGraphLoader_Trial(SingleGraphLoader):
+    r"""Reuse necessary data for multiple runs.
+    """
+    def get(self, args: Namespace) -> Data:
+        module_name, class_name, kwargs = self._resolve_import(args)
+        dataset = load_import(class_name, module_name)(**kwargs)
+        data = dataset[0]
+        data = self._resolve_split(data)
+
+        self._get_properties(dataset, data)
+        args.num_features, args.num_classes = self.num_features, self.num_classes
+        args.multi = False
+
+        self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
+        self.res_logger.concat([('data', self.data)])
+        return data
+
+    def update(self, args: Namespace, data: Data) -> Data:
+        r"""Update data split for the next trial.
+        """
+        args.num_features, args.num_classes = self.num_features, self.num_classes
+        args.multi = False
+        return Tspec.GenNorm(left=args.normg)(data)

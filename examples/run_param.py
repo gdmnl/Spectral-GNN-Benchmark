@@ -3,95 +3,124 @@
 Author: nyLiao
 File Created: 2024-04-29
 """
-import logging
-from copy import deepcopy
-import json
 import optuna
+from copy import deepcopy
 
-from trainer import SingleGraphLoader, ModelLoader
+from trainer import (
+    SingleGraphLoader_Trial,
+    ModelLoader_Trial,
+    TrnBase_Trial)
 from utils import (
     force_list_str,
     setup_seed,
     setup_argparse,
     setup_args,
-    save_args,
     setup_logger,
     setup_logpath,
     clear_logger,
     ResLogger,
     LOGPATH)
 
-METRIC_NAME = 'f1micro_val'
 
+class TrnWrapper(object):
+    metric_name = 'f1micro_val'
 
-def _get_suggest(trial, key):
-    suggest_dct = {
-        'normg': trial.suggest_float('normg', 0.0, 1.0),
-        'dp': trial.suggest_float('dp', 0.0, 1.0),
-        'lr': trial.suggest_float('lr', 1e-5, 1e-1, log=True),
-        'wd': trial.suggest_float('wd', 1e-6, 1e-3, log=True),
-    }
-    return suggest_dct[key]
+    def __init__(self, data_loader, model_loader, args, res_logger = None):
+        self.data_loader = data_loader
+        self.model_loader = model_loader
+        self.args = args
+        self.res_logger = res_logger or ResLogger()
 
+        self.data, self.model, self.trn_cls = None, None, None
 
-def run_single(args):
-    # ========== Run configuration
-    logger = logging.getLogger('log')
-    res_logger = ResLogger(args.logpath, prefix='param', quiet=args.quiet)
-    res_logger.concat([('seed', args.seed),])
-    for key in args.param:
-        res_logger.concat([(key, args.__dict__[key], type(args.__dict__[key]))])
+    def _loader_get(self, args):
+        self.data = self.data_loader(args)
+        self.model, trn_cls = self.model_loader(args)
+        self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
 
-    # ========== Load data
-    data_loader = SingleGraphLoader(args, res_logger)
-    data = data_loader(args)
+    def _get_suggest(self, trial, key):
+        suggest_dct = {
+            # critical
+            'num_hops': (trial.suggest_int, (2, 30), {'step': 2}),
+            'in_layers': (trial.suggest_int, (0, 3), {}),
+            'out_layers': (trial.suggest_int, (0, 3), {}),
+            'hidden': (trial.suggest_categorical, ([16, 32, 48, 64, 96, 128, 256],), {}),
+            # secondary
+            'normg': (trial.suggest_float, (0.0, 1.0), {'step': 0.05}),
+            'dp': (trial.suggest_float, (0.0, 1.0), {'step': 0.1}),
+            'lr': (trial.suggest_float, (1e-5, 1e-1), {'log': True}),
+            'wd': (trial.suggest_float, (1e-6, 1e-3), {'log': True}),
+        }
 
-    # ========== Load model
-    model_loader = ModelLoader(args, res_logger)
-    model, trn = model_loader(args)
-    res_logger.suffix = trn.name
+        # Model/conv-specific
+        if self.args.model in ['Iterative']:
+            suggest_dct['in_layers'][1] = (1, 3)
+            suggest_dct['out_layers'][1] = (1, 3)
 
-    # ========== Run trainer
-    trn = trn(
-        model=model,
-        data=data,
-        args=args,
-        res_logger=res_logger,)
-    del model, data
-    trn()
+        func, fargs, fkwargs = suggest_dct[key]
+        return func(key, *fargs, **fkwargs)
 
-    logger.info(f"[args]: {args}")
-    logger.info(f"[res]: {res_logger}\n")
+    def __call__(self, trial):
+        args = deepcopy(self.args)
+        res_logger = deepcopy(self.res_logger)
+        args.quiet = True
+        for key in self.args.param:
+            args.__dict__[key] = self._get_suggest(trial, key)
+            res_logger.concat([(
+                key, args.__dict__[key], type(args.__dict__[key]))])
 
-    # ========== Find best
-    return res_logger.data.loc[0, METRIC_NAME]
+        if self.data is None:
+            self._loader_get(args)
+        self.data = self.data_loader.update(args, self.data)
+        self.model = self.model_loader.update(args, self.model)
+        trn = self.trn_cls(
+            model=self.model,
+            data=self.data,
+            args=args,
+            res_logger=res_logger,)
+        trn.trial = trial
+        res_logger = trn()
 
-
-def objective(args, trial):
-    args_single = deepcopy(args)
-    args.quiet = True
-    for key in args.param:
-        args_single.__dict__[key] = _get_suggest(trial, key)
-    return run_single(args_single)
+        res_logger.save()
+        trial.set_user_attr("acc_test", res_logger._get(col='accuracy_test', row=0))
+        return res_logger.data.loc[0, self.metric_name]
 
 
 def main(args):
+    # ========== Run configuration
     args.flag = f'param-{args.seed}'
     args.logpath = setup_logpath(
         folder_args=(args.model, args.data, args.conv, args.flag),
         quiet=args.quiet)
-    logger = setup_logger(args.logpath, level_console=args.loglevel, level_file=20, quiet=args.quiet)
+    logger = setup_logger(args.logpath, level_console=args.loglevel, level_file=30, quiet=True)
+    res_logger = ResLogger(args.logpath, prefix='param', quiet=args.quiet)
+    res_logger.concat([('seed', args.seed),])
 
+    # ========== Study configuration
     storage_path = LOGPATH.joinpath('optuna.db').resolve().absolute()
     study = optuna.create_study(
         study_name='-'.join([args.model, args.data, args.conv, args.flag]),
         storage=f'sqlite:///{str(storage_path)}',
         direction='maximize',
+        sampler=optuna.samplers.TPESampler(
+            seed=args.seed),
+        pruner=optuna.pruners.HyperbandPruner(
+            min_resource=2,
+            max_resource=args.epoch,
+            reduction_factor=3),
         load_if_exists=True)
-    optuna.logging.set_verbosity(optuna.logging.ERROR)
+    optuna.logging.set_verbosity(args.loglevel)
+
+    # ========== Init and run trainer
+    args_run = deepcopy(args)
+    trn = TrnWrapper(
+        data_loader=SingleGraphLoader_Trial(args_run, res_logger),
+        model_loader=ModelLoader_Trial(args_run, res_logger),
+        args=args_run,
+        res_logger=res_logger,)
 
     study.optimize(
-        lambda trial: objective(args, trial),
+        trn,
         n_trials=args.n_trials,
         gc_after_trial=True,
         show_progress_bar=True,)

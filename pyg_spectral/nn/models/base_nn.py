@@ -15,7 +15,7 @@ class myMLP(MLP):
         return super(MLP, self).__repr__()
 
 
-class BaseMLP(nn.Module):
+class BaseNN(nn.Module):
     r"""Base NN structure with MLP before and after convolution layers.
 
     Args:
@@ -57,7 +57,7 @@ class BaseMLP(nn.Module):
             plain_last: bool = False,
             bias: Union[bool, List[bool]] = True,
             **kwargs):
-        super(BaseMLP, self).__init__()
+        super(BaseNN, self).__init__()
 
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels

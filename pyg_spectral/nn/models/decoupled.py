@@ -7,7 +7,7 @@ import torch.nn as nn
 
 from torch_geometric.nn.conv import MessagePassing
 
-from pyg_spectral.nn.models.base_mlp import BaseMLP
+from pyg_spectral.nn.models.base_nn import BaseNN
 from pyg_spectral.utils import load_import
 
 
@@ -79,7 +79,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         raise NotImplementedError()
 
 
-class DecoupledFixed(BaseMLP):
+class DecoupledFixed(BaseNN):
     r"""Decoupled structure without matrix transformation during propagation.
         Fixed scalar propagation parameters.
     NOTE: Apply conv every forward() call. Not to be mixed with :class:`Precomputed` models.
@@ -122,7 +122,7 @@ class DecoupledFixed(BaseMLP):
             conv_cls(num_hops=num_hops, hop=k, theta=theta[k], **kwargs) for k in range(num_hops+1)])
 
 
-class DecoupledVar(BaseMLP):
+class DecoupledVar(BaseNN):
     r"""Decoupled structure without matrix transformation during propagation.
         Learnable scalar propagation parameters.
     NOTE: Apply conv every forward() call. Not to be mixed with :class:`Precomputed` models.

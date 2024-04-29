@@ -2,11 +2,11 @@ import torch.nn as nn
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.dense.linear import Linear
 
-from pyg_spectral.nn.models.base_mlp import BaseMLP
+from pyg_spectral.nn.models.base_nn import BaseNN
 from pyg_spectral.utils import load_import
 
 
-class Iterative(BaseMLP):
+class Iterative(BaseNN):
     r"""Iterative structure with matrix transformation each hop of propagation.
 
     Args:
@@ -40,6 +40,7 @@ class Iterative(BaseMLP):
         lib: str,
         **kwargs
     ) -> MessagePassing:
+        assert self.in_layers > 0 and self.out_layers > 0, "In/out MLPs are required to ensure conv shape consistency."
         convs = nn.ModuleList()
         conv_cls = load_import(conv, lib)
 

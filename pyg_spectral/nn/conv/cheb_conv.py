@@ -55,7 +55,6 @@ class ChebConv(MessagePassing):
     def reset_parameters(self):
         if hasattr(self.theta, 'reset_parameters'):
             self.theta.reset_parameters()
-        self.reset_cache()
 
     def get_propagate_mat(self,
         x: Tensor,
