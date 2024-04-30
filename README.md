@@ -12,7 +12,7 @@ Create your own branch for development and pull request.
 ## Experiment
 ```bash
 cd examples
-bash scripts/sfbiter.sh
+bash scripts/pfb_var_s.sh 0
 ```
 
 ## Structure
@@ -24,7 +24,8 @@ Related to benchmark experiments.
 Core codes for spectral GNNs mimicking PyTorch Geometric structure.
 
 ### `log`
-Log files for saving the results. For experiment and ignored by git.
+Log files for saving the results. For experiment and ignored by git. Link to:
+- `/share/data/transfer/Spectral-GNN-Benchmark/log` on triangle-001
 
 ### `data`
 PyG dataset path. For experiment and ignored by git. Link to:

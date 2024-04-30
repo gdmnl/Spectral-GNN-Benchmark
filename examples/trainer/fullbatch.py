@@ -1,5 +1,5 @@
 # -*- coding:utf-8 -*-
-"""Fullbatch, node classification.
+"""Fullbatch, transductive node classification.
 Author: nyLiao
 File Created: 2024-02-26
 """
@@ -18,7 +18,7 @@ from .base import TrnBase
 from utils import ResLogger
 
 
-class TrnFullbatchIter(TrnBase):
+class TrnFullbatch(TrnBase):
     r"""Fullbatch trainer class for node classification.
         - Model forward input: separate edge index and node features.
         - Run pipeline: train_val -> test.
@@ -27,12 +27,11 @@ class TrnFullbatchIter(TrnBase):
 
     def __init__(self,
                  model: nn.Module,
-                 dataset: Dataset,
+                 data: Dataset,
                  args: Namespace,
                  **kwargs):
-        super(TrnFullbatchIter, self).__init__(model, dataset, args, **kwargs)
+        super(TrnFullbatch, self).__init__(model, data, args, **kwargs)
         self.mask: dict = None
-        self.data: Data = None
 
     def clear(self):
         del self.mask, self.data
@@ -40,7 +39,7 @@ class TrnFullbatchIter(TrnBase):
 
     def _fetch_data(self) -> Tuple[Data, dict]:
         t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'train_mask', 'val_mask', 'test_mask'])
-        self.data = t_to_device(self.dataset[0])
+        self.data = t_to_device(self.data)
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
         if not pyg_utils.is_sparse(self.data.adj_t):
             raise NotImplementedError
@@ -50,13 +49,15 @@ class TrnFullbatchIter(TrnBase):
 
         self.mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
         split_dict = {k: v.sum().item() for k, v in self.mask.items()}
-        
+
         self.logger.info(f"[split]: {split_dict}")
 
         return self.data, self.mask
 
     def _fetch_input(self) -> tuple:
         input, label = (self.data.x, self.data.adj_t), self.data.y
+        if hasattr(self.model, 'preprocess'):
+            self.model.preprocess(*input)
         return input, label
 
     # ===== Epoch run
@@ -135,11 +136,11 @@ class TrnFullbatchIter(TrnBase):
         res_test = self.test()
         res_run.merge(res_test)
 
-        self.test_deg()
+        # res_run.merge(self.test_deg())
 
         return self.res_logger.merge(res_run)
 
 
-# FIXME: possible to decouple model.conv on CPU?
-# class TrnFullbatchDec(TrnBase):
+# FEATURE: possible to decouple model.conv on CPU?
+# class TrnFullbatchCpu(TrnBase):
 #     pass

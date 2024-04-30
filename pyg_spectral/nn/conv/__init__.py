@@ -1,6 +1,6 @@
-from .fix_sumadj import FixSumAdj, FixLinSumAdj
-from .var_sumadj import VarSumAdj, VarLinSumAdj
-from .cheb_base import ChebBase
+from .adj_conv import AdjConv
+from .cheb_conv import ChebConv
+
 from .cheb_conv2 import ChebConv2
 from .bern_conv import BernConv
 from .Ada_gnn import Adagnn

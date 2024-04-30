@@ -1,1 +1,0 @@
-python run_single.py --data Cora --model PostMLP --conv VarSumAdj --theta appr --alpha 0.5 -K 20 --epoch 200

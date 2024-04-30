@@ -15,7 +15,7 @@ class ResCollection(MetricCollection):
     def compute(self) -> List[Tuple[str, Any, Callable]]:
         r"""Wrap compute output to ResLogger style."""
         dct = self._compute_and_reduce("compute")
-        return [(k, v.cpu().numpy(), (lambda x: format(x, '.4f'))) for k, v in dct.items()]
+        return [(k, v.cpu().numpy(), (lambda x: format(x*100, '.3f'))) for k, v in dct.items()]
 
 
 def metric_loader(args: Namespace) -> MetricCollection:
