@@ -22,7 +22,7 @@ from utils import (
 def main(args):
     # ========== Run configuration
     args.logpath = setup_logpath(
-        folder_args=(args.model, args.data, args.conv, args.flag),
+        folder_args=(args.model, args.data, args.conv_str, args.flag),
         quiet=args.quiet)
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
     res_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
@@ -56,12 +56,12 @@ def main(args):
 if __name__ == '__main__':
     parser = setup_argparse()
     # Experiment-specific arguments
-    parser.add_argument('--seed_param', type=int, default=0, help='Seed for optuna search')
+    parser.add_argument('--seed_param', type=int, default=1, help='Seed for optuna search')
     args = setup_args(parser)
 
     storage_path = LOGPATH.joinpath('optuna.db').resolve().absolute()
     study = optuna.load_study(
-        study_name='-'.join([args.model, args.data, args.conv, f'param-{args.seed_param}']),
+        study_name='-'.join([args.model, args.data, args.conv_str, f'param-{args.seed_param}']),
         storage=f'sqlite:///{str(storage_path)}')
     optuna.logging.set_verbosity(optuna.logging.ERROR)
 

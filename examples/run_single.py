@@ -20,7 +20,7 @@ from utils import (
 def main(args):
     # ========== Run configuration
     args.logpath = setup_logpath(
-        folder_args=(args.model, args.data, args.conv, args.flag),
+        folder_args=(args.model, args.data, args.conv_str, args.flag),
         quiet=args.quiet)
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
     res_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)

@@ -27,7 +27,8 @@ class ModelLoader(object):
         """
         self.model = args.model
         self.conv = args.conv
-        self.conv_str = args.conv
+        self.conv_str = args.conv_str
+
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
 
@@ -62,7 +63,6 @@ class ModelLoader(object):
             if self.model in ['Iterative']:
                 trn = TrnFullbatch
             elif self.model in ['DecoupledFixed', 'DecoupledVar']:
-                self.conv_str = '-'.join([self.conv, args.theta_scheme])
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,))

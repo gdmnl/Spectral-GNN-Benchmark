@@ -1,14 +1,16 @@
 # run_param+run_best, fullbatch, Iterative/DecoupledVar, small-scale dataset
 source scripts/ck_path.sh
 DEV=${1:--1}
-SEED_P=0
+SEED_P=1
 # SEED_S="20,21,22,23,24,25,26,27,28,29"
 SEED_S="20,21,22,23,24"
 ARGS_P=(
-    "--n_trials" "200"
+    "--n_trials" "300"
     "--loglevel" "30"
     "--num_hops" "10"
-    "--hidden" "64"
+    "--hidden" "128"
+    "--in_layers" "1"
+    "--out_layers" "1"
     "--epoch" "200"
     "--patience" "50"
     "--theta_scheme" "ones"
@@ -18,7 +20,9 @@ ARGS_S=(
     "--seed_param" "$SEED_P"
     "--loglevel" "25"
     "--num_hops" "10"
-    "--hidden" "64"
+    "--hidden" "128"
+    "--in_layers" "1"
+    "--out_layers" "1"
     "--epoch" "500"
     "--patience" "-1"
     "--theta_scheme" "ones"
@@ -43,12 +47,13 @@ for data in ${DATAS[@]}; do
                 ARGS_C=()
             fi
 
+            # Run hyperparameter search
             python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
                 --data $data --model $model --conv $conv \
                 "${ARGS_P[@]}" "${ARGS_C[@]}"
 
             # Run repeatative with best hyperparameters
-            python run_best.py --dev $DEV --seed $SEED_S \
+            python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
                 --data $data --model $model --conv $conv \
                 "${ARGS_S[@]}" "${ARGS_C[@]}"
         done

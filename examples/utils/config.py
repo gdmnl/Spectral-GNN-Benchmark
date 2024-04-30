@@ -88,6 +88,10 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = parser.parse_args()
     args = setup_cuda(args)
     # Set new args
+    if args.conv in ['DecoupledFixed']:
+        args.conv_str = f'{args.conv}-{args.theta_scheme}'
+    else:
+        args.conv_str = args.conv
     return args
 
 

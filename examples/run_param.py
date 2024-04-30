@@ -39,13 +39,21 @@ class TrnWrapper(object):
         self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
 
     def _get_suggest(self, trial, key):
+        theta_dct = {
+            "appr":  (trial.suggest_float, (0.0, 1.0), {}),
+            "nappr": (trial.suggest_float, (0.0, 1.0), {}),
+            "mono":  (trial.suggest_float, (0.0, 1.0), {}),
+            "hk":    (trial.suggest_float, (1e-1, 10), {'log': True}),
+            "impulse": (lambda x, _: x[0], (self.args.num_hops,), {}),
+        }
         suggest_dct = {
             # critical
             'num_hops': (trial.suggest_int, (2, 30), {'step': 2}),
-            'in_layers': (trial.suggest_int, (0, 3), {}),
-            'out_layers': (trial.suggest_int, (0, 3), {}),
-            'hidden': (trial.suggest_categorical, ([16, 32, 48, 64, 96, 128, 256],), {}),
+            'in_layers': (trial.suggest_int, (1, 3), {}),
+            'out_layers': (trial.suggest_int, (1, 3), {}),
+            'hidden': (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}),
             # secondary
+            'theta_param': theta_dct[self.args.theta_scheme],
             'normg': (trial.suggest_float, (0.0, 1.0), {'step': 0.05}),
             'dp': (trial.suggest_float, (0.0, 1.0), {'step': 0.1}),
             'lr': (trial.suggest_float, (1e-5, 1e-1), {'log': True}),
@@ -53,9 +61,9 @@ class TrnWrapper(object):
         }
 
         # Model/conv-specific
-        if self.args.model in ['Iterative']:
-            suggest_dct['in_layers'][1] = (1, 3)
-            suggest_dct['out_layers'][1] = (1, 3)
+        # if self.args.model in ['Iterative']:
+        #     suggest_dct['in_layers'][1] = (1, 3)
+        #     suggest_dct['out_layers'][1] = (1, 3)
 
         func, fargs, fkwargs = suggest_dct[key]
         return func(key, *fargs, **fkwargs)
@@ -68,6 +76,8 @@ class TrnWrapper(object):
             args.__dict__[key] = self._get_suggest(trial, key)
             res_logger.concat([(
                 key, args.__dict__[key], type(args.__dict__[key]))])
+        if args.in_layers == 0 and args.out_layers == 0:
+            raise optuna.TrialPruned()
 
         if self.data is None:
             self._loader_get(args)
@@ -90,7 +100,7 @@ def main(args):
     # ========== Run configuration
     args.flag = f'param-{args.seed}'
     args.logpath = setup_logpath(
-        folder_args=(args.model, args.data, args.conv, args.flag),
+        folder_args=(args.model, args.data, args.conv_str, args.flag),
         quiet=args.quiet)
     logger = setup_logger(args.logpath, level_console=args.loglevel, level_file=30, quiet=True)
     res_logger = ResLogger(args.logpath, prefix='param', quiet=args.quiet)
@@ -99,7 +109,7 @@ def main(args):
     # ========== Study configuration
     storage_path = LOGPATH.joinpath('optuna.db').resolve().absolute()
     study = optuna.create_study(
-        study_name='-'.join([args.model, args.data, args.conv, args.flag]),
+        study_name='-'.join([args.model, args.data, args.conv_str, args.flag]),
         storage=f'sqlite:///{str(storage_path)}',
         direction='maximize',
         sampler=optuna.samplers.TPESampler(
