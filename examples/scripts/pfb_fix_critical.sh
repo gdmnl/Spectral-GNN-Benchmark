@@ -12,7 +12,7 @@ DATAS=("cora" "citeseer" "pubmed")
 MODELS=("DecoupledFixed")
 CONVS=AdjConv
 SCHEMES=("impulse" "appr" "nappr" "hk" "mono")
-PARLIST="num_hops,in_layers,out_layers,hidden,theta_param,lr,wd"
+PARLIST="num_hops,in_layers,out_layers,hidden,theta_param,lr_lin,lr_conv"
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do

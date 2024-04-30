@@ -25,7 +25,8 @@ class Iterative(BaseNN):
         out_channels (int): Size of each output sample.
         in_layers (int): Number of MLP layers before conv.
         out_layers (int): Number of MLP layers after conv.
-        dropout (float, optional): Dropout probability. (default: :obj:`0.`)
+        dropout_lin (float, optional): Dropout probability for both MLPs.
+        dropout_conv (float, optional): Dropout probability before conv.
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
             args for :class:`pyg.nn.models.MLP`.
         lib_conv (str, optional): Parent module library other than

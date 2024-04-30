@@ -41,9 +41,11 @@ class ModelLoader(object):
             in_channels=args.num_features,
             out_channels=args.num_classes,
             hidden_channels=args.hidden,
-            dropout=args.dp,
+            dropout_lin=args.dp_lin,
+            dropout_conv=args.dp_conv,
         )
 
+        # >>>>>>>>>>
         if self.model in ['GCN']:
             self.conv_str = 'GCNConv'   # Sometimes need to manually fix repr for logging
             module_name = 'torch_geometric.nn.models'
@@ -69,6 +71,7 @@ class ModelLoader(object):
                 trn = TrnFullbatch
             else:
                 raise ValueError(f"Model '{self}' not found.")
+        # <<<<<<<<<<
         return class_name, module_name, kwargs, trn
 
     def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
@@ -81,7 +84,7 @@ class ModelLoader(object):
             args.num_features (int): Number of input features.
             args.num_classes (int): Number of output classes.
             args.hidden (int): Number of hidden units.
-            args.dp (float): Dropout rate.
+            args.dp_[lin/conv] (float): Dropout rate for linear/conv.
         """
         self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)
 
@@ -108,7 +111,7 @@ class ModelLoader_Trial(ModelLoader):
     r"""Reuse necessary data for multiple runs.
     """
     def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
-        self.signature_lst = ['num_hops', 'in_layers', 'out_layers', 'hidden', 'dp']
+        self.signature_lst = ['num_hops', 'in_layers', 'out_layers', 'hidden', 'dp_lin', 'dp_conv']
         self.signature = {key: args.__dict__[key] for key in self.signature_lst}
 
         class_name, module_name, kwargs, trn = self._resolve_import(args)

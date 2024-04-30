@@ -60,17 +60,20 @@ def setup_argparse():
     parser.add_argument('-m', '--model', type=str, default='Iterative', help='Model class name')
     parser.add_argument('-c', '--conv', type=str, default='AdjConv', help='Conv class name')
     parser.add_argument('-k', '--num_hops', type=int, default=10, help='Number of conv hops')
-    parser.add_argument('-l1', '--in_layers',  type=int, default=0, help='Number of MLP layers before conv')
-    parser.add_argument('-l2', '--out_layers', type=int, default=2, help='Number of MLP layers after conv')
-    parser.add_argument('-w', '--hidden', type=int, default=64, help='Number of hidden width')
-    parser.add_argument('--dp', type=list_float, default=0.5, help='Dropout rate')
+    parser.add_argument('-l1', '--in_layers',  type=int, default=1, help='Number of MLP layers before conv')
+    parser.add_argument('-l2', '--out_layers', type=int, default=1, help='Number of MLP layers after conv')
+    parser.add_argument('-w', '--hidden', type=int, default=128, help='Number of hidden width')
+    parser.add_argument('--dp_lin', type=float, default=0.5, help='Dropout rate for linear')
+    parser.add_argument('--dp_conv', type=float, default=0.5, help='Dropout rate for conv')
     # Training configuration
     parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
     parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
     parser.add_argument('-b', '--batch', type=int, default=512, help='Batch size')
-    parser.add_argument('--lr', type=float, default=1.0e-3, help='Learning rate')
-    parser.add_argument('--wd', type=float, default=1e-5, help='Weight decay')
+    parser.add_argument('-lr', '--lr_lin', type=float, default=1.0e-2, help='Learning rate for linear')
+    parser.add_argument('--lr_conv', type=float, default=1.0e-3, help='Learning rate for conv')
+    parser.add_argument('-wd', '--wd_lin', type=float, default=5e-6, help='Weight decay for linear')
+    parser.add_argument('--wd_conv', type=float, default=5e-6, help='Weight decay for conv')
 
     # Model-specific
     # - Decoupled

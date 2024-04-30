@@ -27,7 +27,8 @@ class BaseNN(nn.Module):
         out_channels (int): Size of each output sample.
         in_layers (int): Number of MLP layers before conv.
         out_layers (int): Number of MLP layers after conv.
-        dropout (float, optional): Dropout probability. (default: :obj:`0.`)
+        dropout_lin (float, optional): Dropout probability for both MLPs.
+        dropout_conv (float, optional): Dropout probability before conv.
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
             args for :class:`pyg.nn.models.MLP`.
         lib_conv (str, optional): Parent module library other than
@@ -48,7 +49,8 @@ class BaseNN(nn.Module):
             out_channels: Optional[int] = None,
             in_layers: Optional[int] = None,
             out_layers: Optional[int] = None,
-            dropout: Union[float, List[float]] = 0.,
+            dropout_lin: Union[float, List[float]] = 0.,
+            dropout_conv: float = 0.,
             act: Union[str, Callable, None] = "relu",
             act_first: bool = False,
             act_kwargs: Optional[Dict[str, Any]] = None,
@@ -64,11 +66,7 @@ class BaseNN(nn.Module):
         self.out_channels = out_channels
         self.in_layers = in_layers if in_layers is not None else 0
         self.out_layers = out_layers if out_layers is not None else 0
-        if isinstance(dropout, list):
-            self.dropout_prop = dropout[-1]
-            dropout = dropout[:-1]
-        else:
-            self.dropout_prop = dropout
+        self.dropout_conv = dropout_conv
         lib = kwargs.pop('lib_conv', 'pyg_spectral.nn.conv')
 
         if self.in_layers > 0:
@@ -77,7 +75,7 @@ class BaseNN(nn.Module):
                 hidden_channels=self.hidden_channels,
                 out_channels=self.hidden_channels if self.out_layers > 0 else self.out_channels,
                 num_layers=self.in_layers,
-                dropout=dropout,
+                dropout=dropout_lin,
                 act=act,
                 act_first=act_first,
                 act_kwargs=act_kwargs,
@@ -101,7 +99,7 @@ class BaseNN(nn.Module):
                 hidden_channels=self.hidden_channels,
                 out_channels=self.out_channels,
                 num_layers=self.out_layers,
-                dropout=dropout,
+                dropout=dropout_lin,
                 act=act,
                 act_first=act_first,
                 act_kwargs=act_kwargs,
@@ -135,15 +133,13 @@ class BaseNN(nn.Module):
         for conv in self.convs:
             conv.reset_parameters()
 
-    def get_wd(self, **kwargs):
-        assert 'weight_decay' in kwargs, "Weight decay not found."
+    def get_optimizer(self, dct):
         res = []
         if self.in_layers > 0:
-            res.append({'params': self.in_mlp.parameters(), **kwargs})
+            res.append({'params': self.in_mlp.parameters(), **dct['lin']})
         if self.out_layers > 0:
-            res.append({'params': self.out_mlp.parameters(), **kwargs})
-        kwargs['weight_decay'] = 0.0
-        res.append({'params': self.convs.parameters(), **kwargs})
+            res.append({'params': self.out_mlp.parameters(), **dct['lin']})
+        res.append({'params': self.convs.parameters(), **dct['conv']})
         return res
 
     def preprocess(self,
@@ -165,7 +161,7 @@ class BaseNN(nn.Module):
         """
         # NOTE: [APPNP](https://github.com/pyg-team/pytorch_geometric/blob/master/benchmark/citation/appnp.py)
         # does not have last dropout, but exists in [GPRGNN](https://github.com/jianhao2016/GPRGNN/blob/master/src/GNN_models.py)
-        x = F.dropout(x, p=self.dropout_prop, training=self.training)
+        x = F.dropout(x, p=self.dropout_conv, training=self.training)
         # FEATURE: batch norm
 
         conv_mat = self.get_forward_mat(x, edge_index)

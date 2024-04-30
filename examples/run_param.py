@@ -43,21 +43,24 @@ class TrnWrapper(object):
             "appr":  (trial.suggest_float, (0.0, 1.0), {}),
             "nappr": (trial.suggest_float, (0.0, 1.0), {}),
             "mono":  (trial.suggest_float, (0.0, 1.0), {}),
-            "hk":    (trial.suggest_float, (1e-1, 10), {'log': True}),
+            "hk":    (trial.suggest_float, (1e-2, 10), {'log': True}),
             "impulse": (lambda x, _: x[0], (self.args.num_hops,), {}),
         }
         suggest_dct = {
             # critical
-            'num_hops': (trial.suggest_int, (2, 30), {'step': 2}),
-            'in_layers': (trial.suggest_int, (1, 3), {}),
-            'out_layers': (trial.suggest_int, (1, 3), {}),
-            'hidden': (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}),
+            'num_hops':     (trial.suggest_int, (2, 30), {'step': 2}),
+            'in_layers':    (trial.suggest_int, (1, 3), {}),
+            'out_layers':   (trial.suggest_int, (1, 3), {}),
+            'hidden':       (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}),
             # secondary
             'theta_param': theta_dct[self.args.theta_scheme],
-            'normg': (trial.suggest_float, (0.0, 1.0), {'step': 0.05}),
-            'dp': (trial.suggest_float, (0.0, 1.0), {'step': 0.1}),
-            'lr': (trial.suggest_float, (1e-5, 1e-1), {'log': True}),
-            'wd': (trial.suggest_float, (1e-6, 1e-3), {'log': True}),
+            'normg':        (trial.suggest_float, (0.0, 1.0), {'step': 0.05}),
+            'dp_lin':       (trial.suggest_float, (0.0, 1.0), {'step': 0.1}),
+            'dp_conv':      (trial.suggest_float, (0.0, 1.0), {'step': 0.1}),
+            'lr_lin':       (trial.suggest_float, (1e-5, 5e-1), {'log': True}),
+            'lr_conv':      (trial.suggest_float, (1e-5, 5e-1), {'log': True}),
+            'wd_lin':       (trial.suggest_float, (1e-7, 1e-3), {'log': True}),
+            'wd_conv':      (trial.suggest_float, (1e-7, 1e-3), {'log': True}),
         }
 
         # Model/conv-specific

@@ -8,21 +8,22 @@ ARGS_P=(
     "--n_trials" "300"
     "--loglevel" "30"
     "--num_hops" "10"
-    "--hidden" "128"
     "--in_layers" "1"
     "--out_layers" "1"
+    "--hidden" "128"
     "--epoch" "200"
     "--patience" "50"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
+    "--suffix" "small"
 )
 ARGS_S=(
     "--seed_param" "$SEED_P"
     "--loglevel" "25"
     "--num_hops" "10"
-    "--hidden" "128"
     "--in_layers" "1"
     "--out_layers" "1"
+    "--hidden" "128"
     "--epoch" "500"
     "--patience" "-1"
     "--theta_scheme" "ones"
@@ -37,7 +38,7 @@ CONVS=("AdjConv" "ChebConv")
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do
         for conv in ${CONVS[@]}; do
-            PARLIST="normg,dp,lr,wd"
+            PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
             # Add model/conv-specific args/params here
             if [ "$conv" = "AdjConv" ]; then
                 ARGS_C=("--alpha" "0.0")

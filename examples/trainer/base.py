@@ -27,8 +27,8 @@ class TrnBase(object):
         args (Namespace): Configuration arguments.
             device (str): torch device.
             epoch (int): Number of training epochs.
-            lr (float): Learning rate.
-            wd (float): Weight decay.
+            lr_[lin/conv] (float): Learning rate for linear/conv.
+            wd_[lin/conv] (float): Weight decay for linear/conv.
             patience (int): Patience for early stopping.
             period (int): Period for checkpoint saving.
             suffix (str): Suffix for checkpoint saving.
@@ -53,8 +53,9 @@ class TrnBase(object):
         # Get args
         self.device = args.device
         self.epoch = args.epoch
-        self.lr = args.lr
-        self.wd = args.wd
+        self.optimizer_dct = {
+            'lin':  {'lr': args.lr_lin,  'weight_decay': args.wd_lin},
+            'conv': {'lr': args.lr_conv, 'weight_decay': args.wd_conv},}
         self.patience = args.patience
         self.period = args.period
         self.logpath = args.logpath
@@ -86,12 +87,12 @@ class TrnBase(object):
         self.metric_ckpt = 'fimacro_val' if self.multi else 'f1micro_val'
 
     def setup_optimizer(self):
-        if hasattr(self.model, 'get_wd'):
+        if hasattr(self.model, 'get_optimizer'):
             self.optimizer = torch.optim.Adam(
-                self.model.get_wd(weight_decay=self.wd), lr=self.lr)
+                self.model.get_optimizer(self.optimizer_dct))
         else:
             self.optimizer = torch.optim.Adam(
-                self.model.parameters(), lr=self.lr, weight_decay=self.wd)
+                self.model.parameters(), **self.optimizer_dct['lin'])
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer, mode='max', factor=0.5,
             threshold=1e-4, patience=15)
