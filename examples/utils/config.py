@@ -48,7 +48,7 @@ def setup_argparse():
     # Logging configuration
     parser.add_argument('-s', '--seed', type=force_list_int, default=[0], help='random seed')
     parser.add_argument('-v', '--dev', type=int, default=0, help='GPU id')
-    parser.add_argument('-z', '--suffix', type=str, default=None, help='Checkpoint save name suffix.')
+    parser.add_argument('-z', '--suffix', type=str, default=None, help='Save name suffix.')
     parser.add_argument('-quiet', action='store_true', help='Dry run without saving logs.')
     parser.add_argument('--loglevel', type=int, default=10, help='10:progress, 15:train, 20:info, 25:result')
     # Data configuration
@@ -75,6 +75,7 @@ def setup_argparse():
     parser.add_argument('-wd', '--wd_lin', type=float, default=5e-6, help='Weight decay for linear')
     parser.add_argument('--wd_conv', type=float, default=5e-6, help='Weight decay for conv')
 
+    # >>>>>>>>>>
     # Model-specific
     # - Decoupled
     parser.add_argument('--theta_scheme', type=str, default="appr", help='Filter name')
@@ -83,6 +84,7 @@ def setup_argparse():
     # Conv-specific
     # - AdjConv, ChebConv
     parser.add_argument('--alpha', type=float, default=-1.0, help='Decay factor')
+    # <<<<<<<<<<
     return parser
 
 
@@ -91,7 +93,7 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = parser.parse_args()
     args = setup_cuda(args)
     # Set new args
-    if args.conv in ['DecoupledFixed']:
+    if args.model in ['DecoupledFixed']:
         args.conv_str = f'{args.conv}-{args.theta_scheme}'
     else:
         args.conv_str = args.conv

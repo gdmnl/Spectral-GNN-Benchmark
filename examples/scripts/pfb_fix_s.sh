@@ -29,7 +29,7 @@ DATAS=("cora" "citeseer" "pubmed")
 MODELS=("DecoupledFixed")
 CONVS=AdjConv
 SCHEMES=("impulse" "appr" "nappr" "hk" "mono")
-PARLIST="theta_param,normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
+PARLIST="theta_param,normg,dp_lin,dp_conv,lr_lin,wd_lin"
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do

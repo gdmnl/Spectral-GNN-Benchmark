@@ -39,6 +39,7 @@ class TrnWrapper(object):
         self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
 
     def _get_suggest(self, trial, key):
+        # >>>>>>>>>>
         theta_dct = {
             "appr":  (trial.suggest_float, (0.0, 1.0), {}),
             "nappr": (trial.suggest_float, (0.0, 1.0), {}),
@@ -67,6 +68,7 @@ class TrnWrapper(object):
         # if self.args.model in ['Iterative']:
         #     suggest_dct['in_layers'][1] = (1, 3)
         #     suggest_dct['out_layers'][1] = (1, 3)
+        # <<<<<<<<<<
 
         func, fargs, fkwargs = suggest_dct[key]
         return func(key, *fargs, **fkwargs)
@@ -110,7 +112,8 @@ def main(args):
     res_logger.concat([('seed', args.seed),])
 
     # ========== Study configuration
-    storage_path = LOGPATH.joinpath('optuna.db').resolve().absolute()
+    storage_path = '-'.join(filter(None, ['optuna', args.suffix])) + '.db'
+    storage_path = LOGPATH.joinpath(storage_path).resolve().absolute()
     study = optuna.create_study(
         study_name='-'.join([args.model, args.data, args.conv_str, args.flag]),
         storage=f'sqlite:///{str(storage_path)}',

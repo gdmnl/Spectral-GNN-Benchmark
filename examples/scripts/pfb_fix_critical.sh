@@ -7,12 +7,13 @@ ARGS_P=(
     "--loglevel" "30"
     "--epoch" "200"
     "--patience" "50"
+    "--suffix" "small"
 )
 DATAS=("cora" "citeseer" "pubmed")
 MODELS=("DecoupledFixed")
 CONVS=AdjConv
 SCHEMES=("impulse" "appr" "nappr" "hk" "mono")
-PARLIST="num_hops,in_layers,out_layers,hidden,theta_param,lr_lin,lr_conv"
+PARLIST="num_hops,in_layers,out_layers,hidden,theta_param,lr_lin"
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do

@@ -9,6 +9,7 @@ ARGS_P=(
     "--patience" "50"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
+    "--suffix" "small"
 )
 DATAS=("cora" "citeseer" "pubmed")
 MODELS=("Iterative" "DecoupledVar")

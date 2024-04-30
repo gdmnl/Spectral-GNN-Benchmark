@@ -136,6 +136,7 @@ class SingleGraphLoader(object):
 
     # ===== Data acquisition
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
+        # >>>>>>>>>>
         if self.data.startswith('ogb'):
             module_name = 'ogb'
             pass
@@ -151,6 +152,7 @@ class SingleGraphLoader(object):
                 class_name = 'WebKB'
             else:
                 raise ValueError(f"Dataset '{self}' not found.")
+        # <<<<<<<<<<
 
             kwargs = dict(
                 root=DATAPATH,
