@@ -109,6 +109,8 @@ class BaseNN(nn.Module):
                 norm_kwargs=norm_kwargs,
                 plain_last=plain_last,
                 bias=bias,)
+            
+        self.reset_parameters()
 
     def init_conv(self, conv: str, num_hops: int, lib: str, **kwargs) -> MessagePassing:
         raise NotImplementedError
@@ -117,7 +119,7 @@ class BaseNN(nn.Module):
         # if hasattr(self.conv_cls, func) and callable(getattr(self.conv_cls, func)):
         #     setattr(self, func, getattr(self.conv_cls, func))
         if hasattr(self.convs[0], func) and callable(getattr(self.convs[0], func)):
-            setattr(self, func, getattr(self.convs[0], func))
+            setattr(self, func, getattr(self.convs[0], func)) # use the first one.
         else:
             raise NotImplementedError(f"Method '{func}' not found in {self.convs[0].__name__}!")
             # setattr(self, func, lambda x: x)

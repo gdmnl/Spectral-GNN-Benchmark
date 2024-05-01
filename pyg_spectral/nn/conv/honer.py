@@ -1,20 +1,22 @@
-from typing import Optional, Any, Union
+from typing import Final
 
 import torch
-import torch.nn as nn
 from torch import Tensor
+from torch.nn import Parameter
 
-from torch_geometric.typing import Adj
+from torch_geometric.typing import Adj, OptTensor, SparseTensor
 from torch_geometric.nn.conv import MessagePassing
-from torch_geometric.utils import spmm
+from torch_geometric.utils import spmm, add_self_loops
+from torch_geometric.data import Data
+import torch_geometric.transforms as T
 
 from pyg_spectral.utils import get_laplacian
 
 
-class ChebConv(MessagePassing):
-    r"""Convolutional layer with Chebyshev Polynomials.
-    paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
-    ref: https://github.com/ivam-he/ChebNetII/blob/main/main/Chebbase_pro.py
+class Horner(MessagePassing):
+    r"""Incomplete Version of Convolutional layer with ClenShaw GCN.
+    paper: Clenshaw Graph Neural Networks
+    ref: https://github.com/yuziGuo/ClenshawGNN/blob/master/layers/HornerConv.py
 
     Args:
         num_hops (int), hop (int): total and current number of propagation hops.
@@ -22,6 +24,7 @@ class ChebConv(MessagePassing):
         alpha (float): decay factor for each hop :math:`1/hop^\alpha`.
         theta (nn.Parameter or nn.Module): transformation of propagation result
             before applying to the output.
+        lamda (float): eigenvalue by default 1.0
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
@@ -34,11 +37,11 @@ class ChebConv(MessagePassing):
         theta: Union[nn.Parameter, nn.Module] = None,
         alpha: float = -1.0,
         cached: bool = True,
+        lamda: float=1.0,
         **kwargs
     ):
-        # FEATURE: `combine_root` as `pyg.nn.conv.SimpleConv`
         kwargs.setdefault('aggr', 'add')
-        super(ChebConv, self).__init__(**kwargs)
+        super(ClenShaw, self).__init__(**kwargs)
 
         self.num_hops = num_hops
         self.hop = hop
@@ -48,6 +51,11 @@ class ChebConv(MessagePassing):
 
         self.cached = cached
         self._cache = None
+
+        self.lamda = lamda
+        self.coes = torch.log(self.lamda / (torch.arange(self.num_hops)+1) + 1)
+        _ones = torch.ones_like(self.coes)
+        self.coes = torch.where(self.coes<1, self.coes, _ones)
 
     def reset_cache(self):
         del self._cache
@@ -59,7 +67,7 @@ class ChebConv(MessagePassing):
         if self.hop == 0:
             self.temps = nn.Parameter(torch.ones(self.num_hops+1))
             self.temps.data.fill_(0.0)
-            self.temps.data[0]=1.0       
+            self.temps.data[0]=1.0  
 
     def get_propagate_mat(self,
         x: Tensor,
@@ -108,7 +116,7 @@ class ChebConv(MessagePassing):
         return {
             'out': torch.zeros_like(x),
             'x': x,
-            'x_1': x,
+            'x_1': torch.zeros_like(x),
             'prop_mat': self.get_propagate_mat(x, edge_index),
             'temps': self.temps}
 
@@ -129,26 +137,25 @@ class ChebConv(MessagePassing):
         Args & Returns: (dct): same with output of get_forward_mat()
         """
         if self.hop == 0:
-            out = self._forward_theta(x) * F.relu(temps[self.hop])
-            return {'out': out, 'x': x, 'x_1': x, 'prop_mat': prop_mat, 'temps': temps}
-        elif self.hop == 1:
-            h = self.propagate(prop_mat, x=x)
-            out += self._forward_theta(h) * F.relu(temps[self.hop])
-            return {'out': out, 'x': h, 'x_1': x, 'prop_mat': prop_mat, 'temps': temps}
+            x = self._forward_theta(x)
+            out = x * F.relu(temps[self.hop])
+            return {'out': out, 'x': x, 'x_1': x_1, 'prop_mat': prop_mat, 'temps': temps}
 
-        h = self.propagate(prop_mat, x=x)
-        h = 2. * h - x_1
-        out += self._forward_theta(h) / (self.hop ** self.alpha) * F.relu(temps[self.hop])
+        h = self.propagate(prop_mat, x=x_1)
+        h = temps[-self.hop] * x + h
+        hw = self._forward_theta(h)
+        h = self.coes[self.hop] * hw + (1.-self.coes[self.hop]) * h
 
         return {
-            'out': out,
-            'x': h,
-            'x_1': x,
+            'out': h,
+            'x': x,
+            'x_1': h,
             'prop_mat': prop_mat,
             'temps': temps}
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)
 
-    def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(alpha={self.alpha})'
+    def __repr__(self):
+        return f'{self.__class__.__name__}'
+
