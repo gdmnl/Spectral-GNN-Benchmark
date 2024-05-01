@@ -30,6 +30,7 @@ class ModelLoader(object):
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
 
+        
     def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
         r"""Load model with specified arguments.
 

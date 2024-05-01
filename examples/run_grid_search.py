@@ -108,7 +108,7 @@ def get_degree_accuracy(args, method, model):
         quiet=args.quiet)
     # Ensure method and model are valid
     if method in method_model_configs and model in method_model_configs[method]:
-        optimal_path = os.path.join(args.logpath, args.conv+ "_optimal/config.json")
+        optimal_path = os.path.join(args.logpath, args.conv+"_"+args.theta+"_optimal/config.json")
         hyperparams = method_model_configs[method][model]
         with open(optimal_path, 'r') as file:
             config_dict = json.load(file)
@@ -167,7 +167,7 @@ def main(args):
     degree_table_path = Path('../log/degree_table.csv')
     if current_accuracy>best_accuracy and args.grid_search_flag:
         setattr(args, 'optimal_accuracy', current_accuracy)
-        optimal_path = os.path.join(args.logpath, args.conv+ "_optimal")
+        optimal_path = os.path.join(args.logpath, args.conv+"_"+args.theta+ "_optimal")
         if not os.path.exists(optimal_path):
             os.makedirs(optimal_path)
         save_args(Path(optimal_path), args)

@@ -9,10 +9,9 @@ import uuid
 import random
 import argparse
 from pathlib import Path
-
 import numpy as np
 import torch
-
+from .logger import setup_logpath
 
 # noinspection PyUnresolvedReferences
 def setup_seed(seed: int = None, cuda: bool = True) -> int:
@@ -51,6 +50,7 @@ def setup_argparse():
     parser.add_argument('-z', '--suffix', type=str, default=None, help='Save name suffix.')
     parser.add_argument('-quiet', action='store_true', help='Quiet run without saving logs.')
     parser.add_argument('--loglevel', type=int, default=10, help='10:progress, 15:train, 20:info, 25:result')
+    parser.add_argument('--tsne', action='store_true', help='Whether to draw the cluster for visualization')
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
     parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
@@ -69,7 +69,7 @@ def setup_argparse():
     parser.add_argument('--lr', type=float, default=1.0e-3, help='Learning rate')
     parser.add_argument('--wd', type=float, default=1e-5, help='Weight decay')
     parser.add_argument('--split', type=int, default=0, help='Training test split')
-
+    parser.add_argument('--opsetting',action='store_true', help='Whether to load our optimal setting searched by grid search')
     # Model-specific
     # - pyg_spectral
     parser.add_argument('--dpe', type=float, default=0.0, help='Edge dropout rate')
@@ -83,10 +83,23 @@ def setup_argparse():
 def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     # Check args
     args = parser.parse_args()
+    args.flag = f'{args.seed}'
+    args.logpath = setup_logpath(
+        folder_args=(args.data, args.model, args.flag),
+        quiet=args.quiet)
+    args.optimal_path = os.path.join(args.logpath, args.conv+ "_optimal/config.json")
+    if os.path.exists(args.optimal_path) and args.opsetting:
+        with open(args.optimal_path, 'r') as file:
+            config = json.load(file)
+            args.lr = config.get('lr', 0.01)
+            args.wd = config.get('wd', 1e-5)
+            args.K = config.get('K', 2)
+            args.dp = config.get('dp', 0.5)
+        print("Optimal config file loaded successfully:", args.optimal_path, " ", args)
     args = setup_cuda(args)
     args.seed = setup_seed(args.seed, args.cuda)
     # Set new args
-    args.flag = f'{args.seed}'
+    
     return args
 
 
