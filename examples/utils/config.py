@@ -9,10 +9,9 @@ import uuid
 import random
 import argparse
 from pathlib import Path
-
 import numpy as np
 import torch
-
+from .logger import setup_logpath
 
 # noinspection PyUnresolvedReferences
 def setup_seed(seed: int = None, cuda: bool = True) -> int:
@@ -51,6 +50,7 @@ def setup_argparse():
     parser.add_argument('-z', '--suffix', type=str, default=None, help='Save name suffix.')
     parser.add_argument('-quiet', action='store_true', help='Dry run without saving logs.')
     parser.add_argument('--loglevel', type=int, default=10, help='10:progress, 15:train, 20:info, 25:result')
+    parser.add_argument('--tsne', action='store_true', help='Whether to draw the cluster for visualization')
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
     parser.add_argument('--data_split', type=str, default='60/20/20', help='Index or percentage of dataset split')
@@ -76,6 +76,7 @@ def setup_argparse():
     parser.add_argument('--wd_conv', type=float, default=5e-6, help='Weight decay for conv')
 
     # >>>>>>>>>>
+    parser.add_argument('--opsetting',action='store_true', help='Whether to load our optimal setting searched by grid search')
     # Model-specific
     # - Decoupled, ACMGNN
     parser.add_argument('--theta_scheme', type=str, default="appr", help='Filter name')
@@ -91,6 +92,19 @@ def setup_argparse():
 def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     # Check args
     args = parser.parse_args()
+    args.flag = f'{args.seed}'
+    args.logpath = setup_logpath(
+        folder_args=(args.data, args.model, args.flag),
+        quiet=args.quiet)
+    args.optimal_path = os.path.join(args.logpath, args.conv+ "_optimal/config.json")
+    if os.path.exists(args.optimal_path) and args.opsetting:
+        with open(args.optimal_path, 'r') as file:
+            config = json.load(file)
+            args.lr = config.get('lr', 0.01)
+            args.wd = config.get('wd', 1e-5)
+            args.K = config.get('K', 2)
+            args.dp = config.get('dp', 0.5)
+        print("Optimal config file loaded successfully:", args.optimal_path, " ", args)
     args = setup_cuda(args)
     # Set new args
     if args.model in ['DecoupledFixed']:
@@ -99,6 +113,7 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
         args.conv_str = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
     else:
         args.conv_str = args.conv
+    
     return args
 
 
