@@ -1,21 +1,17 @@
+import torch
 import torch.nn as nn
 from torch_geometric.nn.conv import MessagePassing
-from torch_geometric.nn.dense.linear import Linear
 
 from pyg_spectral.nn.models.base_nn import BaseNN
 from pyg_spectral.utils import load_import
 
 
-class Iterative(BaseNN):
-    r"""Iterative structure with matrix transformation each hop of propagation.
+class AdaGNN(BaseNN):
+    r"""Decoupled structure with diag transformation each hop of propagation.
+    paper: AdaGNN: Graph Neural Networks with Adaptive Frequency Response Filter
+    ref: https://github.com/yushundong/AdaGNN
 
     Args:
-        bias (bool, optional): whether learn an additive bias in conv.
-        weight_initializer (str, optional): The initializer for the weight
-            matrix (:obj:`"glorot"`, :obj:`"uniform"`, :obj:`"kaiming_uniform"`
-            or :obj:`None`).
-        bias_initializer (str, optional): The initializer for the bias vector
-            (:obj:`"zeros"` or :obj:`None`).
         --- BaseNN Args ---
         conv (str): Name of :class:`pyg_spectral.nn.conv` module.
         num_hops (int): Total number of conv hops.
@@ -41,21 +37,17 @@ class Iterative(BaseNN):
         lib: str,
         **kwargs
     ) -> MessagePassing:
-        assert self.in_layers > 0 and self.out_layers > 0, "In/out MLPs are required to ensure conv shape consistency."
-        convs = nn.ModuleList()
         conv_cls = load_import(conv, lib)
+        return nn.ModuleList([
+            conv_cls(num_hops=num_hops, hop=k,
+                     theta=nn.Parameter(torch.FloatTensor(self.channel_list[self.in_layers+k])),
+                     **kwargs) for k in range(num_hops)])
 
-        for k in range(num_hops):
-            bias_default = (k == self.num_hops - 1)
-            bias = kwargs.pop('bias', bias_default)
-            weight_initializer = kwargs.pop('weight_initializer', 'glorot')
-            bias_initializer = kwargs.pop('bias_initializer', None)
-
-            theta = Linear(
-                self.hidden_channels, self.hidden_channels,
-                bias=bias,
-                weight_initializer=weight_initializer,
-                bias_initializer=bias_initializer)
-            convs.append(conv_cls(num_hops=num_hops, hop=k, theta=theta, **kwargs))
-
-        return convs
+    def reset_parameters(self):
+        if self.in_layers > 0:
+            self.in_mlp.reset_parameters()
+        if self.out_layers > 0:
+            self.out_mlp.reset_parameters()
+        for k, conv in enumerate(self.convs):
+            conv.reset_parameters()
+            nn.init.normal_(conv.theta, mean=0, std=1e-7)

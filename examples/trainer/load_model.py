@@ -62,7 +62,7 @@ class ModelLoader(object):
                     alpha=args.alpha,))
 
             # Parse model args
-            if self.model in ['Iterative']:
+            if self.model in ['Iterative', 'AdaGNN']:
                 trn = TrnFullbatch
             elif self.model in ['DecoupledFixed', 'DecoupledVar']:
                 kwargs.update(dict(

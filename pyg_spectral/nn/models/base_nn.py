@@ -61,6 +61,7 @@ class BaseNN(nn.Module):
             **kwargs):
         super(BaseNN, self).__init__()
 
+        self.num_hops = num_hops
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
         self.out_channels = out_channels
@@ -69,11 +70,25 @@ class BaseNN(nn.Module):
         self.dropout_conv = dropout_conv
         lib = kwargs.pop('lib_conv', 'pyg_spectral.nn.conv')
 
+        # Arrange channel list
+        # assert (self.in_layers+self.out_layers > 0) or (self.in_channels == self.out_channels)
+        total_layers = self.in_layers + self.num_hops + self.out_layers
+        self.channel_list = [in_channels] + [None] * (total_layers - 1) + [out_channels]
+        for i in range(self.in_layers - 1):
+            # 1:in_layers-1
+            self.channel_list[i + 1] = hidden_channels
+        if self.in_layers > 0:
+            self.channel_list[self.in_layers] = hidden_channels if self.out_layers > 0 else self.out_channels
+        for i in range(self.num_hops):
+            # (in_layers+1):(in_layers+num_hops)
+            self.channel_list[self.in_layers + i + 1] = self.channel_list[self.in_layers]
+        for i in range(self.out_layers - 1):
+            # (in_layers+num_hops+1):(total_layers-1)
+            self.channel_list[self.in_layers+self.num_hops + i + 1] = hidden_channels
+
         if self.in_layers > 0:
             self.in_mlp = myMLP(
-                in_channels=self.in_channels,
-                hidden_channels=self.hidden_channels,
-                out_channels=self.hidden_channels if self.out_layers > 0 else self.out_channels,
+                channel_list=self.channel_list[:self.in_layers+1],
                 num_layers=self.in_layers,
                 dropout=dropout_lin,
                 act=act,
@@ -84,7 +99,6 @@ class BaseNN(nn.Module):
                 plain_last=plain_last,
                 bias=bias,)
 
-        self.num_hops = num_hops
         self.convs = self.init_conv(
             conv=conv,
             num_hops=num_hops,
@@ -95,9 +109,7 @@ class BaseNN(nn.Module):
 
         if self.out_layers > 0:
             self.out_mlp = myMLP(
-                in_channels=self.hidden_channels if self.in_layers > 0 else self.in_channels,
-                hidden_channels=self.hidden_channels,
-                out_channels=self.out_channels,
+                channel_list=self.channel_list[self.in_layers+self.num_hops:],
                 num_layers=self.out_layers,
                 dropout=dropout_lin,
                 act=act,

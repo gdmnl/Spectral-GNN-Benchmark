@@ -54,7 +54,7 @@ class TrnWrapper(object):
             'out_layers':   (trial.suggest_int, (1, 3), {}),
             'hidden':       (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}),
             # secondary
-            'theta_param': theta_dct[self.args.theta_scheme],
+            'theta_param': theta_dct.get(self.args.theta_scheme, None),
             'normg':        (trial.suggest_float, (0.0, 1.0), {'step': 0.05}),
             'dp_lin':       (trial.suggest_float, (0.0, 1.0), {'step': 0.1}),
             'dp_conv':      (trial.suggest_float, (0.0, 1.0), {'step': 0.1}),

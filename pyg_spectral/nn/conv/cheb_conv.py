@@ -36,7 +36,6 @@ class ChebConv(MessagePassing):
         cached: bool = True,
         **kwargs
     ):
-        # FEATURE: `combine_root` as `pyg.nn.conv.SimpleConv`
         kwargs.setdefault('aggr', 'add')
         super(ChebConv, self).__init__(**kwargs)
 

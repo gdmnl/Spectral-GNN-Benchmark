@@ -87,7 +87,7 @@ class DecoupledFixed(BaseNN):
     Args:
         theta_scheme (str): Method to generate decoupled parameters.
         theta_param (float, optional): Hyperparameter for the scheme.
-        --- BaseMLP Args ---
+        --- BaseNN Args ---
         conv (str): Name of :class:`pyg_spectral.nn.conv` module.
         num_hops (int): Total number of conv hops.
         in_channels (int): Size of each input sample, or :obj:`-1` to derive
@@ -131,7 +131,7 @@ class DecoupledVar(BaseNN):
     Args:
         theta_scheme (str): Method to generate decoupled parameters.
         theta_param (float, optional): Hyperparameter for the scheme.
-        --- BaseMLP Args ---
+        --- BaseNN Args ---
         conv (str): Name of :class:`pyg_spectral.nn.conv` module.
         num_hops (int): Total number of conv hops.
         in_channels (int): Size of each input sample, or :obj:`-1` to derive
