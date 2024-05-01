@@ -77,12 +77,12 @@ def setup_argparse():
 
     # >>>>>>>>>>
     # Model-specific
-    # - Decoupled
+    # - Decoupled, ACMGNN
     parser.add_argument('--theta_scheme', type=str, default="appr", help='Filter name')
     parser.add_argument('--theta_param', type=list_float, default=0.2, help='Hyperparameter for filter')
 
     # Conv-specific
-    # - AdjConv, ChebConv
+    # - AdjConv, ChebConv, ACMGNN
     parser.add_argument('--alpha', type=float, default=-1.0, help='Decay factor')
     # <<<<<<<<<<
     return parser
@@ -95,6 +95,8 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     # Set new args
     if args.model in ['DecoupledFixed']:
         args.conv_str = f'{args.conv}-{args.theta_scheme}'
+    elif args.model in ['ACMGNN']:
+        args.conv_str = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
     else:
         args.conv_str = args.conv
     return args

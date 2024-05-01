@@ -6,16 +6,16 @@ from pyg_spectral.nn.models.base_nn import BaseNN
 from pyg_spectral.utils import load_import
 
 
-class Iterative(BaseNN):
-    r"""Iterative structure with matrix transformation each hop of propagation.
+class ACMGNN(BaseNN):
+    r"""Decoupled structure with diag transformation each hop of propagation.
+    paper: Revisiting Heterophily For Graph Neural Networks
+    paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
+    ref: https://github.com/SitaoLuan/ACM-GNN
 
     Args:
-        bias (bool, optional): whether learn an additive bias in conv.
-        weight_initializer (str, optional): The initializer for the weight
-            matrix (:obj:`"glorot"`, :obj:`"uniform"`, :obj:`"kaiming_uniform"`
-            or :obj:`None`).
-        bias_initializer (str, optional): The initializer for the bias vector
-            (:obj:`"zeros"` or :obj:`None`).
+        theta_scheme (str): Channel list. "FBGNN"="low-high", "ACMGNN"="low-high-id",
+            "ACMGNN+"="low-high-id-struct" (not implemented).
+        weight_initializer (str, optional): The initializer for the weight.
         --- BaseNN Args ---
         conv (str): Name of :class:`pyg_spectral.nn.conv` module.
         num_hops (int): Total number of conv hops.
@@ -41,20 +41,21 @@ class Iterative(BaseNN):
         lib: str,
         **kwargs
     ) -> MessagePassing:
-        assert self.in_layers > 0 and self.out_layers > 0, "In/out MLPs are required to ensure conv shape consistency."
-        bias = kwargs.pop('bias', None)
-        weight_initializer = kwargs.pop('weight_initializer', 'glorot')
+        theta_scheme = kwargs.pop('theta_scheme', 'low-high-id')
+        theta_scheme = [v.strip() for v in theta_scheme.split('-')]
+        weight_initializer = kwargs.pop('weight_initializer', 'uniform')
         bias_initializer = kwargs.pop('bias_initializer', None)
 
         conv_cls = load_import(conv, lib)
         convs = nn.ModuleList()
         for k in range(num_hops):
-            bias_default = (k == self.num_hops - 1)
-            theta = Linear(
-                self.hidden_channels, self.hidden_channels,
-                bias=(bias or bias_default),
+            in_channels = self.channel_list[self.in_layers + k]
+            out_channels = self.channel_list[self.in_layers + k + 1]
+            theta = nn.ModuleDict({sch: Linear(
+                in_channels, out_channels,
+                bias=False,
                 weight_initializer=weight_initializer,
-                bias_initializer=bias_initializer)
+                bias_initializer=bias_initializer) for sch in theta_scheme})
             convs.append(conv_cls(num_hops=num_hops, hop=k, theta=theta, **kwargs))
 
         return convs
