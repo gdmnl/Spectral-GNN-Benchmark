@@ -55,6 +55,6 @@ class Iterative(BaseNN):
                 bias=(bias or bias_default),
                 weight_initializer=weight_initializer,
                 bias_initializer=bias_initializer)
-            convs.append(conv_cls(num_hops=num_hops, hop=k, theta=theta, **kwargs))
+            convs.append(conv_cls(num_hops=num_hops, hop=k, theta=theta, **kwargs)) # how about the original decoupled parameters?
 
         return convs
