@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Optional, Any, Union
 
 from typing import Optional, Tuple
 from torch_geometric.typing import Adj, OptTensor, PairTensor
