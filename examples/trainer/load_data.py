@@ -150,6 +150,9 @@ class SingleGraphLoader(object):
                 class_name = 'WikipediaNetwork'
             elif self.data in ["cornell", "texas", "wisconsin"]:
                 class_name = 'WebKB'
+            elif self.data in ['chameleon_filtered',  'squirrel_filtered']:
+                class_name = 'FilteredWikipediaNetwork'
+                module_name = 'trainer'
             else:
                 raise ValueError(f"Dataset '{self}' not found.")
         # <<<<<<<<<<
