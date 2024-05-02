@@ -10,7 +10,7 @@ from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import spmm, add_self_loops
 from torch_geometric.data import Data
 import torch_geometric.transforms as T
-
+import torch.nn.functional as F
 from pyg_spectral.utils import get_laplacian
 
 

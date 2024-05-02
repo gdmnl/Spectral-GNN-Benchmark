@@ -10,7 +10,7 @@ from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import spmm, add_self_loops
 from torch_geometric.data import Data
 import torch_geometric.transforms as T
-
+import torch.nn.functional as F
 from pyg_spectral.utils import get_laplacian
 
 
@@ -42,7 +42,7 @@ class Horner(MessagePassing):
         **kwargs
     ):
         kwargs.setdefault('aggr', 'add')
-        super(ClenShaw, self).__init__(**kwargs)
+        super(Horner, self).__init__(**kwargs)
 
         self.num_hops = num_hops
         self.hop = hop
