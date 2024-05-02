@@ -1,0 +1,67 @@
+import os.path as osp
+from typing import Callable, List, Optional, Union
+
+import numpy as np
+import torch
+
+from torch_geometric.data import Data, InMemoryDataset, download_url
+from torch_geometric.utils import coalesce
+
+
+class FilteredWikipediaNetwork(InMemoryDataset):
+
+    url = "https://github.com/yandex-research/heterophilous-graphs/raw/main/data"
+
+
+    def __init__(
+        self,
+        root: str,
+        name: str,
+        transform: Optional[Callable] = None,
+        pre_transform: Optional[Callable] = None,
+        force_reload: bool = False,
+    ) -> None:
+        self.name = name.lower()
+        assert self.name in ['chameleon_filtered',  'squirrel_filtered']
+        super().__init__(root, transform, pre_transform,
+                         force_reload=force_reload)
+        self.load(self.processed_paths[0])
+
+    @property
+    def raw_dir(self) -> str:
+        return osp.join(self.root, self.name)
+
+    @property
+    def processed_dir(self) -> str:
+        return osp.join(self.root, self.name)
+
+    @property
+    def raw_file_names(self) -> str:
+        return f'{self.name}.npz'
+
+    @property
+    def processed_file_names(self) -> str:
+        return 'data.pt'
+
+    def download(self) -> None:
+        download_url(f'{self.url}/{self.name}.npz', self.processed_dir)
+
+    def process(self) -> None:
+        
+        data = np.load(f'{self.processed_dir}/{self.name}.npz', allow_pickle=True)
+        x = torch.tensor(data['node_features']).to(torch.float)
+        y = torch.tensor(data['node_labels']).to(torch.long)
+        edge_index = torch.tensor(data['edges']).t().contiguous()
+        edge_index = coalesce(edge_index, num_nodes=x.size(0))
+
+        train_masks = torch.tensor(data['train_masks']).to(torch.bool)
+        val_masks = torch.tensor(data['val_masks']).to(torch.bool)
+        test_masks = torch.tensor(data['test_masks']).to(torch.bool)
+
+        data = Data(x=x, edge_index=edge_index, y=y, train_mask=train_masks, 
+                    val_mask=val_masks, test_mask=test_masks)
+
+        if self.pre_transform is not None:
+            data = self.pre_transform(data)
+
+        self.save([data], self.processed_paths[0])
