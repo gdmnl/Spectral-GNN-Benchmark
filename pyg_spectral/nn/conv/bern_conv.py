@@ -137,8 +137,8 @@ class BernConv(MessagePassing):
 
         x = self._forward_theta(self.propagate(prop_mat_2, x=x)) # corresponding to tmps.
         
-        if self.hop == self.hops:
-            out += (comp(self.num_hops, self.num_hops-self.hop+1) / (2**self.num_hops)) * x * F.relu(temps[self.hop])
+        if self.hop == self.num_hops:
+            out += (comb(self.num_hops, self.num_hops-self.hop+1) / (2**self.num_hops)) * x * F.relu(temps[self.hop])
             return {
                 'out': out,
                 'x': h,
@@ -153,7 +153,7 @@ class BernConv(MessagePassing):
             x_1 = self._forward_theta(self.propagate(prop_mat_1, x=x_1))
             # ? x_1 = self.propagate(prop_mat_1, x=h)
 
-        out += comp(self.num_hops, self.num_hops-self.hop+1) / (2**self.num_hops) * x_1 * F.relu(temps[self.hop])
+        out += comb(self.num_hops, self.num_hops-self.hop+1) / (2**self.num_hops) * x_1 * F.relu(temps[self.hop])
 
         return {
             'out': out,

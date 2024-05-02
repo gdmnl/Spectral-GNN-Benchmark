@@ -6,3 +6,6 @@ from .bern_conv import BernConv
 
 from .ada_conv import AdaConv
 from .acm_conv import ACMConv
+
+from .clenshaw import ClenShaw
+from .horner import Horner
