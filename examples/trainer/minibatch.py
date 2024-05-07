@@ -6,7 +6,7 @@ File Created: 2024-03-03
 from typing import Tuple, Generator
 import logging
 from argparse import Namespace
-import os
+
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
@@ -17,7 +17,8 @@ from pyg_spectral.nn.norm import TensorStandardScaler
 from pyg_spectral.profile import Stopwatch, Accumulator
 
 from .base import TrnBase
-from utils import ResLogger, tsne_plt
+from utils import ResLogger
+
 
 class TrnMinibatch(TrnBase):
     r"""Minibatch trainer class for node classification.
@@ -44,8 +45,6 @@ class TrnMinibatch(TrnBase):
         self.shuffle = {'train': True, 'val': False, 'test': False}
         self.embed = None
 
-        self.data = None
-        self.args = args
     def clear(self):
         del self.data
         return super().clear()
@@ -69,8 +68,6 @@ class TrnMinibatch(TrnBase):
         input, label = (data.x, data.adj_t), data.y
         if hasattr(self.model, 'preprocess'):
             self.model.preprocess(*input)
-    def _fetch_input_propagate(self, data: Data) -> tuple:
-        input, label = (data.x.to(self.device), data.adj_t.to(self.device)), data.y.to(self.device)
         return input, label
 
     def _fetch_input(self, split: str) -> Generator:
@@ -141,34 +138,6 @@ class TrnMinibatch(TrnBase):
                                       num_workers=0)
             self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.data[k])}")
         return ResLogger()
-    
-    # ===== Run tsne
-
-    def draw_tsne(self):
-        data, mask = self._fetch_data()
-        self.input, self.label = self._fetch_input_propagate(data)
-        optimal_path = os.path.join(self.args.logpath, self.args.conv+"_"+self.args.theta+ "_optimal")
-        if not os.path.exists(optimal_path):
-            os.makedirs(optimal_path)
-        def feature_visualization_hook(module, input, output):
-            print("input", input)
-            print("output", output)
-            tsne_plt(input[0].detach(), self.label, save_path=os.path.join(self.args.logpath, self.args.conv+"_"+self.args.theta+ "_optimal/input.jpg"))
-            tsne_plt(output.detach(), self.label, save_path=os.path.join(self.args.logpath, self.args.conv+"_"+self.args.theta+ "_optimal/output.jpg"))
-            
-            # return input
-
-        self.model.eval()
-        res = ResLogger()
-        if self.args.model in ['PostMLP']:
-            hook = self.model.mlp.register_forward_hook(feature_visualization_hook)
-        elif self.args.model in ['PreDecMLP']:
-            hook = self.model.mlp.register_forward_hook(feature_visualization_hook)
-        elif self.args.model in ['PreMLP']:
-            hook = self.model.hiddenmlp.register_forward_hook(feature_visualization_hook)
-        
-        with Stopwatch() as stopwatch:
-            output = self.model(*self.input)
 
     # ===== Run pipeline
     def run(self) -> ResLogger:
@@ -188,8 +157,5 @@ class TrnMinibatch(TrnBase):
         self.model = self.ckpt_logger.load('best', model=self.model)
         res_test = self.test()
         res_run.merge(res_test)
-
-        if self.tsne:
-           self.draw_tsne()
 
         return self.res_logger.merge(res_run)
