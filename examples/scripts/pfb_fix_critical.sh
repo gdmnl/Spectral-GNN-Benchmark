@@ -7,7 +7,7 @@ ARGS_P=(
     "--loglevel" "30"
     "--epoch" "200"
     "--patience" "50"
-    "--suffix" "small"
+    "--suffix" "fb_fix"
 )
 DATAS=("cora" "citeseer" "pubmed")
 MODELS=("DecoupledFixed")

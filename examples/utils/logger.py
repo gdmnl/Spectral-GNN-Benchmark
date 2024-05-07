@@ -64,32 +64,30 @@ def clear_logger(logger: logging.Logger):
 
 def setup_logpath(dir: Union[Path, str] = LOGPATH,
                   folder_args: Tuple=None,
-                  name_args: Tuple=None,
                   quiet: bool = True):
     r"""Resolve log path for saving.
 
     Args:
-        dir (Path or str): Base directory for saving logs. Default is './log/'.
+        dir (Path or str): Base directory for saving logs. Default is '../log/'.
         folder_args (Tuple): Subfolder names.
-        name_args (Tuple): File name components.
         quiet (bool, optional): Quiet run without creating directories.
 
     Returns:
-        logpath (Path): Path for log file/directory.
+        logpath (Path): Path for log directory.
+        logid (str): Path relative to dir.
     """
     dir = Path(dir)
+    flag = str(uuid.uuid4())[:6]
     if folder_args is not None:
+        folder_args = tuple(arg or flag for arg in folder_args)
         dir = dir.joinpath(*folder_args)
-    else:
-        flag = str(uuid.uuid4())[:6]
-        dir = dir.joinpath(flag)
+
+    logid = str(dir.relative_to(LOGPATH))
+    dir = dir.resolve().absolute()
     if not quiet:
         dir.mkdir(parents=True, exist_ok=True)
 
-    if name_args is None:
-        return dir
-    fname = '-'.join(name_args) + '.txt'
-    return dir.joinpath(fname)
+    return dir, logid
 
 
 class ResLogger(object):

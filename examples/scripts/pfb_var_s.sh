@@ -15,7 +15,7 @@ ARGS_P=(
     "--patience" "50"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
-    "--suffix" "small"
+    "--suffix" "fb_var"
 )
 ARGS_S=(
     "--seed_param" "$SEED_P"
@@ -28,6 +28,7 @@ ARGS_S=(
     "--patience" "-1"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
+    "--suffix" "fb_var"
 )
 
 # DATAS=("cora" "citeseer" "pubmed")

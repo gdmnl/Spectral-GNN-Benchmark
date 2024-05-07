@@ -12,7 +12,7 @@ ARGS_P=(
     "--hidden" "128"
     "--epoch" "200"
     "--patience" "50"
-    "--suffix" "small"
+    "--suffix" "fb_fix"
 )
 ARGS_S=(
     "--seed_param" "$SEED_P"
@@ -23,6 +23,7 @@ ARGS_S=(
     "--hidden" "128"
     "--epoch" "500"
     "--patience" "-1"
+    "--suffix" "fb_fix"
 )
 
 DATAS=("cora" "citeseer" "pubmed")

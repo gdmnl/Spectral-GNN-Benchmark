@@ -96,19 +96,25 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = setup_cuda(args)
     # Set new args
     if args.model in ['DecoupledFixed']:
-        args.conv_str = f'{args.conv}-{args.theta_scheme}'
+        args.model_repr = args.model
+        args.conv_repr = f'{args.conv}-{args.theta_scheme}'
+    elif args.model in ['AdaGNN']:
+        args.model_repr = 'DecoupledVar'
+        args.conv_repr = args.conv
     elif args.model in ['ACMGNN']:
-        args.conv_str = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
+        args.model_repr = 'Iterative'
+        args.conv_repr = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
     else:
-        args.conv_str = args.conv
+        args.model_repr = args.model
+        args.conv_repr = args.conv
     return args
 
 
-def save_args(logpath: Path, args: argparse.Namespace):
-    if args.quiet:
+def save_args(logpath: Path, args: dict):
+    if 'quiet' in args and args['quiet']:
         return
     with open(logpath.joinpath('config.json'), 'w') as f:
-        f.write(json.dumps(dict_to_json(vars(args)), indent=4))
+        f.write(json.dumps(dict_to_json(args), indent=4))
 
 
 def dict_to_json(dictionary) -> dict:

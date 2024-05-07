@@ -19,11 +19,8 @@ from utils import (
 
 def main(args):
     # ========== Run configuration
-    args.logpath = setup_logpath(
-        folder_args=(args.model, args.data, args.conv_str, args.flag),
-        quiet=args.quiet)
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
-    res_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
+    res_logger = ResLogger(quiet=args.quiet)
     res_logger.concat([('seed', args.seed),])
 
     # ========== Load data
@@ -47,7 +44,7 @@ def main(args):
     logger.info(f"[args]: {args}")
     logger.log(logging.LRES, f"[res]: {res_logger}")
     res_logger.save()
-    save_args(args.logpath, args)
+    save_args(args.logpath, vars(args))
     clear_logger(logger)
 
 
@@ -61,5 +58,8 @@ if __name__ == '__main__':
     for seed in seed_lst:
         args.seed = setup_seed(seed, args.cuda)
         args.flag = f'{args.seed}'
+        args.logpath, args.logid = setup_logpath(
+            folder_args=(args.data, args.model_repr, args.conv_repr, args.flag),
+            quiet=args.quiet)
 
         main(args)
