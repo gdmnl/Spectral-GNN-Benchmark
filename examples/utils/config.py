@@ -50,6 +50,7 @@ def setup_argparse():
     parser.add_argument('-v', '--dev', type=int, default=0, help='GPU id')
     parser.add_argument('-z', '--suffix', type=str, default=None, help='Save name suffix.')
     parser.add_argument('-quiet', action='store_true', help='Dry run without saving logs.')
+    parser.add_argument('--storage', type=str, default='state_gpu', choices=['state_file', 'state_ram', 'state_gpu'], help='Storage scheme for saving the checkpoints.')
     parser.add_argument('--loglevel', type=int, default=10, help='10:progress, 15:train, 20:info, 25:result')
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')

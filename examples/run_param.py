@@ -110,7 +110,6 @@ def main(args):
     # ========== Study configuration
     study_path = '-'.join(filter(None, ['optuna', args.suffix])) + '.db'
     study_path, _ = setup_logpath(folder_args=(study_path,))
-    print(study_path)
     study = optuna.create_study(
         study_name=args.logid,
         storage=f'sqlite:///{str(study_path)}',
