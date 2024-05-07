@@ -2,19 +2,17 @@ from typing import Optional, Any, Union
 
 import torch
 import torch.nn as nn
-from torch import Tensor
-from torch.nn import Parameter
-
-from torch_geometric.typing import Adj, OptTensor, SparseTensor
-from torch_geometric.nn.conv import MessagePassing
-from torch_geometric.utils import spmm, add_self_loops
-from torch_geometric.data import Data
-import torch_geometric.transforms as T
 import torch.nn.functional as F
+from torch import Tensor
+
+from torch_geometric.typing import Adj
+from torch_geometric.nn.conv import MessagePassing
+from torch_geometric.utils import spmm
+
 from pyg_spectral.utils import get_laplacian
 
 
-class Horner(MessagePassing):
+class HornerConv(MessagePassing):
     r"""Incomplete Version of Convolutional layer with ClenShaw GCN.
     paper: Clenshaw Graph Neural Networks
     ref: https://github.com/yuziGuo/ClenshawGNN/blob/master/layers/HornerConv.py
@@ -22,10 +20,9 @@ class Horner(MessagePassing):
     Args:
         num_hops (int), hop (int): total and current number of propagation hops.
             hop=0 explicitly handles x without propagation.
-        alpha (float): decay factor for each hop :math:`1/hop^\alpha`.
+        alpha (float): eigenvalue by default 1.0
         theta (nn.Parameter or nn.Module): transformation of propagation result
             before applying to the output.
-        lamda (float): eigenvalue by default 1.0
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
@@ -38,23 +35,21 @@ class Horner(MessagePassing):
         theta: Union[nn.Parameter, nn.Module] = None,
         alpha: float = -1.0,
         cached: bool = True,
-        lamda: float=1.0,
         **kwargs
     ):
         kwargs.setdefault('aggr', 'add')
-        super(Horner, self).__init__(**kwargs)
+        super(HornerConv, self).__init__(**kwargs)
 
         self.num_hops = num_hops
         self.hop = hop
         self.theta = theta
-        self.alpha = 0.0 if alpha < 0 else alpha  #NOTE: set actual alpha default here
+        self.alpha = 1.0 if alpha < 0 else alpha  #NOTE: set actual alpha default here
         self.temps = None
 
         self.cached = cached
         self._cache = None
 
-        self.lamda = lamda
-        self.coes = torch.log(self.lamda / (torch.arange(self.num_hops)+1) + 1)
+        self.coes = torch.log(self.alpha / (torch.arange(self.num_hops)+1) + 1)
         _ones = torch.ones_like(self.coes)
         self.coes = torch.where(self.coes<1, self.coes, _ones)
 
@@ -68,7 +63,7 @@ class Horner(MessagePassing):
         if self.hop == 0:
             self.temps = nn.Parameter(torch.ones(self.num_hops+1))
             self.temps.data.fill_(0.0)
-            self.temps.data[0]=1.0  
+            self.temps.data[0]=1.0
 
     def get_propagate_mat(self,
         x: Tensor,
@@ -159,4 +154,3 @@ class Horner(MessagePassing):
 
     def __repr__(self):
         return f'{self.__class__.__name__}'
-

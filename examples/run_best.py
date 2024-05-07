@@ -21,7 +21,7 @@ from utils import (
 def main(args):
     # ========== Run configuration
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
-    res_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
+    res_logger = ResLogger(quiet=args.quiet)
     res_logger.concat([('seed', args.seed),])
 
     # ========== Load data

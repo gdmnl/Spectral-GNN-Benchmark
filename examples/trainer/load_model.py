@@ -57,12 +57,9 @@ class ModelLoader(object):
             class_name = self.model
 
             # Parse conv args
-            if self.conv in ['AdjConv', 'ChebConv']:
+            if self.conv in ['AdjConv', 'ChebConv', 'ClenShaw', 'Horner']:
                 kwargs.update(dict(
                     alpha=args.alpha,))
-            elif self.conv in ['ClenShaw', 'Horner']:
-                kwargs.update(dict(
-                    lamda=args.lamda,))
 
             # Parse model args
             if self.model in ['Iterative', 'AdaGNN', 'ACMGNN']:

@@ -83,10 +83,8 @@ def setup_argparse():
     parser.add_argument('--theta_param', type=list_float, default=0.2, help='Hyperparameter for filter')
 
     # Conv-specific
-    # - AdjConv, ChebConv, ACMGNN
+    # - AdjConv, ChebConv, Clenshaw, Horner, ACMGNN
     parser.add_argument('--alpha', type=float, default=-1.0, help='Decay factor')
-    # - Clenshaw, Horner
-    parser.add_argument('--lamda', type=float, default=1.0, help='Eigenvalue')
     # <<<<<<<<<<
     return parser
 
