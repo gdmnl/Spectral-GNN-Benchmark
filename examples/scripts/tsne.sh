@@ -1,1 +1,0 @@
-python run_single.py --data Cora --model PreDecMLP --conv FixSumAdj --theta gaussian --tsne --opsetting

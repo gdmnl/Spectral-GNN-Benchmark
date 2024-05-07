@@ -60,7 +60,7 @@ class TrnBase(object):
         self.period = args.period
         self.logpath = args.logpath
         self.suffix = args.suffix
-        self.tsne = args.tsne
+
         # Get entities
         self.model = model
         self.data = data

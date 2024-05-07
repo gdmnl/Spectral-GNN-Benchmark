@@ -5,7 +5,7 @@ File Created: 2024-02-26
 """
 from typing import Tuple
 from argparse import Namespace
-import os
+
 import torch
 import torch.nn as nn
 from torch_geometric.data import Data, Dataset
@@ -15,7 +15,7 @@ import torch_geometric.utils as pyg_utils
 from pyg_spectral.profile import Stopwatch
 
 from .base import TrnBase
-from utils import ResLogger, tsne_plt
+from utils import ResLogger
 
 
 class TrnFullbatch(TrnBase):
@@ -32,8 +32,6 @@ class TrnFullbatch(TrnBase):
                  **kwargs):
         super(TrnFullbatch, self).__init__(model, data, args, **kwargs)
         self.mask: dict = None
-        self.data: Data = None
-        self.args = args
 
     def clear(self):
         del self.mask, self.data
@@ -123,31 +121,6 @@ class TrnFullbatch(TrnBase):
             ('num_low', self.mask['test_low'].sum().item())])
         self.logger.log(logging.LTRN, res_test.get_str())
         return res_test
-    
-    
-
-    # ===== Run tsne
-    def draw_tsne(self) -> ResLogger:
-        self.input, self.label = self._fetch_input()
-        def feature_visualization_hook(module, input, output):
-            print("input", input)
-            print("output", output)
-            tsne_plt(input[0].detach(), self.label, save_path=os.path.join(self.args.logpath, self.args.conv+ "_optimal/input.jpg"))
-            tsne_plt(output.detach(), self.label, save_path=os.path.join(self.args.logpath, self.args.conv+ "_optimal/output.jpg"))
-            
-            # return input
-
-        self.model.eval()
-        res = ResLogger()
-        if self.args.model in ['PostMLP']:
-            hook = self.model.mlp.register_forward_hook(feature_visualization_hook)
-        elif self.model in ['PreDecMLP']:
-            hook = self.model.mlp.register_forward_hook(feature_visualization_hook)
-        elif self.model in ['PreMLP']:
-            hook = self.model.hiddenmlp.register_forward_hook(feature_visualization_hook)
-        with Stopwatch() as stopwatch:
-            output = self.model(*self.input)
-
 
     # ===== Run pipeline
     def run(self) -> ResLogger:
@@ -164,9 +137,6 @@ class TrnFullbatch(TrnBase):
         res_run.merge(res_test)
 
         # res_run.merge(self.test_deg())
-        res_run.merge(self.test_deg())
-        if self.tsne:
-           self.draw_tsne()
 
         return self.res_logger.merge(res_run)
 
