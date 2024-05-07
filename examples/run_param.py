@@ -97,7 +97,7 @@ class TrnWrapper(object):
         res_logger = trn()
 
         res_logger.save()
-        trial.set_user_attr("acc_test", res_logger._get(col='accuracy_test', row=0))
+        trial.set_user_attr("f1_test", res_logger._get(col='f1micro_test', row=0))
         return res_logger.data.loc[0, self.metric_name]
 
 

@@ -7,7 +7,7 @@ from typing import Tuple, List, Callable, Any
 from argparse import Namespace
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
-    MulticlassF1Score, MultilabelF1Score, MulticlassAccuracy)
+    MulticlassF1Score, MultilabelF1Score)
 
 
 
@@ -28,13 +28,11 @@ def metric_loader(args: Namespace) -> MetricCollection:
     # TODO: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)
     if args.multi:
         metric = ResCollection({
-            'accuracy': MulticlassAccuracy(num_classes=args.num_classes),
             'f1micro': MultilabelF1Score(num_labels=args.num_classes, average='micro'),
             'f1macro': MultilabelF1Score(num_labels=args.num_classes, average='macro'),
         })
     else:
         metric = ResCollection({
-            'accuracy': MulticlassAccuracy(num_classes=args.num_classes),
             'f1micro': MulticlassF1Score(num_classes=args.num_classes, average='micro'),
             'f1macro': MulticlassF1Score(num_classes=args.num_classes, average='macro'),
         })

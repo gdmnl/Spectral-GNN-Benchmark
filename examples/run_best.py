@@ -59,7 +59,8 @@ if __name__ == '__main__':
     parser.add_argument('--seed_param', type=int, default=1, help='Seed for optuna search')
     args = setup_args(parser)
 
-    storage_path = LOGPATH.joinpath('optuna.db').resolve().absolute()
+    storage_path = '-'.join(filter(None, ['optuna', args.suffix])) + '.db'
+    storage_path = LOGPATH.joinpath(storage_path).resolve().absolute()
     study = optuna.load_study(
         study_name='-'.join([args.model, args.data, args.conv_str, f'param-{args.seed_param}']),
         storage=f'sqlite:///{str(storage_path)}')
