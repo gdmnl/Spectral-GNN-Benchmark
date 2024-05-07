@@ -14,6 +14,7 @@ from utils import (
     setup_logpath,
     clear_logger,
     ResLogger)
+from utils.tsne import test_tsne
 
 
 def main(args):
@@ -31,7 +32,7 @@ def main(args):
     model, trn = model_loader(args)
     res_logger.suffix = trn.name
 
-    # ========== Run trainer
+    # ========== Load trainer
     trn = trn(
         model=model,
         data=data,
@@ -40,7 +41,10 @@ def main(args):
     trn._fetch_data()
     trn.model = trn.ckpt_logger.load('best', model=trn.model)
     trn.model = trn.model.to(trn.device)
+
+    # ========== Perform evaluation
     res_test = trn.test()
+    test_tsne(trn)
 
     # logger.info(f"[args]: {args}")
     # logger.log(logging.LRES, f"[res]: {res_logger}")
