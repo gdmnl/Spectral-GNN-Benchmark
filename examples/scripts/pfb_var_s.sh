@@ -43,8 +43,8 @@ for data in ${DATAS[@]}; do
             # Add model/conv-specific args/params here
             if [ "$conv" = "AdjConv" ]; then
                 ARGS_C=("--alpha" "0.0")
-            elif [ "$conv" = "ClenshawConv" ]; then
-                PARLIST="$PARLIST,alpha"
+            # elif [ "$conv" = "ClenshawConv" ]; then
+            #     PARLIST="$PARLIST,alpha"
             else
                 ARGS_C=()
             fi

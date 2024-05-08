@@ -140,6 +140,7 @@ class SingleGraphLoader(object):
         if self.data.startswith('ogb'):
             module_name = 'ogb'
             pass
+            #FIXME: data symlink to OGB/PyG folders
         elif self.data in ['chameleon_filtered', 'squirrel_filtered']:
             module_name = 'dataset_process'
             class_name = 'FilteredWikipediaNetwork'
@@ -157,10 +158,10 @@ class SingleGraphLoader(object):
                 raise ValueError(f"Dataset '{self}' not found.")
         # <<<<<<<<<<
 
-            kwargs = dict(
-                root=DATAPATH,
-                name=self.data,
-                transform=self.transform,)
+        kwargs = dict(
+            root=DATAPATH,
+            name=self.data,
+            transform=self.transform,)
         return module_name, class_name, kwargs
 
     def get(self, args: Namespace) -> Data:
