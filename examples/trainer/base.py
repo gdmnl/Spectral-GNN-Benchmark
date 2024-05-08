@@ -32,6 +32,7 @@ class TrnBase(object):
             patience (int): Patience for early stopping.
             period (int): Period for checkpoint saving.
             suffix (str): Suffix for checkpoint saving.
+            storage (str): Storage scheme for checkpoint saving.
             logpath (Path): Path for logging.
             multi (bool): True for multi-label classification.
             num_features (int): Number of data input features.
@@ -60,6 +61,7 @@ class TrnBase(object):
         self.period = args.period
         self.logpath = args.logpath
         self.suffix = args.suffix
+        self.storage = args.storage
 
         # Get entities
         self.model = model
@@ -82,8 +84,8 @@ class TrnBase(object):
             self.logpath,
             patience=self.patience,
             period=self.period,
-            prefix=(f'model-{self.suffix}' if self.suffix else 'model'),
-            storage='state_gpu')
+            prefix=('-'.join(filter(None, ['model', self.suffix]))),
+            storage=self.storage)
         self.metric_ckpt = 'fimacro_val' if self.multi else 'f1micro_val'
 
     def setup_optimizer(self):

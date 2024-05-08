@@ -2,7 +2,8 @@
 source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=1
-SEED_S="20,21,22,23,24,25,26,27,28,29"
+# SEED_S="20,21,22,23,24,25,26,27,28,29"
+SEED_S="20,21,22"
 ARGS_P=(
     "--n_trials" "300"
     "--loglevel" "30"
@@ -12,7 +13,7 @@ ARGS_P=(
     "--hidden" "128"
     "--epoch" "200"
     "--patience" "50"
-    "--suffix" "small"
+    "--suffix" "fb_fix"
 )
 ARGS_S=(
     "--seed_param" "$SEED_P"
@@ -23,9 +24,11 @@ ARGS_S=(
     "--hidden" "128"
     "--epoch" "500"
     "--patience" "-1"
+    "--suffix" "fb_fix"
 )
 
-DATAS=("cora" "citeseer" "pubmed")
+# DATAS=("cora" "citeseer" "pubmed")
+DATAS=("cornell" "texas" "wisconsin" "chameleon_filtered" "squirrel_filtered")
 MODELS=("DecoupledFixed")
 CONVS=AdjConv
 SCHEMES=("impulse" "appr" "nappr" "hk" "mono")

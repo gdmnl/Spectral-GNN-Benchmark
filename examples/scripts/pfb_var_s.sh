@@ -3,7 +3,7 @@ source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=1
 # SEED_S="20,21,22,23,24,25,26,27,28,29"
-SEED_S="20,21,22,23,24"
+SEED_S="20,21,22"
 ARGS_P=(
     "--n_trials" "300"
     "--loglevel" "30"
@@ -15,7 +15,7 @@ ARGS_P=(
     "--patience" "50"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
-    "--suffix" "small"
+    "--suffix" "fb_var"
 )
 ARGS_S=(
     "--seed_param" "$SEED_P"
@@ -28,12 +28,13 @@ ARGS_S=(
     "--patience" "-1"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
+    "--suffix" "fb_var"
 )
 
 # DATAS=("cora" "citeseer" "pubmed")
-DATAS=("cora")
+DATAS=("cora" "citeseer" "pubmed" "chameleon_filtered" "squirrel_filtered")
 MODELS=("Iterative" "DecoupledVar")
-CONVS=("AdjConv" "ChebConv")
+CONVS=("AdjConv" "ChebConv" "ChebConv2" "BernConv" "ClenhawConv" "HornerConv")
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do
@@ -42,8 +43,8 @@ for data in ${DATAS[@]}; do
             # Add model/conv-specific args/params here
             if [ "$conv" = "AdjConv" ]; then
                 ARGS_C=("--alpha" "0.0")
-            elif [ "$conv" = "ClenshawConv" ]; then
-                PARLIST="$PARLIST,alpha"
+            # elif [ "$conv" = "ClenshawConv" ]; then
+            #     PARLIST="$PARLIST,alpha"
             else
                 ARGS_C=()
             fi

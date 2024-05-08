@@ -1,28 +1,23 @@
 from typing import Optional, Any, Union
 
-from typing import Optional, Tuple
-from torch_geometric.typing import Adj, OptTensor, PairTensor
-import math
 import torch
 import torch.nn as nn
-from torch import Tensor
-from torch.nn import Parameter
-from torch_scatter import scatter_add
-from torch_sparse import SparseTensor, matmul, fill_diag, sum, mul
-from torch_geometric.nn.conv import MessagePassing
-from torch_geometric.utils import spmm, add_self_loops, remove_self_loops #,get_laplacian
-from pyg_spectral.utils import get_laplacian
-from torch_geometric.utils.num_nodes import maybe_num_nodes
-from torch_geometric.nn.conv.gcn_conv import gcn_norm
 import torch.nn.functional as F
+from torch import Tensor
+
+from torch_geometric.typing import Adj, OptTensor
+from torch_geometric.nn.conv import MessagePassing
+from torch_geometric.utils import spmm
+from pyg_spectral.utils import get_laplacian
+
 from scipy.special import comb
 
-class BernConv(MessagePassing):
 
+class BernConv(MessagePassing):
     r"""Convolutional layer with Bernstein Polynomials.
     paper: BernNet: Learning Arbitrary Graph Spectral Filters via Bernstein Approximation
     ref: https://github.com/ivam-he/BernNet/blob/main/NodeClassification/Bernpro.py
-    
+
     Args:
         K (int, optional): Number of iterations :math:`K`.
     """
@@ -30,7 +25,7 @@ class BernConv(MessagePassing):
     supports_norm_batch: bool = False
     _cache: Optional[Any]
 
-    def __init__(self, 
+    def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
         theta: Union[nn.Parameter, nn.Module] = None,
@@ -53,7 +48,7 @@ class BernConv(MessagePassing):
     def reset_cache(self):
         del self._cache
         self._cache = None
-    
+
     def reset_parameters(self):
         if hasattr(self.theta, 'reset_parameters'):
             self.theta.reset_parameters()
@@ -136,7 +131,7 @@ class BernConv(MessagePassing):
         #    return {'out': out, 'x': h, 'x_1': x, 'prop_mat_1': prop_mat_1, 'prop_mat_2': prop_mat_2}
 
         x = self._forward_theta(self.propagate(prop_mat_2, x=x)) # corresponding to tmps.
-        
+
         if self.hop == self.num_hops:
             out += (comb(self.num_hops, self.num_hops-self.hop+1) / (2**self.num_hops)) * x * F.relu(temps[self.hop])
             return {

@@ -4,16 +4,14 @@ import math
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torch.nn import Parameter
-
-from torch_geometric.typing import Adj, OptTensor, SparseTensor
-from torch_geometric.nn.conv import MessagePassing
-from torch_geometric.utils import spmm, add_self_loops
-from torch_geometric.data import Data
-import torch_geometric.transforms as T
 import torch.nn.functional as F
 
+from torch_geometric.typing import Adj
+from torch_geometric.nn.conv import MessagePassing
+from torch_geometric.utils import spmm
+
 from pyg_spectral.utils import get_laplacian
+
 
 def cheby(i,x):
     if i==0:
@@ -30,11 +28,10 @@ def cheby(i,x):
 
 
 class ChebConv2(MessagePassing):
-
     r"""Convolutional layer with Chebyshev-II Polynomials.
     paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
     ref: https://github.com/ivam-he/ChebNetII/blob/main/main/ChebnetII_pro.py
-    
+
     Args:
         num_hops (int), hop (int): total and current number of propagation hops.
             hop=0 explicitly handles x without propagation.
@@ -43,7 +40,6 @@ class ChebConv2(MessagePassing):
             before applying to the output.
         cached: whether cache the propagation matrix.
     """
-
     supports_batch: bool = False
     supports_norm_batch: bool = False
     _cache: Optional[Any]
@@ -128,7 +124,7 @@ class ChebConv2(MessagePassing):
         if self.hop == 0:
             coe_tmp=F.relu(self.temps)
             coe=coe_tmp.clone()
-            
+
             for i in range(self.num_hops+1):
                 coe[i]=coe_tmp[0]*cheby(i,math.cos((self.num_hops+0.5)*math.pi/(self.num_hops+1)))
                 for j in range(1,self.num_hops+1):
@@ -190,4 +186,3 @@ class ChebConv2(MessagePassing):
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}'
-

@@ -15,11 +15,11 @@ from utils import (
     setup_seed,
     setup_argparse,
     setup_args,
+    save_args,
     setup_logger,
     setup_logpath,
     clear_logger,
-    ResLogger,
-    LOGPATH)
+    ResLogger)
 
 
 class TrnWrapper(object):
@@ -97,26 +97,22 @@ class TrnWrapper(object):
         res_logger = trn()
 
         res_logger.save()
-        trial.set_user_attr("acc_test", res_logger._get(col='accuracy_test', row=0))
+        trial.set_user_attr("f1_test", res_logger._get(col='f1micro_test', row=0))
         return res_logger.data.loc[0, self.metric_name]
 
 
 def main(args):
     # ========== Run configuration
-    args.flag = f'param-{args.seed}'
-    args.logpath = setup_logpath(
-        folder_args=(args.model, args.data, args.conv_str, args.flag),
-        quiet=args.quiet)
     logger = setup_logger(args.logpath, level_console=args.loglevel, level_file=30, quiet=True)
     res_logger = ResLogger(args.logpath, prefix='param', quiet=args.quiet)
     res_logger.concat([('seed', args.seed),])
 
     # ========== Study configuration
-    storage_path = '-'.join(filter(None, ['optuna', args.suffix])) + '.db'
-    storage_path = LOGPATH.joinpath(storage_path).resolve().absolute()
+    study_path = '-'.join(filter(None, ['optuna', args.suffix])) + '.db'
+    study_path, _ = setup_logpath(folder_args=(study_path,))
     study = optuna.create_study(
-        study_name='-'.join([args.model, args.data, args.conv_str, args.flag]),
-        storage=f'sqlite:///{str(storage_path)}',
+        study_name=args.logid,
+        storage=f'sqlite:///{str(study_path)}',
         direction='maximize',
         sampler=optuna.samplers.TPESampler(
             seed=args.seed),
@@ -134,12 +130,14 @@ def main(args):
         model_loader=ModelLoader_Trial(args_run, res_logger),
         args=args_run,
         res_logger=res_logger,)
-
     study.optimize(
         trn,
         n_trials=args.n_trials,
         gc_after_trial=True,
         show_progress_bar=True,)
+
+    best_params = study.best_params
+    save_args(args.logpath, best_params)
     clear_logger(logger)
 
 
@@ -153,5 +151,9 @@ if __name__ == '__main__':
     seed_lst = args.seed.copy()
     for seed in seed_lst:
         args.seed = setup_seed(seed, args.cuda)
+        args.flag = f'param-{args.seed}'
+        args.logpath, args.logid = setup_logpath(
+            folder_args=(args.data, args.model, args.conv_repr, args.flag),
+            quiet=args.quiet)
 
         main(args)

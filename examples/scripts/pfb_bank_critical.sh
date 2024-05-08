@@ -7,7 +7,7 @@ ARGS_P=(
     "--loglevel" "30"
     "--epoch" "200"
     "--patience" "50"
-    "--suffix" "small"
+    "--suffix" "fb_bank"
 )
 DATAS=("cora" "citeseer" "pubmed")
 PARLIST="num_hops,in_layers,out_layers,hidden,lr_lin,lr_conv"

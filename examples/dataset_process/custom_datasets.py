@@ -47,7 +47,7 @@ class FilteredWikipediaNetwork(InMemoryDataset):
         download_url(f'{self.url}/{self.name}.npz', self.processed_dir)
 
     def process(self) -> None:
-        
+
         data = np.load(f'{self.processed_dir}/{self.name}.npz', allow_pickle=True)
         x = torch.tensor(data['node_features']).to(torch.float)
         y = torch.tensor(data['node_labels']).to(torch.long)
@@ -58,7 +58,7 @@ class FilteredWikipediaNetwork(InMemoryDataset):
         val_masks = torch.tensor(data['val_masks']).to(torch.bool)
         test_masks = torch.tensor(data['test_masks']).to(torch.bool)
 
-        data = Data(x=x, edge_index=edge_index, y=y, train_mask=train_masks, 
+        data = Data(x=x, edge_index=edge_index, y=y, train_mask=train_masks,
                     val_mask=val_masks, test_mask=test_masks)
 
         if self.pre_transform is not None:

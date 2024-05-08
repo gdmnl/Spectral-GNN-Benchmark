@@ -27,7 +27,7 @@ class ModelLoader(object):
         """
         self.model = args.model
         self.conv = args.conv
-        self.conv_str = args.conv_str
+        self.conv_repr = args.conv_repr
 
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
@@ -47,7 +47,7 @@ class ModelLoader(object):
 
         # >>>>>>>>>>
         if self.model in ['GCN']:
-            self.conv_str = 'GCNConv'   # Sometimes need to manually fix repr for logging
+            self.conv_repr = 'GCNConv'   # Sometimes need to manually fix repr for logging
             module_name = 'torch_geometric.nn.models'
             raise DeprecationWarning
 
@@ -57,12 +57,9 @@ class ModelLoader(object):
             class_name = self.model
 
             # Parse conv args
-            if self.conv in ['AdjConv', 'ChebConv']:
+            if self.conv in ['AdjConv', 'ChebConv', 'ClenShaw', 'Horner']:
                 kwargs.update(dict(
                     alpha=args.alpha,))
-            elif self.conv in ['ClenShaw', 'Horner']:
-                kwargs.update(dict(
-                    lamda=args.lamda,))
 
             # Parse model args
             if self.model in ['Iterative', 'AdaGNN', 'ACMGNN']:
@@ -100,14 +97,14 @@ class ModelLoader(object):
 
         self.logger.log(logging.LTRN, f"[model]: {str(self)}")
         self.logger.info(f"[trainer]: {trn.__name__}")
-        self.res_logger.concat([('model', self.model), ('conv', self.conv_str)])
+        self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
         return model, trn
 
     def __call__(self, *args, **kwargs):
         return self.get(*args, **kwargs)
 
     def __str__(self) -> str:
-        return f"{self.model}:{self.conv_str}"
+        return f"{self.model}:{self.conv_repr}"
 
 
 class ModelLoader_Trial(ModelLoader):
@@ -126,7 +123,7 @@ class ModelLoader_Trial(ModelLoader):
 
         self.logger.log(logging.LTRN, f"[model]: {str(self)}")
         self.logger.info(f"[trainer]: {trn.__name__}")
-        self.res_logger.concat([('model', self.model), ('conv', self.conv_str)])
+        self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
         return model, trn
 
     def update(self, args: Namespace, model: nn.Module) -> nn.Module:

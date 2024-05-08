@@ -4,7 +4,7 @@ Author: nyLiao
 File Created: 2024-04-29
 """
 import logging
-import optuna
+import json
 
 from trainer import SingleGraphLoader, ModelLoader
 from utils import (
@@ -15,17 +15,13 @@ from utils import (
     setup_logger,
     setup_logpath,
     clear_logger,
-    ResLogger,
-    LOGPATH)
+    ResLogger)
 
 
 def main(args):
     # ========== Run configuration
-    args.logpath = setup_logpath(
-        folder_args=(args.model, args.data, args.conv_str, args.flag),
-        quiet=args.quiet)
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
-    res_logger = ResLogger(args.logpath.parent.parent, quiet=args.quiet)
+    res_logger = ResLogger(quiet=args.quiet)
     res_logger.concat([('seed', args.seed),])
 
     # ========== Load data
@@ -49,7 +45,7 @@ def main(args):
     logger.info(f"[args]: {args}")
     logger.log(logging.LRES, f"[res]: {res_logger}")
     res_logger.save()
-    save_args(args.logpath, args)
+    save_args(args.logpath, vars(args))
     clear_logger(logger)
 
 
@@ -59,13 +55,11 @@ if __name__ == '__main__':
     parser.add_argument('--seed_param', type=int, default=1, help='Seed for optuna search')
     args = setup_args(parser)
 
-    storage_path = LOGPATH.joinpath('optuna.db').resolve().absolute()
-    study = optuna.load_study(
-        study_name='-'.join([args.model, args.data, args.conv_str, f'param-{args.seed_param}']),
-        storage=f'sqlite:///{str(storage_path)}')
-    optuna.logging.set_verbosity(optuna.logging.ERROR)
-
-    best_params = study.best_params
+    study_path, _ = setup_logpath(
+        folder_args=(args.data, args.model_repr, args.conv_repr, f'param-{args.seed_param}',
+                     'config.json'))
+    with open(study_path, 'r') as config_file:
+        best_params = json.load(config_file)
     for key, value in best_params.items():
         setattr(args, key, value)
 
@@ -73,5 +67,8 @@ if __name__ == '__main__':
     for seed in seed_lst:
         args.seed = setup_seed(seed, args.cuda)
         args.flag = f'{args.seed}'
+        args.logpath, _ = setup_logpath(
+            folder_args=(args.data, args.model_repr, args.conv_repr, args.flag),
+            quiet=args.quiet)
 
         main(args)

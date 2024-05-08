@@ -140,27 +140,28 @@ class SingleGraphLoader(object):
         if self.data.startswith('ogb'):
             module_name = 'ogb'
             pass
+            #FIXME: data symlink to OGB/PyG folders
+        elif self.data in ['chameleon_filtered', 'squirrel_filtered']:
+            module_name = 'dataset_process'
+            class_name = 'FilteredWikipediaNetwork'
         # Default to load from PyG
         else:
             module_name = 'torch_geometric.datasets'
             # Small-scale: use 60/20/20 split
             if self.data in ['cora', 'citeseer', 'pubmed']:
                 class_name = 'Planetoid'
-            elif self.data in ["chameleon", "squirrel"]:
-                class_name = 'WikipediaNetwork'
+            # elif self.data in ["chameleon", "squirrel"]:
+            #     class_name = 'WikipediaNetwork'
             elif self.data in ["cornell", "texas", "wisconsin"]:
                 class_name = 'WebKB'
-            elif self.data in ['chameleon_filtered',  'squirrel_filtered']:
-                class_name = 'FilteredWikipediaNetwork'
-                module_name = 'trainer'
             else:
                 raise ValueError(f"Dataset '{self}' not found.")
         # <<<<<<<<<<
 
-            kwargs = dict(
-                root=DATAPATH,
-                name=self.data,
-                transform=self.transform,)
+        kwargs = dict(
+            root=DATAPATH,
+            name=self.data,
+            transform=self.transform,)
         return module_name, class_name, kwargs
 
     def get(self, args: Namespace) -> Data:

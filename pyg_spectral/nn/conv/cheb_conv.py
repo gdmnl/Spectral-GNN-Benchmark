@@ -2,6 +2,7 @@ from typing import Optional, Any, Union
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
 from torch_geometric.typing import Adj
@@ -58,7 +59,7 @@ class ChebConv(MessagePassing):
         if self.hop == 0:
             self.temps = nn.Parameter(torch.ones(self.num_hops+1))
             self.temps.data.fill_(0.0)
-            self.temps.data[0]=1.0       
+            self.temps.data[0]=1.0
 
     def get_propagate_mat(self,
         x: Tensor,

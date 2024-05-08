@@ -50,6 +50,7 @@ def setup_argparse():
     parser.add_argument('-v', '--dev', type=int, default=0, help='GPU id')
     parser.add_argument('-z', '--suffix', type=str, default=None, help='Save name suffix.')
     parser.add_argument('-quiet', action='store_true', help='Dry run without saving logs.')
+    parser.add_argument('--storage', type=str, default='state_gpu', choices=['state_file', 'state_ram', 'state_gpu'], help='Storage scheme for saving the checkpoints.')
     parser.add_argument('--loglevel', type=int, default=10, help='10:progress, 15:train, 20:info, 25:result')
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
@@ -82,10 +83,8 @@ def setup_argparse():
     parser.add_argument('--theta_param', type=list_float, default=0.2, help='Hyperparameter for filter')
 
     # Conv-specific
-    # - AdjConv, ChebConv, ACMGNN
+    # - AdjConv, ChebConv, Clenshaw, Horner, ACMGNN
     parser.add_argument('--alpha', type=float, default=-1.0, help='Decay factor')
-    # - Clenshaw, Horner
-    parser.add_argument('--lamda', type=float, default=1.0, help='Eigenvalue')
     # <<<<<<<<<<
     return parser
 
@@ -96,19 +95,25 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = setup_cuda(args)
     # Set new args
     if args.model in ['DecoupledFixed']:
-        args.conv_str = f'{args.conv}-{args.theta_scheme}'
+        args.model_repr = args.model
+        args.conv_repr = f'{args.conv}-{args.theta_scheme}'
+    elif args.model in ['AdaGNN']:
+        args.model_repr = 'DecoupledVar'
+        args.conv_repr = args.conv
     elif args.model in ['ACMGNN']:
-        args.conv_str = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
+        args.model_repr = 'Iterative'
+        args.conv_repr = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
     else:
-        args.conv_str = args.conv
+        args.model_repr = args.model
+        args.conv_repr = args.conv
     return args
 
 
-def save_args(logpath: Path, args: argparse.Namespace):
-    if args.quiet:
+def save_args(logpath: Path, args: dict):
+    if 'quiet' in args and args['quiet']:
         return
     with open(logpath.joinpath('config.json'), 'w') as f:
-        f.write(json.dumps(dict_to_json(vars(args)), indent=4))
+        f.write(json.dumps(dict_to_json(args), indent=4))
 
 
 def dict_to_json(dictionary) -> dict:
