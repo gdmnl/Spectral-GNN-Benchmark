@@ -23,6 +23,15 @@ from utils import ResLogger
 DATAPATH = Path('../data')
 
 
+def idx2mask(idx, n):
+    res = tuple()
+    for v in idx.values():
+        mask = torch.zeros(n, dtype=bool)
+        mask[v] = True
+        res += (mask,)
+    return idx
+
+
 def split_random(seed, n, n_train, n_val):
     """Split index randomly"""
     np.random.seed(seed)
@@ -77,7 +86,7 @@ class SingleGraphLoader(object):
         self.num_classes = None
 
     # ===== Data processing
-    def _resolve_split(self, data: Data) -> None:
+    def _resolve_split(self, dataset: Dataset, data: Data) -> None:
         if type(self.data_split) is str:
             (r_train, r_val, r_test) = map(int, self.data_split.split('/'))
             n = data.num_nodes
@@ -88,6 +97,8 @@ class SingleGraphLoader(object):
             data.val_mask = torch.as_tensor(val_mask)
             data.test_mask = torch.as_tensor(test_mask)
         else:
+            if self.data.startswith('ogbn-'):
+                data.train_mask, data.val_mask, data.test_mask = idx2mask(dataset.get_idx_split())
             if data.train_mask.dim() > 1:
                 data.train_mask = data.train_mask[:, self.split_idx]
                 data.val_mask = data.val_mask[:, self.split_idx]
@@ -137,19 +148,43 @@ class SingleGraphLoader(object):
     # ===== Data acquisition
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
         # >>>>>>>>>>
-        if self.data.startswith('ogb'):
-            module_name = 'ogb'
-            pass
-            #FIXME: data symlink to OGB/PyG folders
-        elif self.data in ['chameleon_filtered', 'squirrel_filtered']:
+        if self.data.startswith('ogbn-'):
+            module_name = 'ogb.nodeproppred'
+            class_name = 'PygNodePropPredDataset'
+            kwargs = dict(
+                root=DATAPATH.joinpath('OGB'),
+                name=self.data,
+                transform=self.transform,)
+        elif self.data in ['chameleon_filtered', 'squirrel_filtered',\
+                'roman_empire', 'amazon_ratings', 'minesweeper', 'tolokers', 'questions']:
             module_name = 'dataset_process'
-            class_name = 'FilteredWikipediaNetwork'
+            class_name = 'Yandex'
+            kwargs = dict(
+                root=DATAPATH.joinpath('Yandex'),
+                name=self.data,
+                transform=self.transform,
+                pre_transform=T.ToUndirected())
         # Default to load from PyG
         else:
             module_name = 'torch_geometric.datasets'
+            kwargs = dict(
+                root=DATAPATH.joinpath('PyG'),
+                name=self.data,
+                transform=self.transform,)
             # Small-scale: use 60/20/20 split
             if self.data in ['cora', 'citeseer', 'pubmed']:
                 class_name = 'Planetoid'
+            elif self.data in ["photo", "computers"]:
+                class_name = 'Amazon'
+            elif self.data in ["cs", "physics"]:
+                class_name = 'Coauthor'
+            elif self.data in ["ego-facebook", "ego-twitter", "ego-gplus"]:
+                class_name = 'SNAPDataset'
+            elif self.data in ["facebook", "tweibo"]:
+                class_name = 'AttributedGraphDataset'
+            elif self.data in ["flickr", "reddit"]:
+                class_name = self.data.capitalize()
+                kwargs.pop('name')
             # elif self.data in ["chameleon", "squirrel"]:
             #     class_name = 'WikipediaNetwork'
             elif self.data in ["cornell", "texas", "wisconsin"]:
@@ -158,10 +193,6 @@ class SingleGraphLoader(object):
                 raise ValueError(f"Dataset '{self}' not found.")
         # <<<<<<<<<<
 
-        kwargs = dict(
-            root=DATAPATH,
-            name=self.data,
-            transform=self.transform,)
         return module_name, class_name, kwargs
 
     def get(self, args: Namespace) -> Data:
@@ -182,13 +213,16 @@ class SingleGraphLoader(object):
 
         dataset = load_import(class_name, module_name)(**kwargs)
         data = dataset[0]
-        data = self._resolve_split(data)
+        data = self._resolve_split(dataset, data)
 
         self._get_properties(dataset, data)
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
 
         self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
+        self.logger.info(f"[data]: {self.data}")
+        split_dict = {k[:-5]: v.sum().item() for k, v in self.data.items() if k.endswith('_mask')}
+        self.logger.info(f"[split]: {split_dict}")
         self.res_logger.concat([('data', self.data)])
         del dataset
         return data
@@ -213,7 +247,6 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
 
-        self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
         self.res_logger.concat([('data', self.data)])
         return data
 

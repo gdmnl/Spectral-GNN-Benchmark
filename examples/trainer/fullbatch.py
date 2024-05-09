@@ -45,13 +45,8 @@ class TrnFullbatch(TrnBase):
             raise NotImplementedError
         # if pyg_utils.contains_isolated_nodes(self.data.edge_index):
         #     self.logger.warning(f"Graph {self.data} contains isolated nodes.")
-        self.logger.info(f"[data]: {self.data}")
 
         self.mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
-        split_dict = {k: v.sum().item() for k, v in self.mask.items()}
-
-        self.logger.info(f"[split]: {split_dict}")
-
         return self.data, self.mask
 
     def _fetch_input(self) -> tuple:
