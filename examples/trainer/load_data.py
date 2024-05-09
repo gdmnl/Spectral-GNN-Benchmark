@@ -8,7 +8,6 @@ from pathlib import Path
 from argparse import Namespace
 import logging
 
-import numpy as np
 import torch
 import torch_geometric
 from torch_geometric.data import Data, Dataset
@@ -18,36 +17,10 @@ import pyg_spectral.transforms as Tspec
 from pyg_spectral.utils import load_import
 
 from utils import ResLogger
+from dataset_process import idx2mask, split_random
 
 
 DATAPATH = Path('../data')
-
-
-def idx2mask(idx, n):
-    res = tuple()
-    for v in idx.values():
-        mask = torch.zeros(n, dtype=bool)
-        mask[v] = True
-        res += (mask,)
-    return idx
-
-
-def split_random(seed, n, n_train, n_val):
-    """Split index randomly"""
-    np.random.seed(seed)
-    rnd = np.random.permutation(n)
-
-    train_idx = np.sort(rnd[:n_train])
-    val_idx = np.sort(rnd[n_train:n_train + n_val])
-
-    train_val_idx = np.concatenate((train_idx, val_idx))
-    test_idx = np.sort(np.setdiff1d(np.arange(n), train_val_idx))
-
-    train_mask, val_mask, test_mask = np.zeros(n, dtype=bool), np.zeros(n, dtype=bool), np.zeros(n, dtype=bool)
-    train_mask[train_idx] = True
-    val_mask[val_idx] = True
-    test_mask[test_idx] = True
-    return train_mask, val_mask, test_mask
 
 
 class SingleGraphLoader(object):
@@ -88,11 +61,10 @@ class SingleGraphLoader(object):
     # ===== Data processing
     def _resolve_split(self, dataset: Dataset, data: Data) -> None:
         if type(self.data_split) is str:
-            (r_train, r_val, r_test) = map(int, self.data_split.split('/'))
-            n = data.num_nodes
-            n_train, n_val = int(np.ceil(n * r_train / 100)), int(np.ceil(n * r_val / 100))
+            (r_train, r_val) = map(int, self.data_split.split('/')[:2])
+            r_train, r_val = r_train / 100, r_val / 100
 
-            train_mask, val_mask, test_mask = split_random(self.seed, n, n_train, n_val)
+            train_mask, val_mask, test_mask = split_random(data.y, r_train, r_val)
             data.train_mask = torch.as_tensor(train_mask)
             data.val_mask = torch.as_tensor(val_mask)
             data.test_mask = torch.as_tensor(test_mask)
@@ -155,6 +127,14 @@ class SingleGraphLoader(object):
                 root=DATAPATH.joinpath('OGB'),
                 name=self.data,
                 transform=self.transform,)
+        # TODO: arxiv-year, penn94(fb100)
+        elif self.data in ['genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki']:
+            module_name = 'dataset_process'
+            class_name = 'LINKX'
+            kwargs = dict(
+                root=DATAPATH.joinpath('LINKX'),
+                name=self.data,
+                transform=self.transform,)
         elif self.data in ['chameleon_filtered', 'squirrel_filtered',\
                 'roman_empire', 'amazon_ratings', 'minesweeper', 'tolokers', 'questions']:
             module_name = 'dataset_process'
@@ -171,17 +151,22 @@ class SingleGraphLoader(object):
                 root=DATAPATH.joinpath('PyG'),
                 name=self.data,
                 transform=self.transform,)
-            # Small-scale: use 60/20/20 split
-            if self.data in ['cora', 'citeseer', 'pubmed']:
-                class_name = 'Planetoid'
-            elif self.data in ["photo", "computers"]:
-                class_name = 'Amazon'
-            elif self.data in ["cs", "physics"]:
-                class_name = 'Coauthor'
-            elif self.data in ["ego-facebook", "ego-twitter", "ego-gplus"]:
-                class_name = 'SNAPDataset'
-            elif self.data in ["facebook", "tweibo"]:
-                class_name = 'AttributedGraphDataset'
+            pyg_mapping = {
+                'cora':         'Planetoid',
+                'citeseer':     'Planetoid',
+                'pubmed':       'Planetoid',
+                'photo':        'Amazon',
+                'computers':    'Amazon',
+                'cs':           'Coauthor',
+                'physics':      'Coauthor',
+                'ego-facebook': 'SNAPDataset',
+                'ego-twitter':  'SNAPDataset',
+                'ego-gplus':    'SNAPDataset',
+                'facebook':     'AttributedGraphDataset',
+                'tweibo':       'AttributedGraphDataset'
+            }
+            if self.data in pyg_mapping:
+                class_name = pyg_mapping[self.data]
             elif self.data in ["flickr", "reddit"]:
                 class_name = self.data.capitalize()
                 kwargs.pop('name')

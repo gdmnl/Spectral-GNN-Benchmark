@@ -21,20 +21,10 @@ class Yandex(InMemoryDataset):
         pre_transform: Optional[Callable] = None,
         force_reload: bool = False,
     ) -> None:
-        self.url = "https://github.com/yandex-research/heterophilous-graphs/raw/main/data"
-
         self.name = name.lower()
         super().__init__(root, transform, pre_transform,
                          force_reload=force_reload)
         self.load(self.processed_paths[0])
-
-    @property
-    def raw_dir(self) -> str:
-        return osp.join(self.root, self.name)
-
-    @property
-    def processed_dir(self) -> str:
-        return osp.join(self.root, self.name)
 
     @property
     def raw_file_names(self) -> str:
@@ -45,11 +35,11 @@ class Yandex(InMemoryDataset):
         return 'data.pt'
 
     def download(self) -> None:
-        download_url(f'{self.url}/{self.name}.npz', self.processed_dir)
+        url = "https://github.com/yandex-research/heterophilous-graphs/raw/main/data"
+        download_url(f'{url}/{self.name}.npz', self.raw_dir)
 
     def process(self) -> None:
-
-        data = np.load(f'{self.processed_dir}/{self.name}.npz', allow_pickle=True)
+        data = np.load(osp.join(self.raw_dir, f'{self.name}.npz'), allow_pickle=True)
         x = torch.tensor(data['node_features'], dtype=torch.float)
         y = torch.tensor(data['node_labels'], dtype=torch.long)
         edge_index = torch.tensor(data['edges'], dtype=torch.long).t().contiguous()
