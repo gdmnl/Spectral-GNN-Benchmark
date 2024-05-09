@@ -13,11 +13,13 @@ import torch_geometric
 from torch_geometric.data import Data, Dataset
 import torch_geometric.transforms as T
 from torch_geometric.data.dataset import _get_flattened_data_list
+
 import pyg_spectral.transforms as Tspec
 from pyg_spectral.utils import load_import
 
 from utils import ResLogger
 from dataset_process import idx2mask, split_random
+from dataset_process.linkx import T_arxiv_year
 
 
 DATAPATH = Path('../data')
@@ -60,7 +62,7 @@ class SingleGraphLoader(object):
 
     # ===== Data processing
     def _resolve_split(self, dataset: Dataset, data: Data) -> None:
-        if type(self.data_split) is str:
+        if hasattr(self, 'data_split'):
             (r_train, r_val) = map(int, self.data_split.split('/')[:2])
             r_train, r_val = r_train / 100, r_val / 100
 
@@ -70,7 +72,7 @@ class SingleGraphLoader(object):
             data.test_mask = torch.as_tensor(test_mask)
         else:
             if self.data.startswith('ogbn-'):
-                data.train_mask, data.val_mask, data.test_mask = idx2mask(dataset.get_idx_split())
+                data.train_mask, data.val_mask, data.test_mask = idx2mask(dataset.get_idx_split(), data.y.size(0))
             if data.train_mask.dim() > 1:
                 data.train_mask = data.train_mask[:, self.split_idx]
                 data.val_mask = data.val_mask[:, self.split_idx]
@@ -117,6 +119,17 @@ class SingleGraphLoader(object):
             raise TypeError(f"Invalid transform type: {type(self.transform)}")
         return self.transform
 
+    def _T_prepend(self, new_t: List[T.BaseTransform]) -> T.Compose:
+        if self.transform is None:
+            self.transform = T.Compose(new_t)
+        elif isinstance(self.transform, T.Compose):
+            self.transform.transforms = new_t + self.transform.transforms
+        elif isinstance(self.transform, T.BaseTransform):
+            self.transform = T.Compose(new_t + [self.transform])
+        else:
+            raise TypeError(f"Invalid transform type: {type(self.transform)}")
+        return self.transform
+
     # ===== Data acquisition
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
         # >>>>>>>>>>
@@ -126,8 +139,16 @@ class SingleGraphLoader(object):
             kwargs = dict(
                 root=DATAPATH.joinpath('OGB'),
                 name=self.data,
+                transform=self._T_prepend(T.ToUndirected()),)
+        elif self.data in ['arxiv-year']:
+            module_name = 'ogb.nodeproppred'
+            class_name = 'PygNodePropPredDataset'
+            kwargs = dict(
+                root=DATAPATH.joinpath('LINKX'),
+                name='ogbn-arxiv',
+                pre_transform=T_arxiv_year(),
                 transform=self.transform,)
-        # TODO: arxiv-year, penn94(fb100)
+        # FIXME: check ToUndirected in LINKX
         elif self.data in ['genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki']:
             module_name = 'dataset_process'
             class_name = 'LINKX'
@@ -135,15 +156,22 @@ class SingleGraphLoader(object):
                 root=DATAPATH.joinpath('LINKX'),
                 name=self.data,
                 transform=self.transform,)
-        elif self.data in ['chameleon_filtered', 'squirrel_filtered',\
+        elif self.data in ['penn94', 'amherst41', 'cornell5', 'johns_hopkins55', 'reed98']:
+            module_name = 'dataset_process'
+            class_name = 'FB100'
+            kwargs = dict(
+                root=DATAPATH.joinpath('LINKX'),
+                name=self.data,
+                transform=self.transform,)
+        elif self.data in ['chameleon_filtered', 'squirrel_filtered', \
                 'roman_empire', 'amazon_ratings', 'minesweeper', 'tolokers', 'questions']:
             module_name = 'dataset_process'
             class_name = 'Yandex'
             kwargs = dict(
                 root=DATAPATH.joinpath('Yandex'),
                 name=self.data,
-                transform=self.transform,
-                pre_transform=T.ToUndirected())
+                pre_transform=T.ToUndirected(),
+                transform=self.transform)
         # Default to load from PyG
         else:
             module_name = 'torch_geometric.datasets'
@@ -163,17 +191,18 @@ class SingleGraphLoader(object):
                 'ego-twitter':  'SNAPDataset',
                 'ego-gplus':    'SNAPDataset',
                 'facebook':     'AttributedGraphDataset',
-                'tweibo':       'AttributedGraphDataset'
+                'tweibo':       'AttributedGraphDataset',
+                # 'chameleon':    'WikipediaNetwork',
+                # 'squirrel':     'WikipediaNetwork',
+                'cornell':      'WebKB',
+                'texas':        'WebKB',
+                'wisconsin':    'WebKB',
             }
             if self.data in pyg_mapping:
                 class_name = pyg_mapping[self.data]
             elif self.data in ["flickr", "reddit"]:
                 class_name = self.data.capitalize()
                 kwargs.pop('name')
-            # elif self.data in ["chameleon", "squirrel"]:
-            #     class_name = 'WikipediaNetwork'
-            elif self.data in ["cornell", "texas", "wisconsin"]:
-                class_name = 'WebKB'
             else:
                 raise ValueError(f"Dataset '{self}' not found.")
         # <<<<<<<<<<
@@ -204,9 +233,13 @@ class SingleGraphLoader(object):
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
 
+        # Remaining resolvers
+        if not args.multi and data.y.dim() > 1 and data.y.size(1) == 1:
+            data.y = data.y.flatten()
+
         self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
-        self.logger.info(f"[data]: {self.data}")
-        split_dict = {k[:-5]: v.sum().item() for k, v in self.data.items() if k.endswith('_mask')}
+        self.logger.info(f"[data]: {data}")
+        split_dict = {k[:-5]: v.sum().item() for k, v in data.items() if k.endswith('_mask')}
         self.logger.info(f"[split]: {split_dict}")
         self.res_logger.concat([('data', self.data)])
         del dataset

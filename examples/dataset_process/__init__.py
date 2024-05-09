@@ -1,5 +1,5 @@
 from .yandex import Yandex
-from .linkx import LINKX
+from .linkx import LINKX, FB100
 
 from .utils import (
     idx2mask,

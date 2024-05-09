@@ -8,7 +8,7 @@ def idx2mask(idx: dict, n: int) -> tuple:
         mask = torch.zeros(n, dtype=bool)
         mask[idx[k]] = True
         res += (mask,)
-    return idx
+    return res
 
 
 def split_random(label: torch.Tensor, r_train: float, r_val: float, ignore_neg=True) -> tuple:
@@ -41,7 +41,7 @@ def even_quantile_labels(vals, nclasses, verbose=True):
     vals is np array
     returns an np array of int class labels
     """
-    label = -1 * np.ones(vals.shape[0], dtype=np.int)
+    label = -1 * np.ones(vals.shape[0], dtype=int)
     interval_lst = []
     lower = -np.inf
     for k in range(nclasses - 1):

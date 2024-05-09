@@ -27,6 +27,14 @@ class Yandex(InMemoryDataset):
         self.load(self.processed_paths[0])
 
     @property
+    def raw_dir(self) -> str:
+        return osp.join(self.root, self.name, 'raw')
+
+    @property
+    def processed_dir(self) -> str:
+        return osp.join(self.root, self.name, 'processed')
+
+    @property
     def raw_file_names(self) -> str:
         return f'{self.name}.npz'
 

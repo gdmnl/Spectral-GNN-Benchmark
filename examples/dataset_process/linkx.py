@@ -1,15 +1,20 @@
 import os.path as osp
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 import scipy
+from sklearn.preprocessing import label_binarize
 import pandas as pd
 import torch
 
 from torch_geometric.data import Data, InMemoryDataset, download_url, download_google_url
 from torch_geometric.utils import coalesce
+from torch_geometric.transforms import BaseTransform
 
 from .utils import even_quantile_labels
+
+
+NCLASS_Q = 5
 
 
 class LINKX(InMemoryDataset):
@@ -44,6 +49,14 @@ class LINKX(InMemoryDataset):
         super().__init__(root, transform, pre_transform,
                          force_reload=force_reload)
         self.load(self.processed_paths[0])
+
+    @property
+    def raw_dir(self) -> str:
+        return osp.join(self.root, self.name, 'raw')
+
+    @property
+    def processed_dir(self) -> str:
+        return osp.join(self.root, self.name, 'processed')
 
     @property
     def raw_file_names(self) -> str:
@@ -88,23 +101,24 @@ class LINKX(InMemoryDataset):
         elif self.name in ['wiki']:
             x = torch.load(osp.join(self.raw_dir, f'{self.name}_features.pt'))
             y = torch.load(osp.join(self.raw_dir, f'{self.name}_views.pt'))
-            n = y.shape(0)
+            n = y.shape[0]
             edge_index = torch.load(osp.join(self.raw_dir, f'{self.name}_edges.pt')).t().contiguous()
             edge_index = coalesce(edge_index, num_nodes=n)
         else:
             data = scipy.io.loadmat(osp.join(self.raw_dir, f'{self.name}.mat'))
             x = torch.tensor(data['node_feat'], dtype=torch.float)
             if self.name in ['snap-patents']:
-                y = even_quantile_labels(data['year'].flatten(), 5, verbose=False)
+                y = even_quantile_labels(data['year'].flatten(), NCLASS_Q, verbose=False)
             else:
                 y = torch.tensor(data['label'], dtype=torch.long).flatten()
-            n = y.shape(0)
+            n = y.shape[0]
             edge_index = torch.tensor(data['edge_index'], dtype=torch.long).contiguous()
             edge_index = coalesce(edge_index, num_nodes=n)
         kwargs = {'x': x, 'edge_index': edge_index, 'y': y}
 
         splits_keys = [k.split('_')[0] for k in self.splits_drive_url]
         if self.name in splits_keys:
+            # 50/25/25 train/valid/test split
             splits_lst = np.load(osp.join(self.raw_dir, f'{self.name}_splits.npy'), allow_pickle=True)
             mask = {}
             for k in ['train', 'valid', 'test']:
@@ -121,3 +135,71 @@ class LINKX(InMemoryDataset):
             data = self.pre_transform(data)
 
         self.save([data], self.processed_paths[0])
+
+
+class FB100(InMemoryDataset):
+    def __init__(
+        self,
+        root: str,
+        name: str,
+        transform: Optional[Callable] = None,
+        pre_transform: Optional[Callable] = None,
+        force_reload: bool = False,
+    ) -> None:
+        self.name = name.lower()
+        super().__init__(root, transform, pre_transform,
+                         force_reload=force_reload)
+        self.load(self.processed_paths[0])
+
+    @property
+    def raw_dir(self) -> str:
+        return osp.join(self.root, self.name, 'raw')
+
+    @property
+    def processed_dir(self) -> str:
+        return osp.join(self.root, self.name, 'processed')
+
+    @property
+    def raw_file_names(self) -> str:
+        return f'{self.name}.mat'
+
+    @property
+    def processed_file_names(self) -> str:
+        return 'data.pt'
+
+    def download(self) -> None:
+        url = "https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/facebook100"
+        name = self.name.replace('_', ' ').capitalize()
+        download_url(f'{url}/{name}.mat', self.raw_dir, filename=f'{self.name}.mat')
+
+    def process(self) -> None:
+        data = scipy.io.loadmat(osp.join(self.raw_dir, f'{self.name}.mat'))
+        n = data['A'].shape[0]
+        edge_index = torch.tensor(data['A'].nonzero(), dtype=torch.long).contiguous()
+        edge_index = coalesce(edge_index, num_nodes=n)
+
+        data = data['local_info'].astype(int)
+        y = torch.tensor(data[:, 1] - 1, dtype=torch.long).flatten()
+        # make features into one-hot encodings
+        data = np.hstack((np.expand_dims(data[:, 0], 1), data[:, 2:]))
+        x = np.empty((n, 0))
+        for col in range(data.shape[1]):
+            feat_col = data[:, col]
+            feat_onehot = label_binarize(feat_col, classes=np.unique(feat_col))
+            x = np.hstack((x, feat_onehot))
+        x = torch.tensor(x, dtype=torch.float)
+
+        data = Data(x=x, edge_index=edge_index, y=y)
+
+        if self.pre_transform is not None:
+            data = self.pre_transform(data)
+
+        self.save([data], self.processed_paths[0])
+
+
+class T_arxiv_year(BaseTransform):
+    def forward(self, data: Any) -> Any:
+        y = even_quantile_labels(data['node_year'].flatten(), NCLASS_Q, verbose=False)
+        data.y = torch.tensor(y, dtype=torch.long)
+        del data['node_year']
+        return data
