@@ -259,7 +259,7 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
         module_name, class_name, kwargs = self._resolve_import(args)
         dataset = load_import(class_name, module_name)(**kwargs)
         data = dataset[0]
-        data = self._resolve_split(data)
+        data = self._resolve_split(dataset, data)
 
         self._get_properties(dataset, data)
         args.num_features, args.num_classes = self.num_features, self.num_classes

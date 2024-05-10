@@ -121,8 +121,6 @@ class ModelLoader_Trial(ModelLoader):
         if hasattr(model, 'reset_cache'):
             model.reset_cache()
 
-        self.logger.log(logging.LTRN, f"[model]: {str(self)}")
-        self.logger.info(f"[trainer]: {trn.__name__}")
         self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
         return model, trn
 
