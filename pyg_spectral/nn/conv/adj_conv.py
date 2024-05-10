@@ -15,7 +15,7 @@ class AdjConv(MessagePassing):
     Args:
         num_hops (int), hop (int): total and current number of propagation hops.
         alpha (float): additional scaling for self-loop in adjacency matrix
-            :math:`\mathbf{A} + \alpha\mathbf{I}`.
+            :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. `improved` in PyG GCNConv.
         theta (nn.Parameter or nn.Module): transformation of propagation result
             before applying to the output.
         cached: whether cache the propagation matrix.

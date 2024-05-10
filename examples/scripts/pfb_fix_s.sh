@@ -31,21 +31,28 @@ ARGS_S=(
 DATAS=("cornell" "texas" "wisconsin" "chameleon_filtered" "squirrel_filtered")
 MODELS=("DecoupledFixed")
 CONVS=AdjConv
-SCHEMES=("impulse" "appr" "nappr" "hk" "mono")
+SCHEMES=("impulse" "mono" "appr" "nappr" "hk" "gaussian")
 PARLIST="theta_param,normg,dp_lin,dp_conv,lr_lin,wd_lin"
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do
         for scheme in ${SCHEMES[@]}; do
+            # Add model/conv-specific args/params here
+            if [ "$scheme" = "gaussian" ]; then
+                ARGS_C=("--alpha" "1.0")
+            else
+                ARGS_C=()
+            fi
+
             # Run hyperparameter search
             python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
                 --data $data --model $model --conv $CONVS --theta_scheme $scheme \
-                "${ARGS_P[@]}"
+                "${ARGS_P[@]}" "${ARGS_C[@]}"
 
             # Run repeatative with best hyperparameters
             python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
                 --data $data --model $model --conv $CONVS --theta_scheme $scheme \
-                "${ARGS_S[@]}"
+                "${ARGS_S[@]}" "${ARGS_C[@]}"
         done
     done
 done
