@@ -7,14 +7,14 @@ from pyg_spectral.utils import load_import
 
 
 class ACMGNN(BaseNN):
-    r"""Decoupled structure with diag transformation each hop of propagation.
+    r"""Iterative structure for ACM conv.
     paper: Revisiting Heterophily For Graph Neural Networks
     paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
     ref: https://github.com/SitaoLuan/ACM-GNN
 
     Args:
         theta_scheme (str): Channel list. "FBGNN"="low-high", "ACMGNN"="low-high-id",
-            "ACMGNN+"="low-high-id-struct" (not implemented).
+            ("ACMGNN+"="low-high-id-struct", not implemented).
         weight_initializer (str, optional): The initializer for the weight.
         --- BaseNN Args ---
         conv (str): Name of :class:`pyg_spectral.nn.conv` module.

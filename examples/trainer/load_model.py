@@ -69,6 +69,12 @@ class ModelLoader(object):
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,))
                 trn = TrnFullbatch
+            elif self.model in ['DecoupledFixedCompose', 'DecoupledVarCompose']:
+                kwargs.update(dict(
+                    theta_scheme=args.theta_scheme,
+                    theta_param=args.theta_param,
+                    combine=args.combine,))
+                trn = TrnFullbatch
             else:
                 raise ValueError(f"Model '{self}' not found.")
         # <<<<<<<<<<
@@ -96,6 +102,7 @@ class ModelLoader(object):
             model.reset_cache()
 
         self.logger.log(logging.LTRN, f"[model]: {str(self)}")
+        self.logger.log(logging.LTRN, str(model))
         self.logger.info(f"[trainer]: {trn.__name__}")
         self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
         return model, trn

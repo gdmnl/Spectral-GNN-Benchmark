@@ -80,7 +80,9 @@ def setup_argparse():
     # Model-specific
     # - Decoupled, ACMGNN
     parser.add_argument('--theta_scheme', type=str, default="appr", help='Filter name')
-    parser.add_argument('--theta_param', type=list_float, default=0.2, help='Hyperparameter for filter')
+    parser.add_argument('--theta_param', type=list_float, default=0.2, help='Hyperparameter for filter') # Support list by default
+    # - DecoupledCompose
+    parser.add_argument('--combine', type=str, default="sum_weighted", choices=['sum', 'sum_weighted', 'cat'], help='How to combine different channels of convs')
 
     # Conv-specific
     # - AdjConv, ChebConv, Clenshaw, Horner, ACMGNN
@@ -94,7 +96,7 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = parser.parse_args()
     args = setup_cuda(args)
     # Set new args
-    if args.model in ['DecoupledFixed']:
+    if args.model in ['DecoupledFixed', 'DecoupledFixedCompose']:
         args.model_repr = args.model
         args.conv_repr = f'{args.conv}-{args.theta_scheme}'
     elif args.model in ['AdaGNN']:
