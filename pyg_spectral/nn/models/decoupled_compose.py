@@ -52,7 +52,14 @@ class DecoupledFixedCompose(BaseNNCompose):
         for c, scheme, param in zip(conv, theta_schemes, theta_params):
             theta = gen_theta(num_hops, scheme, param)
             conv_cls = load_import(c, lib)
-            kwargs_c = {k: v for k, v in kwargs.items() if k in conv_cls.__init__.__code__.co_varnames}
+            kwargs_c = {}
+            for k, v in kwargs.items():
+                # Find required arguments for current conv class
+                if k in conv_cls.__init__.__code__.co_varnames:
+                    if isinstance(v, list) and len(v) == len(conv):
+                        kwargs_c[k] = v[c]
+                    else:
+                        kwargs_c[k] = v
 
             # NOTE: k=0 layer explicitly handles x without propagation. So there is
             # (num_hops+1) conv layers in total.
@@ -113,7 +120,14 @@ class DecoupledVarCompose(BaseNNCompose):
         for c, scheme, param in zip(conv, theta_schemes, theta_params):
             self.theta_init.append(gen_theta(num_hops, scheme, param))
             conv_cls = load_import(c, lib)
-            kwargs_c = {k: v for k, v in kwargs.items() if k in conv_cls.__init__.__code__.co_varnames}
+            kwargs_c = {}
+            for k, v in kwargs.items():
+                # Find required arguments for current conv class
+                if k in conv_cls.__init__.__code__.co_varnames:
+                    if isinstance(v, list) and len(v) == len(conv):
+                        kwargs_c[k] = v[c]
+                    else:
+                        kwargs_c[k] = v
 
             # NOTE: k=0 layer explicitly handles x without propagation. So there is
             # (num_hops+1) conv layers in total.

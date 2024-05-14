@@ -35,6 +35,7 @@ class TrnWrapper(object):
         self.data, self.model, self.trn_cls = None, None, None
 
     def _get_suggest(self, trial, key):
+        list2str = lambda x: ','.join(map(str, x))
         nofmt = lambda x: x
         # >>>>>>>>>>
         theta_dct = {
@@ -53,6 +54,7 @@ class TrnWrapper(object):
             'in_layers':    (trial.suggest_int, (1, 3), {}, nofmt),
             'out_layers':   (trial.suggest_int, (1, 3), {}, nofmt),
             'hidden':       (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}, nofmt),
+            'combine':      (trial.suggest_categorical, (["sum", "sum_weighted", "cat"],), {}, nofmt),
             # secondary
             'theta_param': theta_dct.get(self.args.theta_scheme, None),
             'normg':        (trial.suggest_float, (0.0, 1.0), {'step': 0.05}, lambda x: round(x, 2)),
@@ -62,6 +64,7 @@ class TrnWrapper(object):
             'lr_conv':      (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
             'wd_lin':       (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
             'wd_conv':      (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'beta':         (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
         }
 
         # Model/conv-specific
@@ -71,7 +74,21 @@ class TrnWrapper(object):
         # <<<<<<<<<<
 
         func, fargs, fkwargs, fmt = suggest_dct[key]
-        return func(key, *fargs, **fkwargs), fmt
+        if 'Compose' in self.args.model:
+            convs = self.args.conv.split(',')
+            if key == 'theta_param':
+                return list2str([func(*fargs, **fkwargs) for _ in convs]), str
+            elif key == 'beta':
+                beta_c = {
+                    'AdjiConv':     [(0.0, 1.0), (0.0, 1.0)],   # FAGNN
+                    'Adji2Conv':    [(1.0, 2.0), (0.0, 1.0)],   # G2CN
+                    'AdjDiffConv':  [(0.0, 1.0), (-1.0, 0.0)],  # GNN-LF/HF
+                }
+                return list2str([func(*beta_i, **fkwargs) for beta_i in beta_c[convs[0]]]), str
+            else:
+                return func(key, *fargs, **fkwargs), fmt
+        else:
+            return func(key, *fargs, **fkwargs), fmt
 
     def __call__(self, trial):
         args = deepcopy(self.args)

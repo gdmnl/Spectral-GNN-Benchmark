@@ -130,3 +130,55 @@ class AdjConv(MessagePassing):
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(theta={self.theta})'
+
+
+class AdjDiffConv(AdjConv):
+    r"""Linear filter using the normalized adjacency matrix for propagation.
+        Preprocess the feature by distinguish matrix :math:`\beta\mathbf{L} + \mathbf{I}`.
+
+    Args:
+        num_hops (int), hop (int): total and current number of propagation hops.
+        alpha (float): additional scaling for self-loop in adjacency matrix
+            :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. `improved` in PyG GCNConv.
+        beta (float): scaling for self-loop in distinguish matrix
+            :math:`\beta\mathbf{L} + \mathbf{I}`
+        theta (nn.Parameter or nn.Module): transformation of propagation result
+            before applying to the output.
+        cached: whether cache the propagation matrix.
+    """
+    def __init__(self,
+        num_hops: int = 0,
+        hop: int = 0,
+        theta: Union[nn.Parameter, nn.Module] = None,
+        alpha: float = -1.0,
+        beta: float = None,
+        cached: bool = True,
+        **kwargs
+    ):
+        super(AdjDiffConv, self).__init__(num_hops, hop, theta, alpha, cached, **kwargs)
+        self.beta = beta or 1.0
+
+    def forward(self,
+        out: Tensor,
+        x: Tensor,
+        prop_mat: Adj,
+    ) -> dict:
+        r"""
+        Args & Returns: (dct): same with output of get_forward_mat()
+        """
+        if self.hop == 0 and not callable(self.theta):
+            # I + beta * L -> (1+beta) * I - beta * A
+            out = self.propagate(prop_mat, x=x)
+            out = self._forward_theta(x)
+            out = (1 + self.beta) * x - self.beta * out
+            return {'out': out, 'x': x, 'prop_mat': prop_mat}
+
+        # propagate_type: (x: Tensor)
+        x = self.propagate(prop_mat, x=x)
+
+        out += self._forward_theta(x)
+
+        return {
+            'out': out,
+            'x': x,
+            'prop_mat': prop_mat}

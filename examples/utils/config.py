@@ -86,7 +86,9 @@ def setup_argparse():
 
     # Conv-specific
     # - AdjConv, ChebConv, Clenshaw, Horner, ACMGNN
-    parser.add_argument('--alpha', type=float, default=-1.0, help='Decay factor')
+    parser.add_argument('--alpha', type=list_float, default=-1.0, help='Decay factor')
+    # - AdjiConv
+    parser.add_argument('--beta', type=list_float, default=-1.0, help='Scaling factor')
     # <<<<<<<<<<
     return parser
 
@@ -97,8 +99,11 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = setup_cuda(args)
     # Set new args
     if args.model in ['DecoupledFixed', 'DecoupledFixedCompose']:
-        args.model_repr = args.model
+        args.model_repr = 'DecoupledFixed'
         args.conv_repr = f'{args.conv}-{args.theta_scheme}'
+    elif args.model in ['DecoupledVar', 'DecoupledVarCompose']:
+        args.model_repr = 'DecoupledVar'
+        args.conv_repr = args.conv
     elif args.model in ['AdaGNN']:
         args.model_repr = 'DecoupledVar'
         args.conv_repr = args.conv
