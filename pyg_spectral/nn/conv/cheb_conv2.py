@@ -169,9 +169,9 @@ class ChebConv2(MessagePassing):
             out += self._forward_theta(h) * temps[self.hop]
             return {'out': out, 'x': h, 'x_1': x, 'prop_mat': prop_mat, 'temps': temps}
 
-        h = self.propagate(prop_mat, x=x)
+        h = self._forward_theta(self.propagate(prop_mat, x=x))
         h = 2. * h - x_1
-        out += self._forward_theta(h) * temps[self.hop]
+        out += h * temps[self.hop]
 
         return {
             'out': out,
