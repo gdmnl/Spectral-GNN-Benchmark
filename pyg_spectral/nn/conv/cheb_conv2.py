@@ -52,7 +52,6 @@ class ChebConv2(MessagePassing):
         cached: bool = True,
         **kwargs
     ):
-        # FEATURE: `combine_root` as `pyg.nn.conv.SimpleConv`
         kwargs.setdefault('aggr', 'add')
         super(ChebConv2, self).__init__(**kwargs)
 

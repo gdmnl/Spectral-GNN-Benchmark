@@ -67,7 +67,7 @@ def setup_argparse():
     parser.add_argument('--dp_lin', type=float, default=0.5, help='Dropout rate for linear')
     parser.add_argument('--dp_conv', type=float, default=0.5, help='Dropout rate for conv')
     # Training configuration
-    parser.add_argument('-e', '--epoch', type=int, default=100, help='Number of epochs')
+    parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
     parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
     parser.add_argument('-b', '--batch', type=int, default=512, help='Batch size')
@@ -80,11 +80,15 @@ def setup_argparse():
     # Model-specific
     # - Decoupled, ACMGNN
     parser.add_argument('--theta_scheme', type=str, default="appr", help='Filter name')
-    parser.add_argument('--theta_param', type=list_float, default=0.2, help='Hyperparameter for filter')
+    parser.add_argument('--theta_param', type=list_float, default=0.2, help='Hyperparameter for filter') # Support list by default
+    # - DecoupledCompose
+    parser.add_argument('--combine', type=str, default="sum_weighted", choices=['sum', 'sum_weighted', 'cat'], help='How to combine different channels of convs')
 
     # Conv-specific
     # - AdjConv, ChebConv, Clenshaw, Horner, ACMGNN
-    parser.add_argument('--alpha', type=float, default=-1.0, help='Decay factor')
+    parser.add_argument('--alpha', type=list_float, default=-1.0, help='Decay factor')
+    # - AdjiConv
+    parser.add_argument('--beta', type=list_float, default=-1.0, help='Scaling factor')
     # <<<<<<<<<<
     return parser
 
@@ -94,9 +98,12 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = parser.parse_args()
     args = setup_cuda(args)
     # Set new args
-    if args.model in ['DecoupledFixed']:
-        args.model_repr = args.model
+    if args.model in ['DecoupledFixed', 'DecoupledFixedCompose']:
+        args.model_repr = 'DecoupledFixed'
         args.conv_repr = f'{args.conv}-{args.theta_scheme}'
+    elif args.model in ['DecoupledVar', 'DecoupledVarCompose']:
+        args.model_repr = 'DecoupledVar'
+        args.conv_repr = args.conv
     elif args.model in ['AdaGNN']:
         args.model_repr = 'DecoupledVar'
         args.conv_repr = args.conv

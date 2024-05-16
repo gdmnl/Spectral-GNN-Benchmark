@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Optional, Any, Dict
 
 import torch
 import torch.nn as nn
@@ -14,7 +14,7 @@ from pyg_spectral.utils import get_laplacian
 
 
 class ACMConv(MessagePassing):
-    r"""Convolutional layer with ACMGNN(I and II).
+    r"""Convolutional layer of FBGNN & ACMGNN(I & II).
     paper: Revisiting Heterophily For Graph Neural Networks
     paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
     ref: https://github.com/SitaoLuan/ACM-GNN/blob/main/ACM-Geometric/layers.py
@@ -78,7 +78,7 @@ class ACMConv(MessagePassing):
     def get_propagate_mat(self,
         x: Tensor,
         edge_index: Adj
-    ) -> Adj:
+    ) -> Dict[str, Adj]:
         r"""Get matrices for self.propagate(). Called before each forward() with
             same input.
 
@@ -92,7 +92,7 @@ class ACMConv(MessagePassing):
             prop_mat_low = edge_index
             # A_norm -> L_norm
             prop_mat_high = get_laplacian(
-                edge_index,
+                edge_index.clone(),
                 normalization=True,
                 dtype=x.dtype)
 
@@ -168,4 +168,4 @@ class ACMConv(MessagePassing):
             return f'{self.__class__.__name__}II(theta={self.theta})'
 
 
-# TODO: attr mapping in ACM++
+# FEATURE: attr mapping in ACM++

@@ -14,5 +14,5 @@ check_symbolic_link() {
 
 if [ "$(hostname)" = "dmal-triangle-001" ]; then
     check_symbolic_link "../log"  "/share/data/transfer/Spectral-GNN-Benchmark/log"
-    check_symbolic_link "../data" "/share/data/dataset/PyG/"
+    check_symbolic_link "../data" "/share/data/dataset/"
 fi

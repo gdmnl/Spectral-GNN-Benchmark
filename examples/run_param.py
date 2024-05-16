@@ -30,38 +30,41 @@ class TrnWrapper(object):
         self.model_loader = model_loader
         self.args = args
         self.res_logger = res_logger or ResLogger()
+        self.fmt_logger = {}
 
         self.data, self.model, self.trn_cls = None, None, None
 
-    def _loader_get(self, args):
-        self.data = self.data_loader(args)
-        self.model, trn_cls = self.model_loader(args)
-        self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
-
     def _get_suggest(self, trial, key):
+        list2str = lambda x: ','.join(map(str, x))
+        nofmt = lambda x: x
         # >>>>>>>>>>
         theta_dct = {
-            "appr":  (trial.suggest_float, (0.0, 1.0), {}),
-            "nappr": (trial.suggest_float, (0.0, 1.0), {}),
-            "mono":  (trial.suggest_float, (0.0, 1.0), {}),
-            "hk":    (trial.suggest_float, (1e-2, 10), {'log': True}),
-            "impulse": (lambda x, _: x[0], (self.args.num_hops,), {}),
+            # "impulse": (lambda x, _: x[0], (self.args.num_hops,), {}),
+            "ones":     (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+            "impulse":  (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+            "appr":     (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+            "nappr":    (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+            "mono":     (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+            "hk":       (trial.suggest_float, (1e-2, 10), {'log': True}, lambda x: float(f'{x:.3e}')),
+            "gaussian": (trial.suggest_float, (1e-2, 10), {'log': True}, lambda x: float(f'{x:.3e}')),
         }
         suggest_dct = {
             # critical
-            'num_hops':     (trial.suggest_int, (2, 30), {'step': 2}),
-            'in_layers':    (trial.suggest_int, (1, 3), {}),
-            'out_layers':   (trial.suggest_int, (1, 3), {}),
-            'hidden':       (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}),
+            'num_hops':     (trial.suggest_int, (2, 30), {'step': 2}, nofmt),
+            'in_layers':    (trial.suggest_int, (1, 3), {}, nofmt),
+            'out_layers':   (trial.suggest_int, (1, 3), {}, nofmt),
+            'hidden':       (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}, nofmt),
+            'combine':      (trial.suggest_categorical, (["sum", "sum_weighted", "cat"],), {}, nofmt),
             # secondary
             'theta_param': theta_dct.get(self.args.theta_scheme, None),
-            'normg':        (trial.suggest_float, (0.0, 1.0), {'step': 0.05}),
-            'dp_lin':       (trial.suggest_float, (0.0, 1.0), {'step': 0.1}),
-            'dp_conv':      (trial.suggest_float, (0.0, 1.0), {'step': 0.1}),
-            'lr_lin':       (trial.suggest_float, (1e-5, 5e-1), {'log': True}),
-            'lr_conv':      (trial.suggest_float, (1e-5, 5e-1), {'log': True}),
-            'wd_lin':       (trial.suggest_float, (1e-7, 1e-3), {'log': True}),
-            'wd_conv':      (trial.suggest_float, (1e-7, 1e-3), {'log': True}),
+            'normg':        (trial.suggest_float, (0.0, 1.0), {'step': 0.05}, lambda x: round(x, 2)),
+            'dp_lin':       (trial.suggest_float, (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
+            'dp_conv':      (trial.suggest_float, (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
+            'lr_lin':       (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'lr_conv':      (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'wd_lin':       (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'wd_conv':      (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'beta':         (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
         }
 
         # Model/conv-specific
@@ -70,31 +73,49 @@ class TrnWrapper(object):
         #     suggest_dct['out_layers'][1] = (1, 3)
         # <<<<<<<<<<
 
-        func, fargs, fkwargs = suggest_dct[key]
-        return func(key, *fargs, **fkwargs)
+        func, fargs, fkwargs, fmt = suggest_dct[key]
+        if 'Compose' in self.args.model:
+            convs = self.args.conv.split(',')
+            if key == 'theta_param':
+                return list2str([func(*fargs, **fkwargs) for _ in convs]), str
+            elif key == 'beta':
+                beta_c = {
+                    'AdjiConv':     [(0.0, 1.0), (0.0, 1.0)],   # FAGNN
+                    'Adji2Conv':    [(1.0, 2.0), (0.0, 1.0)],   # G2CN
+                    'AdjDiffConv':  [(0.0, 1.0), (-1.0, 0.0)],  # GNN-LF/HF
+                }
+                return list2str([func(*beta_i, **fkwargs) for beta_i in beta_c[convs[0]]]), str
+            else:
+                return func(key, *fargs, **fkwargs), fmt
+        else:
+            return func(key, *fargs, **fkwargs), fmt
 
     def __call__(self, trial):
         args = deepcopy(self.args)
-        res_logger = deepcopy(self.res_logger)
         args.quiet = True
         for key in self.args.param:
-            args.__dict__[key] = self._get_suggest(trial, key)
-            res_logger.concat([(
-                key, args.__dict__[key], type(args.__dict__[key]))])
+            args.__dict__[key], fmt = self._get_suggest(trial, key)
         if args.in_layers == 0 and args.out_layers == 0:
             raise optuna.TrialPruned()
 
         if self.data is None:
-            self._loader_get(args)
+            self.data = self.data_loader(args)
+            self.model, trn_cls = self.model_loader(args)
+            self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
         self.data = self.data_loader.update(args, self.data)
         self.model = self.model_loader.update(args, self.model)
+        res_logger = deepcopy(self.res_logger)
+        for key in self.args.param:
+            res_logger.concat([(key, args.__dict__[key], fmt)])
+            self.fmt_logger[key] = fmt
+
         trn = self.trn_cls(
             model=self.model,
             data=self.data,
             args=args,
             res_logger=res_logger,)
         trn.trial = trial
-        res_logger = trn()
+        trn()
 
         res_logger.save()
         trial.set_user_attr("f1_test", res_logger._get(col='f1micro_test', row=0))
@@ -136,7 +157,7 @@ def main(args):
         gc_after_trial=True,
         show_progress_bar=True,)
 
-    best_params = study.best_params
+    best_params = {k: trn.fmt_logger[k](v) for k, v in study.best_params.items()}
     save_args(args.logpath, best_params)
     clear_logger(logger)
 

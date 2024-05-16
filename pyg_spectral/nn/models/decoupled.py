@@ -17,22 +17,24 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
     Args:
         num_hops (int): Total number of hops.
         scheme (str): Method to generate parameters.
-            - `impulse`: K-hop, :math:`\mathbf{H} = \mathbf{A}^K \mathbf{X}`.
-            - `ones`: all-same.
-            - 'appr': Approximate PPR, :math:`\mathbf{H} = \sum_{k=0}^K \param (1 - \param)^k \mathbf{A}^k \mathbf{X}`.
-            - 'nappr': Negative PPR, :math:`\mathbf{H} = \sum_{k=0}^K \param^k \mathbf{A}^k \mathbf{X}`.
-            - `mono`: Monomial, :math:`\mathbf{H} = \frac{1}{K} \sum_{k=1}^K\left((1-\param)\mathbf{A}^k + \param \mathbf{I}\right) \mathbf{X}`.
-            - 'hk': Heat Kernel, :math:`\mathbf{H} = \sum_{k=0}^K e^{-\param k} \mathbf{A}^k \mathbf{X}`.
+            - `ones`: all-same, :math:`\theta_k = p`.
+            - `impulse`: K-hop, :math:`\theta_K = p, else 0`.
+            - `mono`: Monomial, :math:`\theta_k = (1-p)/K, \theta_0 = p`.
+            - 'appr': Approximate PPR, :math:`\theta_k = p (1 - p)^k`.
+            - 'nappr': Negative PPR, :math:`\theta_k = p^k`.
+            - 'hk': Heat Kernel, :math:`\theta_k = e^{-p}p^k / k!`.
+            - 'gaussian': Graph Gaussian Kernel, :math:`theta_k = p^{k} / k!`.
             - 'uniform': Random uniform distribution.
             - 'normal': Random Gaussian distribution.
             - 'custom': Custom list of hop parameters.
         param (float, optional): Hyperparameter for the scheme.
-            - 'impulse': Only the K-hop, :math:`param \in [0, K]`.
             - `ones`: Value.
-            - 'appr': Decay factor, :math:`param \in [0, 1]`.
-            - 'nappr': Decay factor, :math:`param \in [-1, 1]`.
-            - 'mono': Decay factor, :math:`param \in [0, 1]`.
-            - 'hk': Decay factor, :math:`param > 0`.
+            - 'impulse': Value.
+            - 'mono': Decay factor, :math:`p \in [0, 1]`.
+            - 'appr': Decay factor, :math:`p \in [0, 1]`.
+            - 'nappr': Decay factor, :math:`p \in [-1, 1]`.
+            - 'hk': Decay factor, :math:`p > 0`.
+            - 'gaussian': Decay factor, :math:`p > 0`.
             - 'uniform': Distribution bound.
             - 'normal': Distribution variance.
             - 'custom': Float list of hop parameters.
@@ -42,11 +44,18 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
     """
     assert num_hops > 0, 'num_hops should be a positive integer'
     if scheme == 'ones':
+        param = param if param is not None else 1.0
         return torch.ones(num_hops+1, dtype=torch.float) * param
     elif scheme == 'impulse':
-        # param = param if param is not None else num_hops
+        param = param if param is not None else 1.0
         theta = torch.zeros(num_hops+1, dtype=torch.float)
-        theta[num_hops] = 1
+        theta[num_hops] = param
+        return theta
+    elif scheme == 'mono':
+        param = param if param is not None else 0.5
+        theta = torch.zeros(num_hops+1, dtype=torch.float)
+        theta[0] = param
+        theta[1:] = (1 - param) / num_hops
         return theta
     elif scheme == 'appr':
         param = param if param is not None else 0.5
@@ -56,15 +65,15 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         param = param if param is not None else 0.5
         theta = param ** torch.arange(num_hops+1)
         return theta/torch.norm(theta, p=1)
-    elif scheme == 'mono':
-        param = param if param is not None else 0.5
-        theta = torch.zeros(num_hops+1, dtype=torch.float)
-        theta[0] = param
-        theta[1:] = (1 - param) / num_hops
-        return theta
     elif scheme == 'hk':
         param = param if param is not None else 1.0
-        return torch.exp(-param * torch.arange(num_hops+1))
+        k = torch.arange(num_hops+1)
+        factorial = torch.tensor([np.math.factorial(i) for i in range(num_hops+1)])
+        return torch.exp(-param) * (param ** k) / factorial
+    elif scheme == 'gaussian':
+        param = param if param is not None else 1.0
+        factorial = torch.tensor([np.math.factorial(i) for i in range(num_hops+1)])
+        return (param ** torch.arange(num_hops+1)) / factorial
     elif scheme == 'uniform':
         param = param if param is not None else np.sqrt(3/(num_hops+1))
         theta = torch.rand(num_hops+1) * 2 * param - param
@@ -119,6 +128,7 @@ class DecoupledFixed(BaseNN):
         conv_cls = load_import(conv, lib)
         # NOTE: k=0 layer explicitly handles x without propagation. So there is
         # (num_hops+1) conv layers in total.
+        # TODO: change to self.register_buffer('theta', torch.empty(1))
         return nn.ModuleList([
             conv_cls(num_hops=num_hops, hop=k, theta=theta[k], **kwargs) for k in range(num_hops+1)])
 

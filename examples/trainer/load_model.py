@@ -60,6 +60,12 @@ class ModelLoader(object):
             if self.conv in ['AdjConv', 'ChebConv', 'ClenShaw', 'Horner']:
                 kwargs.update(dict(
                     alpha=args.alpha,))
+            elif self.conv in ['AdjDiffConv', 'AdjiConv', 'Adji2Conv']:
+                kwargs.update(dict(
+                    alpha=args.alpha,
+                    beta=args.beta,))
+                if self.conv == 'Adji2Conv':
+                    kwargs['num_hops'] = int(kwargs['num_hops'] / 2)
 
             # Parse model args
             if self.model in ['Iterative', 'AdaGNN', 'ACMGNN']:
@@ -68,6 +74,12 @@ class ModelLoader(object):
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,))
+                trn = TrnFullbatch
+            elif self.model in ['DecoupledFixedCompose', 'DecoupledVarCompose']:
+                kwargs.update(dict(
+                    theta_scheme=args.theta_scheme,
+                    theta_param=args.theta_param,
+                    combine=args.combine,))
                 trn = TrnFullbatch
             else:
                 raise ValueError(f"Model '{self}' not found.")
@@ -96,6 +108,7 @@ class ModelLoader(object):
             model.reset_cache()
 
         self.logger.log(logging.LTRN, f"[model]: {str(self)}")
+        self.logger.log(logging.LTRN, str(model))
         self.logger.info(f"[trainer]: {trn.__name__}")
         self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
         return model, trn
@@ -121,8 +134,6 @@ class ModelLoader_Trial(ModelLoader):
         if hasattr(model, 'reset_cache'):
             model.reset_cache()
 
-        self.logger.log(logging.LTRN, f"[model]: {str(self)}")
-        self.logger.info(f"[trainer]: {trn.__name__}")
         self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
         return model, trn
 
