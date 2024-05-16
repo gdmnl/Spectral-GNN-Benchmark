@@ -49,7 +49,7 @@ class ClenhawConv(MessagePassing):
         self.cached = cached
         self._cache = None
 
-        self.coes = torch.log(self.alpha / (torch.arange(self.num_hops)+1) + 1)
+        self.coes = torch.log(self.alpha / (torch.arange(self.num_hops+1))+ 1)
         _ones = torch.ones_like(self.coes)
         self.coes = torch.where(self.coes<1, self.coes, _ones)
 
