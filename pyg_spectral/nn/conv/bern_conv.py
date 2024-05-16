@@ -136,7 +136,7 @@ class BernConv(MessagePassing):
             out += (comb(self.num_hops, self.num_hops-self.hop+1) / (2**self.num_hops)) * x * F.relu(temps[self.hop])
             return {
                 'out': out,
-                'x': h,
+                'x': x,
                 'x_1': x,
                 'prop_mat_1': prop_mat_1,
                 'prop_mat_2': prop_mat_2,
