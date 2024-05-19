@@ -69,7 +69,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         param = param if param is not None else 1.0
         k = torch.arange(num_hops+1)
         factorial = torch.tensor([np.math.factorial(i) for i in range(num_hops+1)])
-        return torch.exp(-param) * (param ** k) / factorial
+        return torch.exp(-torch.tensor(param, dtype=torch.float)) * (param ** k) / factorial
     elif scheme == 'gaussian':
         param = param if param is not None else 1.0
         factorial = torch.tensor([np.math.factorial(i) for i in range(num_hops+1)])
@@ -83,7 +83,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         theta = torch.randn(num_hops+1) * param
         return theta/torch.norm(theta, p=1)
     elif scheme == 'custom':
-        return Tensor(param).float()
+        return torch.tensor(param, dtype=torch.float)
     else:
         raise NotImplementedError()
 

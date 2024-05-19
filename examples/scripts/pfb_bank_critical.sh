@@ -9,7 +9,7 @@ ARGS_P=(
     "--patience" "50"
     "--suffix" "fb_bank"
 )
-DATAS=("cora" "citeseer" "pubmed")
+DATAS=("cora" "actor")
 PARLIST="num_hops,in_layers,out_layers,hidden,lr_lin,lr_conv"
 
 for data in ${DATAS[@]}; do
@@ -38,20 +38,20 @@ for data in ${DATAS[@]}; do
     # FAGNN
     python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
         --data $data --model DecoupledFixedCompose --conv AdjiConv,AdjiConv \
-        --theta_scheme mono,mono --theta_param 1,1 \
-        --alpha 1.0,-1.0 --beta 0.2,0.2 "${ARGS_P[@]}"
+        --theta_scheme mono,mono --theta_param 1,1 --alpha 1.0,-1.0 \
+        "${ARGS_P[@]}"
 
     PARLIST="$PARLIST,theta_param"
     # G2CN
     python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
         --data $data --model DecoupledFixedCompose --conv Adji2Conv,Adji2Conv \
-        --theta_scheme gaussian,gaussian \
-        --alpha="-1.0,-1,0" --beta 1.7,0.3 "${ARGS_P[@]}"
+        --theta_scheme gaussian,gaussian --alpha="-1.0,-1,0" \
+        "${ARGS_P[@]}"
 
     # GNN-LF/HF
     python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
         --data $data --model DecoupledFixedCompose --conv AdjDiffConv,AdjDiffConv \
-        --theta_scheme appr,appr \
-        --alpha 1.0,1.0 --beta 0.5,-0.5 "${ARGS_P[@]}"
+        --theta_scheme appr,appr --alpha 1.0,1.0 \
+        "${ARGS_P[@]}"
 
 done

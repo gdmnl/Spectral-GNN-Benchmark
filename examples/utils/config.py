@@ -46,7 +46,7 @@ def setup_argparse():
 
     parser = argparse.ArgumentParser(description='Benchmark running')
     # Logging configuration
-    parser.add_argument('-s', '--seed', type=force_list_int, default=[0], help='random seed')
+    parser.add_argument('-s', '--seed', type=force_list_int, default=[42], help='random seed')
     parser.add_argument('-v', '--dev', type=int, default=0, help='GPU id')
     parser.add_argument('-z', '--suffix', type=str, default=None, help='Save name suffix.')
     parser.add_argument('-quiet', action='store_true', help='Dry run without saving logs.')

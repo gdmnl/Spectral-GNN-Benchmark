@@ -5,14 +5,14 @@ SEED_P=1
 # SEED_S="20,21,22,23,24,25,26,27,28,29"
 SEED_S="20,21,22"
 ARGS_P=(
-    "--n_trials" "300"
+    "--n_trials" "100"
     "--loglevel" "30"
     "--num_hops" "10"
     "--in_layers" "1"
     "--out_layers" "1"
-    "--hidden" "128"
+    "--hidden" "512"
     "--epoch" "200"
-    "--patience" "50"
+    "--patience" "30"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
     "--suffix" "fb_var"
@@ -23,15 +23,16 @@ ARGS_S=(
     "--num_hops" "10"
     "--in_layers" "1"
     "--out_layers" "1"
-    "--hidden" "128"
-    "--epoch" "500"
+    "--hidden" "512"
+    "--epoch" "300"
     "--patience" "-1"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
     "--suffix" "fb_var"
 )
 
-DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
+# DATAS=("reddit" "ogbn-arxiv" "penn94" "arxiv-year")
+DATAS=("ogbn-arxiv" "penn94")
 MODELS=("DecoupledVar")
 CONVS=("AdjConv" "ChebConv" "ChebConv2" "BernConv" "ClenhawConv" "HornerConv")
 

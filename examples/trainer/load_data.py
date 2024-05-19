@@ -62,6 +62,10 @@ class SingleGraphLoader(object):
 
     # ===== Data processing
     def _resolve_split(self, dataset: Dataset, data: Data) -> None:
+        if self.data in ['genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki']:
+            if hasattr(data, 'train_mask'):
+                del self.data_split
+
         if hasattr(self, 'data_split'):
             (r_train, r_val) = map(int, self.data_split.split('/')[:2])
             r_train, r_val = r_train / 100, r_val / 100
@@ -74,6 +78,8 @@ class SingleGraphLoader(object):
             if self.data.startswith('ogbn-'):
                 data.train_mask, data.val_mask, data.test_mask = idx2mask(dataset.get_idx_split(), data.y.size(0))
             if data.train_mask.dim() > 1:
+                if self.split_idx > data.train_mask.size(1):
+                    self.split_idx = self.split_idx % data.train_mask.size(1)
                 data.train_mask = data.train_mask[:, self.split_idx]
                 data.val_mask = data.val_mask[:, self.split_idx]
                 data.test_mask = data.test_mask[:, self.split_idx]
@@ -139,7 +145,8 @@ class SingleGraphLoader(object):
             kwargs = dict(
                 root=DATAPATH.joinpath('OGB'),
                 name=self.data,
-                transform=self._T_prepend(T.ToUndirected()),)
+                transform=self._T_prepend([T.ToUndirected()]),)
+            del self.data_split
         elif self.data in ['arxiv-year']:
             module_name = 'ogb.nodeproppred'
             class_name = 'PygNodePropPredDataset'
@@ -156,6 +163,7 @@ class SingleGraphLoader(object):
                 root=DATAPATH.joinpath('LINKX'),
                 name=self.data,
                 transform=self.transform,)
+            self.split_idx = self.seed
         elif self.data in ['penn94', 'amherst41', 'cornell5', 'johns_hopkins55', 'reed98']:
             module_name = 'dataset_process'
             class_name = 'FB100'
@@ -200,7 +208,7 @@ class SingleGraphLoader(object):
             }
             if self.data in pyg_mapping:
                 class_name = pyg_mapping[self.data]
-            elif self.data in ["flickr", "reddit"]:
+            elif self.data in ["flickr", "reddit", "actor"]:
                 class_name = self.data.capitalize()
                 kwargs.pop('name')
             else:
@@ -264,6 +272,10 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
         self._get_properties(dataset, data)
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
+
+        # Remaining resolvers
+        if not args.multi and data.y.dim() > 1 and data.y.size(1) == 1:
+            data.y = data.y.flatten()
 
         self.res_logger.concat([('data', self.data)])
         return data

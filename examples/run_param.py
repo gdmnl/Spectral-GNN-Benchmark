@@ -77,14 +77,14 @@ class TrnWrapper(object):
         if 'Compose' in self.args.model:
             convs = self.args.conv.split(',')
             if key == 'theta_param':
-                return list2str([func(*fargs, **fkwargs) for _ in convs]), str
+                return list2str([func(key, *fargs, **fkwargs) for _ in convs]), str
             elif key == 'beta':
                 beta_c = {
                     'AdjiConv':     [(0.0, 1.0), (0.0, 1.0)],   # FAGNN
                     'Adji2Conv':    [(1.0, 2.0), (0.0, 1.0)],   # G2CN
                     'AdjDiffConv':  [(0.0, 1.0), (-1.0, 0.0)],  # GNN-LF/HF
                 }
-                return list2str([func(*beta_i, **fkwargs) for beta_i in beta_c[convs[0]]]), str
+                return list2str([func(key, *beta_i, **fkwargs) for beta_i in beta_c[convs[0]]]), str
             else:
                 return func(key, *fargs, **fkwargs), fmt
         else:
@@ -174,7 +174,7 @@ if __name__ == '__main__':
         args.seed = setup_seed(seed, args.cuda)
         args.flag = f'param-{args.seed}'
         args.logpath, args.logid = setup_logpath(
-            folder_args=(args.data, args.model, args.conv_repr, args.flag),
+            folder_args=(args.data, args.model_repr, args.conv_repr, args.flag),
             quiet=args.quiet)
 
         main(args)

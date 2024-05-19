@@ -27,8 +27,7 @@ ARGS_S=(
     "--suffix" "fb_fix"
 )
 
-# DATAS=("cora" "citeseer" "pubmed")
-DATAS=("cornell" "texas" "wisconsin" "chameleon_filtered" "squirrel_filtered")
+DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
 MODELS=("DecoupledFixed")
 CONVS=AdjConv
 SCHEMES=("impulse" "mono" "appr" "nappr" "hk" "gaussian")
