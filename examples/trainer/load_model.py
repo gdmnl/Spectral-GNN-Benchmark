@@ -33,28 +33,39 @@ class ModelLoader(object):
         self.res_logger = res_logger or ResLogger()
 
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict, TrnBase]:
-        kwargs = dict(
-            conv=self.conv,
-            num_hops=args.num_hops,
-            in_layers=args.in_layers,
-            out_layers=args.out_layers,
-            in_channels=args.num_features,
-            out_channels=args.num_classes,
-            hidden_channels=args.hidden,
-            dropout_lin=args.dp_lin,
-            dropout_conv=args.dp_conv,
-        )
-
         # >>>>>>>>>>
-        if self.model in ['GCN']:
-            self.conv_repr = 'GCNConv'   # Sometimes need to manually fix repr for logging
+        if self.model in ['GCN', 'MLP']:
+            conv_dct = {
+                'GCN': 'GCNConv',
+                'MLP': 'Identity',
+            }
+            self.conv_repr = conv_dct[self.model]   # Sometimes need to manually fix repr for logging
             module_name = 'torch_geometric.nn.models'
-            raise DeprecationWarning
+            class_name = self.model
+            kwargs = dict(
+                in_channels=args.num_features,
+                out_channels=args.num_classes,
+                hidden_channels=args.hidden,
+                num_layers=args.in_layers+args.out_layers,
+                dropout=args.dp_lin,
+            )
+            trn = TrnFullbatch
 
         # Default to load from `pyg_spectral`
         else:
             module_name = 'pyg_spectral.nn.models'
             class_name = self.model
+            kwargs = dict(
+                conv=self.conv,
+                num_hops=args.num_hops,
+                in_layers=args.in_layers,
+                out_layers=args.out_layers,
+                in_channels=args.num_features,
+                out_channels=args.num_classes,
+                hidden_channels=args.hidden,
+                dropout_lin=args.dp_lin,
+                dropout_conv=args.dp_conv,
+            )
 
             # Parse conv args
             if self.conv in ['AdjConv', 'ChebConv', 'ClenShaw', 'Horner']:
