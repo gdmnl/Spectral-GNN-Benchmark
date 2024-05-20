@@ -18,6 +18,14 @@ from utils import (
     ResLogger)
 
 
+def reverse_parse(parser, key, val):
+    for action in parser._actions:
+        if action.dest == key:
+            type_func = action.type
+            break
+    return type_func(val)
+
+
 def main(args):
     # ========== Run configuration
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
@@ -61,7 +69,7 @@ if __name__ == '__main__':
     with open(study_path, 'r') as config_file:
         best_params = json.load(config_file)
     for key, value in best_params.items():
-        setattr(args, key, value)
+        setattr(args, key, reverse_parse(parser, key, value))
 
     seed_lst = args.seed.copy()
     for seed in seed_lst:

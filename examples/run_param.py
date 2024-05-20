@@ -3,6 +3,7 @@
 Author: nyLiao
 File Created: 2024-04-29
 """
+from typing import Iterable
 import optuna
 from copy import deepcopy
 
@@ -73,28 +74,36 @@ class TrnWrapper(object):
         #     suggest_dct['out_layers'][1] = (1, 3)
         # <<<<<<<<<<
 
-        func, fargs, fkwargs, fmt = suggest_dct[key]
         if 'Compose' in self.args.model:
             convs = self.args.conv.split(',')
             if key == 'theta_param':
-                return list2str([func(key, *fargs, **fkwargs) for _ in convs]), str
+                schemes = self.args.theta_scheme.split(',')
+                lst = []
+                for i,c in enumerate(convs):
+                    func, fargs, fkwargs, fmt = theta_dct.get(schemes[i], None)
+                    lst.append(func(key+'-'+str(i), *fargs, **fkwargs))
+                return lst, fmt
             elif key == 'beta':
+                func, fargs, fkwargs, fmt = suggest_dct[key]
                 beta_c = {
                     'AdjiConv':     [(0.0, 1.0), (0.0, 1.0)],   # FAGNN
                     'Adji2Conv':    [(1.0, 2.0), (0.0, 1.0)],   # G2CN
                     'AdjDiffConv':  [(0.0, 1.0), (-1.0, 0.0)],  # GNN-LF/HF
                 }
-                return list2str([func(key, *beta_i, **fkwargs) for beta_i in beta_c[convs[0]]]), str
+                return list2str([func(key+'-'+str(i), *beta_i, **fkwargs) for i,beta_i in enumerate(beta_c[convs[0]])]), str
             else:
+                func, fargs, fkwargs, fmt = suggest_dct[key]
                 return func(key, *fargs, **fkwargs), fmt
         else:
+            func, fargs, fkwargs, fmt = suggest_dct[key]
             return func(key, *fargs, **fkwargs), fmt
 
     def __call__(self, trial):
         args = deepcopy(self.args)
         args.quiet = True
+        fmt_logger = {}
         for key in self.args.param:
-            args.__dict__[key], fmt = self._get_suggest(trial, key)
+            args.__dict__[key], fmt_logger[key] = self._get_suggest(trial, key)
         if args.in_layers == 0 and args.out_layers == 0:
             raise optuna.TrialPruned()
 
@@ -106,8 +115,14 @@ class TrnWrapper(object):
         self.model = self.model_loader.update(args, self.model)
         res_logger = deepcopy(self.res_logger)
         for key in self.args.param:
-            res_logger.concat([(key, args.__dict__[key], fmt)])
-            self.fmt_logger[key] = fmt
+            val = args.__dict__[key]
+            if isinstance(val, Iterable) and not isinstance(val, str):
+                vali = ','.join(map(str, val))
+                fmt = str
+            else:
+                vali, fmt = val, fmt_logger[key]
+            res_logger.concat([(key, vali, fmt)])
+            self.fmt_logger[key] = fmt_logger[key]
 
         trn = self.trn_cls(
             model=self.model,
@@ -157,7 +172,21 @@ def main(args):
         gc_after_trial=True,
         show_progress_bar=True,)
 
-    best_params = {k: trn.fmt_logger[k](v) for k, v in study.best_params.items()}
+    if 'Compose' in args.model:
+        best_params = {}
+        for k, v in study.best_params.items():
+            if '-' in k:
+                relk, idx = k.split('-')
+                if relk not in best_params:
+                    best_params[relk] = [None] * len(args.conv.split(','))
+                best_params[relk][int(idx)] = trn.fmt_logger[relk](v)
+            else:
+                best_params[k] = trn.fmt_logger[k](v)
+        for k, v in best_params.items():
+            if isinstance(v, list):
+                best_params[k] = ','.join(map(str, v))
+    else:
+        best_params = {k: trn.fmt_logger[k](v) for k, v in study.best_params.items()}
     save_args(args.logpath, best_params)
     clear_logger(logger)
 

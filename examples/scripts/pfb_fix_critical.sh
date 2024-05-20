@@ -12,7 +12,7 @@ ARGS_P=(
 DATAS=("cora" "citeseer" "pubmed")
 MODELS=("DecoupledFixed")
 CONVS=AdjConv
-SCHEMES=("impulse" "appr" "nappr" "hk" "mono")
+SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")
 PARLIST="num_hops,in_layers,out_layers,hidden,theta_param,lr_lin"
 
 for data in ${DATAS[@]}; do

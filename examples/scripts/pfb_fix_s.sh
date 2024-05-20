@@ -30,7 +30,7 @@ ARGS_S=(
 DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
 MODELS=("DecoupledFixed")
 CONVS=AdjConv
-SCHEMES=("impulse" "mono" "appr" "nappr" "hk" "gaussian")
+SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")
 PARLIST="theta_param,normg,dp_lin,dp_conv,lr_lin,wd_lin"
 
 for data in ${DATAS[@]}; do

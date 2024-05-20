@@ -55,12 +55,12 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         param = param if param is not None else 0.5
         theta = torch.zeros(num_hops+1, dtype=torch.float)
         theta[0] = param
-        theta[1:] = (1 - param) / num_hops
+        theta[1:] = (1.0 - param) / num_hops
         return theta
     elif scheme == 'appr':
         param = param if param is not None else 0.5
         # theta[-1] = (1 - param) ** num_hops
-        return param * (1 - param) ** torch.arange(num_hops+1)
+        return param * (1.0 - param) ** torch.arange(num_hops+1)
     elif scheme == 'nappr':
         param = param if param is not None else 0.5
         theta = param ** torch.arange(num_hops+1)
