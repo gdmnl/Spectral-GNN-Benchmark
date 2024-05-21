@@ -18,8 +18,8 @@ import pyg_spectral.transforms as Tspec
 from pyg_spectral.utils import load_import
 
 from utils import ResLogger
-from dataset_process import idx2mask, split_random
-from dataset_process.linkx import T_arxiv_year
+from dataset_process import idx2mask, split_random, get_iso_nodes_mapping
+from dataset_process.linkx import T_arxiv_year, T_ogbn_mag
 
 
 DATAPATH = Path('../data')
@@ -76,7 +76,15 @@ class SingleGraphLoader(object):
             data.test_mask = torch.as_tensor(test_mask)
         else:
             if self.data.startswith('ogbn-'):
-                data.train_mask, data.val_mask, data.test_mask = idx2mask(dataset.get_idx_split(), data.y.size(0))
+                idx = dataset.get_idx_split()
+                if self.data == 'ogbn-products':
+                    mapping = get_iso_nodes_mapping(dataset)
+                    for k in idx:
+                        idx[k] = mapping[idx[k]]
+                elif self.data == 'ogbn-mag':
+                    for k in idx:
+                        idx[k] = idx[k]['paper']
+                data.train_mask, data.val_mask, data.test_mask = idx2mask(idx, data.y.size(0))
             if data.train_mask.dim() > 1:
                 if self.split_idx > data.train_mask.size(1):
                     self.split_idx = self.split_idx % data.train_mask.size(1)
@@ -147,6 +155,8 @@ class SingleGraphLoader(object):
                 name=self.data,
                 transform=self._T_prepend([T.ToUndirected()]),)
             del self.data_split
+            if self.data == 'ogbn-mag':
+                kwargs['pre_transform'] = T_ogbn_mag()
         elif self.data in ['arxiv-year']:
             module_name = 'ogb.nodeproppred'
             class_name = 'PygNodePropPredDataset'
@@ -234,6 +244,8 @@ class SingleGraphLoader(object):
         module_name, class_name, kwargs = self._resolve_import(args)
 
         dataset = load_import(class_name, module_name)(**kwargs)
+        if self.data == 'ogbn-mag':
+            print(dataset)
         data = dataset[0]
         data = self._resolve_split(dataset, data)
 

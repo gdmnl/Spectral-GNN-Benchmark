@@ -203,3 +203,13 @@ class T_arxiv_year(BaseTransform):
         data.y = torch.tensor(y, dtype=torch.long)
         del data['node_year']
         return data
+
+
+class T_ogbn_mag(BaseTransform):
+    def forward(self, data: Any) -> Any:
+        new_data = Data(
+            x=data.x_dict['paper'],
+            edge_index=data.edge_index_dict[('paper', 'cites', 'paper')],
+            y=data.y_dict['paper'],
+            num_nodes=data.x_dict['paper'].shape[0])
+        return new_data

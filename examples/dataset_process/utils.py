@@ -57,3 +57,16 @@ def even_quantile_labels(vals, nclasses, verbose=True):
         for class_idx, interval in enumerate(interval_lst):
             print(f'Class {class_idx}: [{interval[0]}, {interval[1]})]')
     return label
+
+
+def get_iso_nodes_mapping(dataset):
+    data = dataset.get(dataset.indices()[0])
+    edge_index = data.edge_index
+    src, dst = edge_index[0], edge_index[1]
+    bin = torch.zeros(data.num_nodes, dtype=torch.bool)
+    bin[src] = True
+    bin[dst] = True
+    kept_nodes = torch.where(bin)[0]
+    mapping = torch.zeros(data.num_nodes, dtype=torch.long) - 1
+    mapping[kept_nodes] = torch.arange(kept_nodes.shape[0])
+    return mapping

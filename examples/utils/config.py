@@ -150,6 +150,6 @@ def dict_to_json(dictionary) -> dict:
 
 force_list_str = lambda x: [str(v) for v in x.split(',')]
 force_list_int = lambda x: [int(v) for v in x.split(',')]
-list_str = lambda x: [str(v) for v in x.split(',')] if ',' in x else str(x)
-list_int = lambda x: [int(v) for v in x.split(',')] if ',' in x else int(x)
-list_float = lambda x: [float(v) for v in x.split(',')] if ',' in x else float(x)
+list_str = lambda x: [str(v) for v in x.split(',')] if isinstance(x, str) and ',' in x else str(x)
+list_int = lambda x: [int(v) for v in x.split(',')] if isinstance(x, str) and ',' in x else int(x)
+list_float = lambda x: [float(v) for v in x.split(',')] if isinstance(x, str) and ',' in x else float(x)

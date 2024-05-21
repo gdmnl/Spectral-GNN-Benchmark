@@ -12,6 +12,7 @@ from torch_geometric.utils import spmm
 from pyg_spectral.utils import get_laplacian
 
 
+# TODO: rename ClenshawConv
 class ClenhawConv(MessagePassing):
     r"""Convolutional layer with ClenShaw GCN.
     paper: Clenshaw Graph Neural Networks
