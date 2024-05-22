@@ -4,6 +4,8 @@
 
 For development
 ```bash
+pip install torch
+pip install torch-scatter torch-sparse -f https://data.pyg.org/whl/torch-2.3.0+cu121.html
 pip install -e .
 ```
 

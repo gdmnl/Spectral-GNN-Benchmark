@@ -244,8 +244,6 @@ class SingleGraphLoader(object):
         module_name, class_name, kwargs = self._resolve_import(args)
 
         dataset = load_import(class_name, module_name)(**kwargs)
-        if self.data == 'ogbn-mag':
-            print(dataset)
         data = dataset[0]
         data = self._resolve_split(dataset, data)
 
