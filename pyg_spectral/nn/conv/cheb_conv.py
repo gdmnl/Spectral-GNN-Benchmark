@@ -1,8 +1,6 @@
-from typing import Optional, Any, Union
+from typing import Optional, Any
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch import Tensor
 
 from torch_geometric.typing import Adj
@@ -21,8 +19,6 @@ class ChebConv(MessagePassing):
         num_hops (int), hop (int): total and current number of propagation hops.
             hop=0 explicitly handles x without propagation.
         alpha (float): decay factor for each hop :math:`1/hop^\alpha`.
-        theta (nn.Parameter or nn.Module): transformation of propagation result
-            before applying to the output.
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
@@ -32,8 +28,7 @@ class ChebConv(MessagePassing):
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        theta: Union[nn.Parameter, nn.Module] = None,
-        alpha: float = -1.0,
+        alpha: float = None,
         cached: bool = True,
         **kwargs
     ):
@@ -42,9 +37,7 @@ class ChebConv(MessagePassing):
 
         self.num_hops = num_hops
         self.hop = hop
-        self.theta = theta
-        self.alpha = 0.0 if alpha < 0 else alpha  #NOTE: set actual alpha default here
-        self.temps = None
+        self.alpha = alpha or 0.0
 
         self.cached = cached
         self._cache = None
@@ -56,10 +49,6 @@ class ChebConv(MessagePassing):
     def reset_parameters(self):
         if hasattr(self.theta, 'reset_parameters'):
             self.theta.reset_parameters()
-        if self.hop == 0:
-            self.temps = nn.Parameter(torch.ones(self.num_hops+1))
-            self.temps.data.fill_(0.0)
-            self.temps.data[0]=1.0
 
     def get_propagate_mat(self,
         x: Tensor,
@@ -109,8 +98,7 @@ class ChebConv(MessagePassing):
             'out': torch.zeros_like(x),
             'x': x,
             'x_1': x,
-            'prop_mat': self.get_propagate_mat(x, edge_index),
-            'temps': self.temps}
+            'prop_mat': self.get_propagate_mat(x, edge_index)}
 
     def _forward_theta(self, x):
         if callable(self.theta):
@@ -123,29 +111,27 @@ class ChebConv(MessagePassing):
         x: Tensor,
         x_1: Tensor,
         prop_mat: Adj,
-        temps: Tensor,
     ) -> dict:
         r"""
         Args & Returns: (dct): same with output of get_forward_mat()
         """
         if self.hop == 0:
-            out = self._forward_theta(x) * F.relu(temps[self.hop])
-            return {'out': out, 'x': x, 'x_1': x, 'prop_mat': prop_mat, 'temps': temps}
+            out = self._forward_theta(x)
+            return {'out': out, 'x': x, 'x_1': x, 'prop_mat': prop_mat}
         elif self.hop == 1:
             h = self.propagate(prop_mat, x=x)
-            out += self._forward_theta(h) * F.relu(temps[self.hop])
-            return {'out': out, 'x': h, 'x_1': x, 'prop_mat': prop_mat, 'temps': temps}
+            out += self._forward_theta(h)
+            return {'out': out, 'x': h, 'x_1': x, 'prop_mat': prop_mat}
 
         h = self.propagate(prop_mat, x=x)
         h = 2. * h - x_1
-        out += self._forward_theta(h) / (self.hop ** self.alpha) * F.relu(temps[self.hop])
+        out += self._forward_theta(h) / (self.hop ** self.alpha)
 
         return {
             'out': out,
             'x': h,
             'x_1': x,
-            'prop_mat': prop_mat,
-            'temps': temps}
+            'prop_mat': prop_mat}
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)

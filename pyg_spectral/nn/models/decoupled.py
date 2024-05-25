@@ -128,9 +128,11 @@ class DecoupledFixed(BaseNN):
         conv_cls = load_import(conv, lib)
         # NOTE: k=0 layer explicitly handles x without propagation. So there is
         # (num_hops+1) conv layers in total.
-        # TODO: change to self.register_buffer('theta', torch.empty(1))
-        return nn.ModuleList([
-            conv_cls(num_hops=num_hops, hop=k, theta=theta[k], **kwargs) for k in range(num_hops+1)])
+        convs = nn.ModuleList([
+            conv_cls(num_hops=num_hops, hop=k, **kwargs) for k in range(num_hops+1)])
+        for k, convk in enumerate(convs):
+            convk.register_buffer('theta', theta[k].clone())
+        return convs
 
 
 class DecoupledVar(BaseNN):
@@ -173,8 +175,11 @@ class DecoupledVar(BaseNN):
         conv_cls = load_import(conv, lib)
         # NOTE: k=0 layer explicitly handles x without propagation. So there is
         # (num_hops+1) conv layers in total.
-        return nn.ModuleList([
-            conv_cls(num_hops=num_hops, hop=k, theta=nn.Parameter(self.theta_init[k]), **kwargs) for k in range(num_hops+1)])
+        convs = nn.ModuleList([
+            conv_cls(num_hops=num_hops, hop=k, **kwargs) for k in range(num_hops+1)])
+        for k, convk in enumerate(convs):
+            convk.register_parameter('theta', nn.Parameter(self.theta_init[k].clone()))
+        return convs
 
     def reset_parameters(self):
         if self.in_layers > 0:

@@ -1,7 +1,6 @@
-from typing import Optional, Any, Union
+from typing import Optional, Any
 
 import torch
-import torch.nn as nn
 from torch import Tensor
 
 from torch_geometric.typing import Adj
@@ -16,8 +15,6 @@ class AdjConv(MessagePassing):
         num_hops (int), hop (int): total and current number of propagation hops.
         alpha (float): additional scaling for self-loop in adjacency matrix
             :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. `improved` in PyG GCNConv.
-        theta (nn.Parameter or nn.Module): transformation of propagation result
-            before applying to the output.
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
@@ -27,8 +24,7 @@ class AdjConv(MessagePassing):
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        theta: Union[nn.Parameter, nn.Module] = None,
-        alpha: float = -1.0,
+        alpha: float = None,
         cached: bool = True,
         **kwargs
     ):
@@ -37,8 +33,7 @@ class AdjConv(MessagePassing):
 
         self.num_hops = num_hops
         self.hop = hop
-        self.theta = theta
-        self.alpha = 0.0 if alpha < 0 else alpha  #NOTE: set actual alpha default here
+        self.alpha = alpha or 0.0
 
         self.cached = cached
         self._cache = None
@@ -96,6 +91,10 @@ class AdjConv(MessagePassing):
             'prop_mat': self.get_propagate_mat(x, edge_index)}
 
     def _forward_theta(self, x):
+        """
+        theta (nn.Parameter or nn.Module): transformation of propagation result
+            before applying to the output.
+        """
         if callable(self.theta):
             return self.theta(x)
         else:
@@ -142,20 +141,17 @@ class AdjDiffConv(AdjConv):
             :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. `improved` in PyG GCNConv.
         beta (float): scaling for self-loop in distinguish matrix
             :math:`\beta\mathbf{L} + \mathbf{I}`
-        theta (nn.Parameter or nn.Module): transformation of propagation result
-            before applying to the output.
         cached: whether cache the propagation matrix.
     """
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        theta: Union[nn.Parameter, nn.Module] = None,
-        alpha: float = -1.0,
+        alpha: float = None,
         beta: float = None,
         cached: bool = True,
         **kwargs
     ):
-        super(AdjDiffConv, self).__init__(num_hops, hop, theta, alpha, cached, **kwargs)
+        super(AdjDiffConv, self).__init__(num_hops, hop, alpha, cached, **kwargs)
         self.beta = beta or 1.0
 
     def forward(self,
@@ -166,12 +162,12 @@ class AdjDiffConv(AdjConv):
         r"""
         Args & Returns: (dct): same with output of get_forward_mat()
         """
-        if self.hop == 0 and not callable(self.theta):
+        if self.hop == 0:
             # I + beta * L -> (1+beta) * I - beta * A
             out = self.propagate(prop_mat, x=x)
             out = self._forward_theta(x)
             out = (1 + self.beta) * x - self.beta * out
-            return {'out': out, 'x': x, 'prop_mat': prop_mat}
+            return {'out': out, 'x': out.clone(), 'prop_mat': prop_mat}
 
         # propagate_type: (x: Tensor)
         x = self.propagate(prop_mat, x=x)

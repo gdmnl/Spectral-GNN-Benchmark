@@ -86,9 +86,9 @@ def setup_argparse():
 
     # Conv-specific
     # - AdjConv, ChebConv, Clenshaw, Horner, ACMGNN
-    parser.add_argument('--alpha', type=list_float, default=-1.0, help='Decay factor')
+    parser.add_argument('--alpha', type=list_float, help='Decay factor')
     # - AdjiConv
-    parser.add_argument('--beta', type=list_float, default=-1.0, help='Scaling factor')
+    parser.add_argument('--beta', type=list_float, help='Scaling factor')
     # <<<<<<<<<<
     return parser
 

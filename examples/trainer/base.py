@@ -10,7 +10,6 @@ from argparse import Namespace
 import torch
 import torch.nn as nn
 from torch_geometric.data import Data
-import optuna
 from pyg_spectral import profile
 
 from .load_metric import metric_loader
@@ -213,6 +212,7 @@ class TrnBase_Trial(TrnBase):
     def train_val(self,
                   split_train: List[str] = ['train'],
                   split_val: List[str] = ['val']) -> ResLogger:
+        import optuna
 
         time_learn = profile.Accumulator()
         res_learn = ResLogger()
