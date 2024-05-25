@@ -68,7 +68,7 @@ class ModelLoader(object):
             )
 
             # Parse conv args
-            if self.conv in ['AdjConv', 'ChebConv', 'ClenShaw', 'Horner']:
+            if self.conv in ['AdjConv', 'ChebConv', 'HornerConv', 'ClenshawConv']:
                 kwargs.update(dict(
                     alpha=args.alpha,))
             elif self.conv in ['AdjDiffConv', 'AdjiConv', 'Adji2Conv']:

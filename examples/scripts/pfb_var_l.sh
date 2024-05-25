@@ -34,7 +34,7 @@ ARGS_S=(
 # DATAS=("reddit" "ogbn-arxiv" "penn94" "arxiv-year")
 DATAS=("ogbn-arxiv" "penn94")
 MODELS=("DecoupledVar")
-CONVS=("AdjConv" "ChebConv" "ChebConv2" "BernConv" "ClenhawConv" "HornerConv")
+CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv")
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do

@@ -65,6 +65,7 @@ class TrnWrapper(object):
             'lr_conv':      (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
             'wd_lin':       (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
             'wd_conv':      (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'alpha':        (trial.suggest_float, (0.01, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
             'beta':         (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
         }
 

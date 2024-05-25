@@ -1,6 +1,6 @@
-from typing import Optional, Any, Union
+from typing import Optional, Any
 
-import math
+import numpy as np
 import torch
 import torch.nn as nn
 from torch import Tensor
@@ -13,21 +13,21 @@ from torch_geometric.utils import spmm
 from pyg_spectral.utils import get_laplacian
 
 
-def cheby(i,x):
-    if i==0:
+def cheby(i, x):
+    if i == 0:
         return 1
-    elif i==1:
+    elif i == 1:
         return x
     else:
-        T0=1
-        T1=x
-        for ii in range(2,i+1):
-            T2=2*x*T1-T0
-            T0,T1=T1,T2
+        T0 = 1
+        T1 = x
+        for ii in range(2, i+1):
+            T2 = 2*x*T1 - T0
+            T0, T1 = T1, T2
         return T2
 
 
-class ChebConv2(MessagePassing):
+class ChebIIConv(MessagePassing):
     r"""Convolutional layer with Chebyshev-II Polynomials.
     paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
     ref: https://github.com/ivam-he/ChebNetII/blob/main/main/ChebnetII_pro.py
@@ -36,30 +36,27 @@ class ChebConv2(MessagePassing):
         num_hops (int), hop (int): total and current number of propagation hops.
             hop=0 explicitly handles x without propagation.
         alpha (float): decay factor for each hop :math:`1/hop^\alpha`.
-        theta (nn.Parameter or nn.Module): transformation of propagation result
-            before applying to the output.
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
     supports_norm_batch: bool = False
     _cache: Optional[Any]
+    coeffs_data = None
 
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        theta: Union[nn.Parameter, nn.Module] = None,
-        alpha: float = -1.0,
         cached: bool = True,
         **kwargs
     ):
         kwargs.setdefault('aggr', 'add')
-        super(ChebConv2, self).__init__(**kwargs)
+        super(ChebIIConv, self).__init__(**kwargs)
 
         self.num_hops = num_hops
         self.hop = hop
-        self.theta = theta
-        self.alpha = 0.0 if alpha < 0 else alpha  #NOTE: set actual alpha default here
-        self.temps = None
+        if self.hop == 0:
+            self.coeffs = nn.Parameter(torch.zeros(self.num_hops+1), requires_grad=True)
+            self.__class__.coeffs_data = self.coeffs.data
 
         self.cached = cached
         self._cache = None
@@ -71,10 +68,12 @@ class ChebConv2(MessagePassing):
     def reset_parameters(self):
         if hasattr(self.theta, 'reset_parameters'):
             self.theta.reset_parameters()
-        if self.hop == 0:
-            self.temps = nn.Parameter(torch.ones(self.num_hops+1))
-            for i in range(self.num_hops+1):
-                self.temps.data[i] = (math.cos((self.num_hops-i+0.5)*math.pi/(self.num_hops+1)))**2
+            self.register_buffer('coeff', torch.tensor(1.0))
+            self.coeffs_data[self.hop] = self.coeff.data
+            if self.hop == 0:
+                self.coeffs.requires_grad = False
+        else:
+            self.coeffs_data[self.hop] = self.theta.data
 
     def get_propagate_mat(self,
         x: Tensor,
@@ -120,68 +119,67 @@ class ChebConv2(MessagePassing):
             x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
             prop_mat (Adj): propagation matrix
         """
-        if self.hop == 0:
-            coe_tmp=F.relu(self.temps)
-            coe=coe_tmp.clone()
+        assert self.num_hops+1 == len(self.coeffs)
+        coeffs = F.relu(self.coeffs)
+        thetas = coeffs.clone()
+        for i in range(self.num_hops+1):
+            thetas[i] = coeffs[0] * cheby(i, np.cos((self.num_hops+0.5) * np.pi/(self.num_hops+1)))
+            for j in range(1, self.num_hops+1):
+                x_j = np.cos((self.num_hops-j+0.5) * np.pi/(self.num_hops+1))
+                thetas[i] = coeffs[i] + thetas[j] * cheby(i, x_j)
+            thetas[i] = 2*thetas[i]/(self.num_hops+1)
+        thetas[0] = thetas[0]/2
 
-            for i in range(self.num_hops+1):
-                coe[i]=coe_tmp[0]*cheby(i,math.cos((self.num_hops+0.5)*math.pi/(self.num_hops+1)))
-                for j in range(1,self.num_hops+1):
-                    x_j=math.cos((self.num_hops-j+0.5)*math.pi/(self.num_hops+1))
-                    coe[i]=coe[i]+coe_tmp[j]*cheby(i,x_j)
-                coe[i]=2*coe[i]/(self.num_hops+1)
+        return {
+            'out': torch.zeros_like(x),
+            'x': x,
+            'x_1': x,
+            'prop_mat': self.get_propagate_mat(x, edge_index),
+            'thetas': thetas}
 
-            return {
-                'out': torch.zeros_like(x),
-                'x': x,
-                'x_1': x,
-                'prop_mat': self.get_propagate_mat(x, edge_index),
-                'temps': coe}
-        else:
-            return {
-                'out': torch.zeros_like(x),
-                'x': x,
-                'x_1': x,
-                'prop_mat': self.get_propagate_mat(x, edge_index),
-                'temps': self.temps}
-
-    def _forward_theta(self, x):
+    def _forward_theta(self, x, thetas):
         if callable(self.theta):
-            return self.theta(x)
+            return self.theta(x) * thetas[self.hop]
         else:
-            return self.theta * x
+            return thetas[self.hop] * x
 
     def forward(self,
         out: Tensor,
         x: Tensor,
         x_1: Tensor,
         prop_mat: Adj,
-        temps: Tensor,
+        thetas: Tensor
     ) -> dict:
         r"""
         Args & Returns: (dct): same with output of get_forward_mat()
         """
         if self.hop == 0:
-            out = self._forward_theta(x) * temps[self.hop]/2 # relu propressed.
-            return {'out': out, 'x': x, 'x_1': x, 'prop_mat': prop_mat, 'temps': temps}
+            out = self._forward_theta(x, thetas)
+            return {'out': out, 'x': x, 'x_1': x, 'prop_mat': prop_mat, 'thetas': thetas}
         elif self.hop == 1:
             h = self.propagate(prop_mat, x=x)
-            out += self._forward_theta(h) * temps[self.hop]
-            return {'out': out, 'x': h, 'x_1': x, 'prop_mat': prop_mat, 'temps': temps}
+            out += self._forward_theta(h, thetas)
+            return {'out': out, 'x': h, 'x_1': x, 'prop_mat': prop_mat, 'thetas': thetas}
 
-        h = self._forward_theta(self.propagate(prop_mat, x=x))
+        h = self.propagate(prop_mat, x=x)
         h = 2. * h - x_1
-        out += h * temps[self.hop]
+        out += self._forward_theta(h, thetas)
 
         return {
             'out': out,
             'x': h,
             'x_1': x,
             'prop_mat': prop_mat,
-            'temps': temps}
+            'thetas': thetas}
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}'
+        if len(self.coeffs_data) > 0:
+            return f'{self.__class__.__name__}(theta={self.coeffs_data[self.hop]})'
+        else:
+            if hasattr(self, 'coeff'):
+                return f'{self.__class__.__name__}(coeff={self.coeff})'
+            else:
+                return f'{self.__class__.__name__}(theta={self.theta})'

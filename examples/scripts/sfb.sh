@@ -5,7 +5,7 @@ python run_single.py --data cora --model DecoupledFixed --conv AdjConv \
 # Iterative
 python run_single.py --data cora --model Iterative --conv AdjConv \
     --alpha 0.0
-# ChebConv2, BernConv, ClenShaw, Horner
+# ChebIIConv, BernConv
 python run_single.py --data cora --model Iterative --conv Horner --alpha 0.0
 # chameleon_filtered
 python run_single.py --data chameleon_filtered --model Iterative --conv AdjConv \

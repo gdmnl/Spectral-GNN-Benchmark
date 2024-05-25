@@ -1,28 +1,23 @@
-from typing import Optional, Any, Union
+from typing import Optional, Any
 
+import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch import Tensor
 
 from torch_geometric.typing import Adj
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import spmm
 
-from pyg_spectral.utils import get_laplacian
-
 
 class HornerConv(MessagePassing):
-    r"""Incomplete Version of Convolutional layer with ClenShaw GCN.
+    r"""Convolutional layer with adjacency propagation and explicit residual.
     paper: Clenshaw Graph Neural Networks
     ref: https://github.com/yuziGuo/ClenshawGNN/blob/master/layers/HornerConv.py
 
     Args:
         num_hops (int), hop (int): total and current number of propagation hops.
             hop=0 explicitly handles x without propagation.
-        alpha (float): eigenvalue by default 1.0
-        theta (nn.Parameter or nn.Module): transformation of propagation result
-            before applying to the output.
+        alpha (float): transformation strength.
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
@@ -32,8 +27,7 @@ class HornerConv(MessagePassing):
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        theta: Union[nn.Parameter, nn.Module] = None,
-        alpha: float = -1.0,
+        alpha: float = None,
         cached: bool = True,
         **kwargs
     ):
@@ -42,16 +36,18 @@ class HornerConv(MessagePassing):
 
         self.num_hops = num_hops
         self.hop = hop
-        self.theta = theta
-        self.alpha = 1.0 if alpha < 0 else alpha  #NOTE: set actual alpha default here
-        self.temps = None
+        alpha = alpha or 0
+        if alpha == 0:
+            self.alpha = 0.5
+        else:
+            self.alpha = np.log(alpha / (hop + 1) + 1)
+            self.alpha = min(self.alpha, 1.0)
+        self.beta_init = 1.0 if hop == num_hops else 0.0
+        self.beta_init = torch.tensor(self.beta_init)
+        self.beta = torch.nn.Parameter(self.beta_init)
 
         self.cached = cached
         self._cache = None
-
-        self.coes = torch.log(self.alpha / (torch.arange(self.num_hops+1))+ 1)
-        _ones = torch.ones_like(self.coes)
-        self.coes = torch.where(self.coes<1, self.coes, _ones)
 
     def reset_cache(self):
         del self._cache
@@ -60,10 +56,7 @@ class HornerConv(MessagePassing):
     def reset_parameters(self):
         if hasattr(self.theta, 'reset_parameters'):
             self.theta.reset_parameters()
-        if self.hop == 0:
-            self.temps = nn.Parameter(torch.ones(self.num_hops+1))
-            self.temps.data.fill_(0.0)
-            self.temps.data[0]=1.0
+        self.beta.data.fill_(self.beta_init)
 
     def get_propagate_mat(self,
         x: Tensor,
@@ -79,15 +72,6 @@ class HornerConv(MessagePassing):
         """
         cache = self._cache
         if cache is None:
-            # A_norm -> L_norm
-            edge_index = get_laplacian(
-                edge_index,
-                normalization=True,
-                dtype=x.dtype)
-            # L_norm -> L_norm - I
-            diag = edge_index.get_diag()
-            edge_index = edge_index.set_diag(diag - 1.0)
-
             if self.cached:
                 self._cache = edge_index
         else:
@@ -105,16 +89,13 @@ class HornerConv(MessagePassing):
         Returns:
             out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
                 accumulating propagation results
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
-            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
+            x_0 (:math:`(|\mathcal{V}|, F)` Tensor): initial input
             prop_mat (Adj): propagation matrix
         """
         return {
             'out': torch.zeros_like(x),
-            'x': x,
-            'x_1': torch.zeros_like(x),
-            'prop_mat': self.get_propagate_mat(x, edge_index),
-            'temps': self.temps}
+            'x_0': x,
+            'prop_mat': self.get_propagate_mat(x, edge_index)}
 
     def _forward_theta(self, x):
         if callable(self.theta):
@@ -124,33 +105,29 @@ class HornerConv(MessagePassing):
 
     def forward(self,
         out: Tensor,
-        x: Tensor,
-        x_1: Tensor,
+        x_0: Tensor,
         prop_mat: Adj,
-        temps: Tensor,
     ) -> dict:
         r"""
         Args & Returns: (dct): same with output of get_forward_mat()
         """
         if self.hop == 0:
-            x = self._forward_theta(x)
-            out = x * F.relu(temps[self.hop])
-            return {'out': out, 'x': x, 'x_1': x_1, 'prop_mat': prop_mat, 'temps': temps}
+            h = out
+        else:
+            # propagate_type: (x: Tensor)
+            h = self.propagate(prop_mat, x=out)
+        h += self.beta * x_0
 
-        h = self.propagate(prop_mat, x=x_1)
-        h = temps[-self.hop] * x + h
-        hw = self._forward_theta(h)
-        h = self.coes[self.hop] * hw + (1.-self.coes[self.hop]) * h
+        out = self._forward_theta(h)
+        out = self.alpha * h + (1 - self.alpha) * out
 
         return {
-            'out': h,
-            'x': x,
-            'x_1': h,
-            'prop_mat': prop_mat,
-            'temps': temps}
+            'out': out,
+            'x_0': x_0,
+            'prop_mat': prop_mat}
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)
 
-    def __repr__(self):
-        return f'{self.__class__.__name__}'
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}(alpha={self.alpha})'

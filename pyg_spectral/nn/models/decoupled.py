@@ -26,6 +26,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
             - 'gaussian': Graph Gaussian Kernel, :math:`theta_k = p^{k} / k!`.
             - 'uniform': Random uniform distribution.
             - 'normal': Random Gaussian distribution.
+            - 'chebyshev': Chebyshev polynomial.
             - 'custom': Custom list of hop parameters.
         param (float, optional): Hyperparameter for the scheme.
             - `ones`: Value.
@@ -37,6 +38,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
             - 'gaussian': Decay factor, :math:`p > 0`.
             - 'uniform': Distribution bound.
             - 'normal': Distribution variance.
+            - 'chebyshev': NA.
             - 'custom': Float list of hop parameters.
 
     Returns:
@@ -82,6 +84,8 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         param = param if param is not None else 1.0
         theta = torch.randn(num_hops+1) * param
         return theta/torch.norm(theta, p=1)
+    elif scheme == 'chebyshev':
+        return (torch.cos((num_hops-torch.arange(num_hops+1)+0.5) * torch.pi/(num_hops+1))) ** 2
     elif scheme == 'custom':
         return torch.tensor(param, dtype=torch.float)
     else:

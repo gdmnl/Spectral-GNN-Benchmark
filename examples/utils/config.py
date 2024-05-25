@@ -85,7 +85,7 @@ def setup_argparse():
     parser.add_argument('--combine', type=str, default="sum_weighted", choices=['sum', 'sum_weighted', 'cat'], help='How to combine different channels of convs')
 
     # Conv-specific
-    # - AdjConv, ChebConv, Clenshaw, Horner, ACMGNN
+    # - AdjConv, ChebConv, Horner, Clenshaw, ACMGNN
     parser.add_argument('--alpha', type=list_float, help='Decay factor')
     # - AdjiConv
     parser.add_argument('--beta', type=list_float, help='Scaling factor')
