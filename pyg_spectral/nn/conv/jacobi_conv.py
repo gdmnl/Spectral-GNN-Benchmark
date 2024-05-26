@@ -1,30 +1,23 @@
-from typing import Optional, Any, Union
+from typing import Optional, Any
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 from torch import Tensor
 
 from torch_geometric.typing import Adj
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import spmm
 
-from pyg_spectral.utils import get_laplacian
-
 
 class JacobiConv(MessagePassing):
-    r"""Convolutional layer with Chebyshev Polynomials.
-    paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
-    ref: https://github.com/GraphPKU/JacobiConv/blob/master/impl/PolyConv.py
+    r"""Convolutional layer with Jacobi Polynomials.
+    paper: How Powerful are Spectral Graph Neural Networks
+    ref: https://github.com/GraphPKU/JacobiConv
 
     Args:
         num_hops (int), hop (int): total and current number of propagation hops.
             hop=0 explicitly handles x without propagation.
-        alpha (float): decay factor for each hop :math:`1/hop^\alpha`.
-        theta (nn.Parameter or nn.Module): transformation of propagation result
-            before applying to the output.
+        alpha, beta (float): hyperparameters in Jacobi polynomials.
         cached: whether cache the propagation matrix.
-        a,b: hyperparameters.
     """
     supports_batch: bool = False
     supports_norm_batch: bool = False
@@ -33,11 +26,9 @@ class JacobiConv(MessagePassing):
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        theta: Union[nn.Parameter, nn.Module] = None,
-        alpha: float = -1.0,
+        alpha: float = None,
+        beta: float = None,
         cached: bool = True,
-        a: float = 1.0,
-        b: float = 1.0,
         **kwargs
     ):
         kwargs.setdefault('aggr', 'add')
@@ -45,11 +36,10 @@ class JacobiConv(MessagePassing):
 
         self.num_hops = num_hops
         self.hop = hop
-        self.theta = theta
-        self.alpha = 0.0 if alpha < 0 else alpha  #NOTE: set actual alpha default here
-        self.a = a
-        self.b = b
-        self.temps = None
+        self.alpha = alpha or 1.0
+        self.beta = beta or 1.0
+        self.l = -1.0
+        self.r = 1.0
 
         self.cached = cached
         self._cache = None
@@ -76,20 +66,10 @@ class JacobiConv(MessagePassing):
         """
         cache = self._cache
         if cache is None:
-            # A_norm -> L_norm
-            edge_index = get_laplacian(
-                edge_index,
-                normalization=True,
-                dtype=x.dtype)
-            # L_norm -> L_norm - I
-            diag = edge_index.get_diag()
-            edge_index = edge_index.set_diag(diag - 1.0)
-
             if self.cached:
                 self._cache = edge_index
         else:
             edge_index = cache
-        
         return edge_index
 
     def get_forward_mat(self,
@@ -111,8 +91,7 @@ class JacobiConv(MessagePassing):
             'out': torch.zeros_like(x),
             'x': x,
             'x_1': x,
-            'prop_mat': self.get_propagate_mat(x, edge_index)
-            }
+            'prop_mat': self.get_propagate_mat(x, edge_index)}
 
     def _forward_theta(self, x):
         if callable(self.theta):
@@ -129,29 +108,39 @@ class JacobiConv(MessagePassing):
         r"""
         Args & Returns: (dct): same with output of get_forward_mat()
         """
+        a, b, l, r, k = self.alpha, self.beta, self.l, self.r, self.hop
         if self.hop == 0:
             out = self._forward_theta(x)
             return {'out': out, 'x': x, 'x_1': x, 'prop_mat': prop_mat}
         elif self.hop == 1:
-            h = (self.a-self.b)/2 * x  + (self.a+self.b+2)/2 * self.propagate(prop_mat, x=-x)
+            coeff0 = (a+b+2.) / (r-l)
+            coeff1 = (a-b)/2. - coeff0/2.*(l+r)
+            # propagate_type: (x: Tensor)
+            h = self.propagate(prop_mat, x=x)
+            h = coeff0 * h + coeff1 * x
             out += self._forward_theta(h)
             return {'out': out, 'x': h, 'x_1': x, 'prop_mat': prop_mat}
 
-        delta = (2*self.hop + self.a + self.b)*(2*self.hop + self.a + self.b - 1) / (2*self.hop*(self.hop+self.a+self.b))
-        delta_1 = (2*self.hop + self.a + self.b - 1)*(self.a**2 - self.b**2) / (2*self.hop*(self.hop+self.a+self.b)*(2*self.hop+self.a+self.b-2))
-        delta_2 = (self.hop+self.a-1)*(self.hop+self.b-1)*(2*self.hop+self.a+self.b) / (self.hop*(self.hop+self.a+self.b)*(2*self.hop+self.a+self.b-2))
-        h = delta * self.propagate(prop_mat, x=-x) + delta_1 * x - delta_2 * x_1
+        cl = 2*k * (k + a + b) * (2*k + a + b - 2)
+        c0 = (2*k + a + b - 1) * (2*k + a + b) * (2*k + a + b - 2) / cl
+        c1 = (2*k + a + b - 1) * (a**2 - b**2) / cl
+        coeff2 = 2 * (k + a - 1) * (k + b -1) * (2*k + a + b) / cl
+        # coeff0 = c0 * (2 / (r-l))
+        # coeff1 = - c0 * ((r+l) / (r-l)) - c1
+        coeff0, coeff1 = c0, c1
+        # propagate_type: (x: Tensor)
+        h = self.propagate(prop_mat, x=x)
+        h = coeff0 * h + coeff1 * x - coeff2 * x_1
         out += self._forward_theta(h)
-        
+
         return {
             'out': out,
             'x': h,
             'x_1': x,
-            'prop_mat': prop_mat
-            }
+            'prop_mat': prop_mat}
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(alpha={self.alpha})'
+        return f'{self.__class__.__name__}(alpha={self.alpha}, beta={self.beta})'

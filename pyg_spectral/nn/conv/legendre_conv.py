@@ -7,18 +7,17 @@ from torch_geometric.typing import Adj
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.utils import spmm
 
-from pyg_spectral.utils import get_laplacian
 
-
-class ChebConv(MessagePassing):
-    r"""Convolutional layer with Chebyshev Polynomials.
-    paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
-    ref: https://github.com/ivam-he/ChebNetII/blob/main/main/Chebbase_pro.py
+class LegendreConv(MessagePassing):
+    r"""Convolutional layer with Legendre Polynomials.
+    paper: How Powerful are Spectral Graph Neural Networks
+    ref: https://github.com/GraphPKU/JacobiConv
+    Alternative paper: Improved Modeling and Generalization Capabilities of Graph Neural Networks With Legendre Polynomials
+    code: https://github.com/12chen20/LegendreNet
 
     Args:
         num_hops (int), hop (int): total and current number of propagation hops.
             hop=0 explicitly handles x without propagation.
-        alpha (float): decay factor for each hop :math:`1/hop^\alpha`.
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
@@ -28,16 +27,14 @@ class ChebConv(MessagePassing):
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        alpha: float = None,
         cached: bool = True,
         **kwargs
     ):
         kwargs.setdefault('aggr', 'add')
-        super(ChebConv, self).__init__(**kwargs)
+        super(LegendreConv, self).__init__(**kwargs)
 
         self.num_hops = num_hops
         self.hop = hop
-        self.alpha = alpha or 0.0
 
         self.cached = cached
         self._cache = None
@@ -64,15 +61,6 @@ class ChebConv(MessagePassing):
         """
         cache = self._cache
         if cache is None:
-            # A_norm -> L_norm
-            edge_index = get_laplacian(
-                edge_index,
-                normalization=True,
-                dtype=x.dtype)
-            # L_norm -> L_norm - I
-            diag = edge_index.get_diag()
-            edge_index = edge_index.set_diag(diag - 1.0)
-
             if self.cached:
                 self._cache = edge_index
         else:
@@ -121,13 +109,14 @@ class ChebConv(MessagePassing):
         elif self.hop == 1:
             # propagate_type: (x: Tensor)
             h = self.propagate(prop_mat, x=x)
+            h = (2. - 1./self.hop) * h
             out += self._forward_theta(h)
             return {'out': out, 'x': h, 'x_1': x, 'prop_mat': prop_mat}
 
         # propagate_type: (x: Tensor)
         h = self.propagate(prop_mat, x=x)
-        h = 2. * h - x_1
-        out += self._forward_theta(h) / (self.hop ** self.alpha)
+        h = (2. - 1./self.hop) * h - (1. - 1./self.hop) * x_1
+        out += self._forward_theta(h)
 
         return {
             'out': out,
@@ -139,4 +128,4 @@ class ChebConv(MessagePassing):
         return spmm(adj_t, x, reduce=self.aggr)
 
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(alpha={self.alpha})'
+        return f'{self.__class__.__name__}'

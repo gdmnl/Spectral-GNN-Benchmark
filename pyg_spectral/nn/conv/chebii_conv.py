@@ -21,7 +21,7 @@ def cheby(i, x):
     else:
         T0 = 1
         T1 = x
-        for ii in range(2, i+1):
+        for _ in range(2, i+1):
             T2 = 2*x*T1 - T0
             T0, T1 = T1, T2
         return T2
@@ -118,8 +118,10 @@ class ChebIIConv(MessagePassing):
             x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
             x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
             prop_mat (Adj): propagation matrix
+            thetas (Tensor): learnable/fixed (wrt decoupled/iterative model)
+                scalar parameters representing cheb(x)
         """
-        assert self.num_hops+1 == len(self.coeffs)
+        # assert self.num_hops+1 == len(self.coeffs)
         coeffs = F.relu(self.coeffs)
         thetas = coeffs.clone()
         for i in range(self.num_hops+1):

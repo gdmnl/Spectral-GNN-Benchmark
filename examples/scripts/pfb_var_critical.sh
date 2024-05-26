@@ -13,7 +13,7 @@ ARGS_P=(
 )
 DATAS=("cora" "citeseer" "pubmed")
 MODELS=("Iterative" "DecoupledVar")
-CONVS=("AdjConv" "ChebConv")
+CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "FavardConv" "JacobiConv")
 PARLIST="num_hops,in_layers,out_layers,hidden,lr_lin,lr_conv"
 
 for data in ${DATAS[@]}; do

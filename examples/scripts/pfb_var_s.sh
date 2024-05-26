@@ -35,17 +35,17 @@ ARGS_S=(
 # DATAS=("amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94")
 DATAS=("ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" "ogbn-mag" "pokec")
 MODELS=("DecoupledVar")
-CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv")
+CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "FavardConv" "JacobiConv")
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do
         for conv in ${CONVS[@]}; do
             PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
             # Add model/conv-specific args/params here
-            if [ "$conv" = "AdjConv" ]; then
-                ARGS_C=("--alpha" "0.0")
-            elif [[ "$conv" == "HornerConv" || "$conv" == "ClenshawConv" ]]; then
+            if [[ "$conv" == "HornerConv" || "$conv" == "ClenshawConv" ]]; then
                 PARLIST="$PARLIST,alpha"
+            elif [[ "$conv" == "JacobiConv" ]]; then
+                PARLIST="$PARLIST,alpha,beta"
             else
                 ARGS_C=()
             fi
