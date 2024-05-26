@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from torch_geometric.typing import Adj, OptTensor
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.models import MLP
+from torch_geometric.nn.inits import reset
 
 
 class myMLP(MLP):
@@ -153,7 +154,7 @@ class BaseNN(nn.Module):
         if self.out_layers > 0:
             self.out_mlp.reset_parameters()
         for conv in self.convs:
-            conv.reset_parameters()
+            reset(conv)
 
     def get_optimizer(self, dct):
         res = []

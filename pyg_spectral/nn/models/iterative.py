@@ -56,5 +56,7 @@ class Iterative(BaseNN):
                 bias=(bias or bias_default),
                 weight_initializer=weight_initializer,
                 bias_initializer=bias_initializer)
+            if hasattr(convs[-1], '_init_with_theta'):
+                convs[-1]._init_with_theta()
 
         return convs

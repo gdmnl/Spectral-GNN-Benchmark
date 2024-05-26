@@ -48,10 +48,6 @@ class JacobiConv(MessagePassing):
         del self._cache
         self._cache = None
 
-    def reset_parameters(self):
-        if hasattr(self.theta, 'reset_parameters'):
-            self.theta.reset_parameters()
-
     def get_propagate_mat(self,
         x: Tensor,
         edge_index: Adj

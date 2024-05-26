@@ -3,17 +3,19 @@ from typing import Optional, Any, Union
 import copy
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch import Tensor
 
 from torch_geometric.typing import Adj
 from torch_geometric.nn.conv import MessagePassing
+from torch_geometric.nn.inits import reset
 from torch_geometric.utils import spmm
 
 
 class FavardConv(MessagePassing):
     r"""Convolutional layer with basis in Favard's Theorem.
     paper: Graph Neural Networks with Learnable and Optimal Polynomial Bases
-    ref: https://github.com/yuziGuo/FarOptBasis/blob/1e3fdac8ea03b8c98110f740cd79afea9fd4831b/layers/FavardNormalConv.py
+    ref: https://github.com/yuziGuo/FarOptBasis/blob/master/layers/FavardNormalConv.py
 
     Args:
         num_hops (int), hop (int): total and current number of propagation hops.
@@ -39,18 +41,26 @@ class FavardConv(MessagePassing):
         self.cached = cached
         self._cache = None
 
+    def _init_with_theta(self):
+        if callable(self.theta):
+            self.alpha = copy.deepcopy(self.theta)
+            self.beta  = copy.deepcopy(self.theta)
+        else:
+            self.register_parameter('alpha', nn.Parameter(self.theta.data.clone()))
+            self.register_parameter('beta' , nn.Parameter(self.theta.data.clone()))
+
     def reset_cache(self):
         del self._cache
         self._cache = None
 
     def reset_parameters(self):
         if hasattr(self.theta, 'reset_parameters'):
-            self.theta.reset_parameters()
-            self.alpha_pos = copy.deepcopy(self.theta)
-            self.beta  = copy.deepcopy(self.theta)
+            reset(self.theta)
+            reset(self.alpha)
+            reset(self.beta)
         else:
-            self.register_parameter('alpha', nn.Parameter(self.theta))
-            self.register_parameter('beta', nn.Parameter(self.theta))
+            self.alpha.data = self.theta.data.clone()
+            self.beta.data = self.theta.data.clone()
 
     def get_propagate_mat(self,
         x: Tensor,
@@ -90,27 +100,25 @@ class FavardConv(MessagePassing):
         """
         return {
             'out': torch.zeros_like(x),
-            'x': x,
+            'x': x + torch.randn_like(x) * 1e-5,
             'x_1': torch.zeros_like(x),
             'prop_mat': self.get_propagate_mat(x, edge_index),
             'alpha_1': None}
 
-    @property
-    def alpha_pos(self):
-        return torch.clamp(self.alpha, min=1e-2)
-
-    def _multiply_coeff(self, x, coeff):
+    def _mul_coeff(self, x, coeff, pos=True):
         if callable(coeff):
-            return coeff(x)
+            return F.relu(coeff(x))
         else:
+            coeff = torch.clamp(coeff, min=1e-2) if pos else coeff
             return coeff * x
 
-    def _devide_coeff(self, x, coeff):
+    def _div_coeff(self, x, coeff, pos=True):
         if callable(coeff):
             assert hasattr(coeff, 'weight')
             # use L2 norm of weight
             return x / torch.norm(coeff.weight)
         else:
+            coeff = torch.clamp(coeff, min=1e-2) if pos else coeff
             return x / coeff
 
     def _forward_theta(self, x):
@@ -130,16 +138,16 @@ class FavardConv(MessagePassing):
         Args & Returns: (dct): same with output of get_forward_mat()
         """
         if self.hop == 0:
-            h = self._devide_coeff(x, self.alpha_pos)
+            h = self._div_coeff(x, self.alpha, pos=True)
             out = self._forward_theta(h)
             return {'out': out, 'x': h, 'x_1': torch.zeros_like(x),
-                    'prop_mat': prop_mat, 'alpha_1': self.alpha_pos}
+                    'prop_mat': prop_mat, 'alpha_1': self.alpha}
 
         # propagate_type: (x: Tensor)
         h = self.propagate(prop_mat, x=x)
-        h -= self._multiply_coeff(x, self.beta)
-        h -= self._multiply_coeff(x_1, alpha_1)
-        h = self._devide_coeff(h, self.alpha_pos)
+        h -= self._mul_coeff(x, self.beta, pos=False)
+        h -= self._mul_coeff(x_1, alpha_1, pos=True)
+        h = self._div_coeff(h, self.alpha, pos=True)
         out += self._forward_theta(h)
 
         return {
@@ -147,7 +155,7 @@ class FavardConv(MessagePassing):
             'x': h,
             'x_1': x,
             'prop_mat': prop_mat,
-            'alpha_1': self.alpha_pos}
+            'alpha_1': self.alpha}
 
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         return spmm(adj_t, x, reduce=self.aggr)

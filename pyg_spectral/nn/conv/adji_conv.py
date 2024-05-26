@@ -1,4 +1,4 @@
-from typing import Optional, Any, Union
+from typing import Optional, Any
 
 import torch
 import torch.nn as nn
@@ -20,8 +20,6 @@ class AdjiConv(MessagePassing):
         beta (float): scaling for self-loop in adjacency matrix, i.e.
             `improved` in PyG GCNConv and `eps` in GINConv. Can be :math:`\beta < 0`.
             beta = 'var' for learnable beta as parameter.
-        theta (nn.Parameter or nn.Module): transformation of propagation result
-            before applying to the output.
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
@@ -31,7 +29,6 @@ class AdjiConv(MessagePassing):
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        theta: Union[nn.Parameter, nn.Module] = None,
         alpha: float = None,
         beta: float = None,
         cached: bool = True,
@@ -42,7 +39,6 @@ class AdjiConv(MessagePassing):
 
         self.num_hops = num_hops
         self.hop = hop
-        self.theta = theta
         alpha = alpha or 1.0
         self.register_buffer('alpha', torch.tensor(alpha))
         if beta is None:

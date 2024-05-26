@@ -6,6 +6,7 @@ from torch import Tensor
 
 from torch_geometric.typing import Adj
 from torch_geometric.nn.conv import MessagePassing
+from torch_geometric.nn.inits import reset
 from torch_geometric.utils import spmm
 
 
@@ -54,8 +55,8 @@ class ClenshawConv(MessagePassing):
         self._cache = None
 
     def reset_parameters(self):
-        if hasattr(self.theta, 'reset_parameters'):
-            self.theta.reset_parameters()
+        reset(self.theta)
+        self.beta.data.fill_(self.beta_init)
 
     def get_propagate_mat(self,
         x: Tensor,

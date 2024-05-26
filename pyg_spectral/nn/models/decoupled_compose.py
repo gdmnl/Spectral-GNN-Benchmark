@@ -4,6 +4,7 @@ from torch_geometric.nn.conv import MessagePassing
 
 from pyg_spectral.nn.models.base_nn import BaseNNCompose
 from pyg_spectral.nn.models.decoupled import gen_theta
+from torch_geometric.nn.inits import reset
 from pyg_spectral.utils import load_import
 
 
@@ -67,6 +68,8 @@ class DecoupledFixedCompose(BaseNNCompose):
                 conv_cls(num_hops=num_hops, hop=k, **kwargs_c) for k in range(num_hops+1)]))
             for k, convk in enumerate(convs[-1]):
                 convk.register_buffer('theta', theta[k].clone())
+                if hasattr(convk, '_init_with_theta'):
+                    convk._init_with_theta()
         return convs
 
 
@@ -137,6 +140,8 @@ class DecoupledVarCompose(BaseNNCompose):
                 conv_cls(num_hops=num_hops, hop=k, theta=nn.Parameter(self.theta_init[-1][k]), **kwargs_c) for k in range(num_hops+1)]))
             for k, convk in enumerate(convs[-1]):
                 convk.register_parameter('theta', nn.Parameter(self.theta_init[-1][k].clone()))
+                if hasattr(convk, '_init_with_theta'):
+                    convk._init_with_theta()
         return convs
 
     def reset_parameters(self):
@@ -146,7 +151,7 @@ class DecoupledVarCompose(BaseNNCompose):
             self.out_mlp.reset_parameters()
         for i, channel in enumerate(self.convs):
             for k, conv in enumerate(channel):
-                conv.reset_parameters()
+                reset(conv)
                 conv.theta.data = self.theta_init[i][k].clone()
         if hasattr(self, 'gamma'):
             nn.init.ones_(self.gamma)

@@ -2,10 +2,11 @@ from typing import List, Union
 
 import numpy as np
 import torch
-from torch import Tensor
 import torch.nn as nn
+from torch import Tensor
 
 from torch_geometric.nn.conv import MessagePassing
+from torch_geometric.nn.inits import reset
 
 from pyg_spectral.nn.models.base_nn import BaseNN
 from pyg_spectral.utils import load_import
@@ -17,6 +18,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
     Args:
         num_hops (int): Total number of hops.
         scheme (str): Method to generate parameters.
+            - `zeros`: all-zero, :math:`\theta_k = 0`.
             - `ones`: all-same, :math:`\theta_k = p`.
             - `impulse`: K-hop, :math:`\theta_K = p, else 0`.
             - `inverse`: Inverse, :math:`\theta_k = p/(k+1)`.
@@ -25,11 +27,13 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
             - 'nappr': Negative PPR, :math:`\theta_k = p^k`.
             - 'hk': Heat Kernel, :math:`\theta_k = e^{-p}p^k / k!`.
             - 'gaussian': Graph Gaussian Kernel, :math:`theta_k = p^{k} / k!`.
-            - 'uniform': Random uniform distribution.
-            - 'normal': Random Gaussian distribution.
             - 'chebyshev': Chebyshev polynomial.
+            - 'uniform': Random uniform distribution.
+            - 'normal_std': Standard random Gaussian distribution N(0, p).
+            - 'normal': Random Gaussian distribution N(p0, p1).
             - 'custom': Custom list of hop parameters.
         param (float, optional): Hyperparameter for the scheme.
+            - `zeros`: NA.
             - `ones`: Value.
             - 'impulse': Value.
             - 'inverse': Value.
@@ -38,16 +42,19 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
             - 'nappr': Decay factor, :math:`p \in [-1, 1]`.
             - 'hk': Decay factor, :math:`p > 0`.
             - 'gaussian': Decay factor, :math:`p > 0`.
-            - 'uniform': Distribution bound.
-            - 'normal': Distribution variance.
             - 'chebyshev': NA.
+            - 'uniform': Distribution bound.
+            - 'normal_std': Distribution variance.
+            - 'normal': Distribution mean and variance.
             - 'custom': Float list of hop parameters.
 
     Returns:
         theta (Tensor): Lenth (num_hops+1) list of hop parameters.
     """
     assert num_hops > 0, 'num_hops should be a positive integer'
-    if scheme == 'ones':
+    if scheme == 'zeros':
+        return torch.zeros(num_hops+1, dtype=torch.float)
+    elif scheme == 'ones':
         param = param if param is not None else 1.0
         return torch.ones(num_hops+1, dtype=torch.float) * param
     elif scheme == 'impulse':
@@ -81,16 +88,23 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         param = param if param is not None else 1.0
         factorial = torch.tensor([np.math.factorial(i) for i in range(num_hops+1)])
         return (param ** torch.arange(num_hops+1)) / factorial
+    elif scheme == 'chebyshev':
+        return (torch.cos((num_hops-torch.arange(num_hops+1)+0.5) * torch.pi/(num_hops+1))) ** 2
     elif scheme == 'uniform':
         param = param if param is not None else np.sqrt(3/(num_hops+1))
         theta = torch.rand(num_hops+1) * 2 * param - param
         return theta/torch.norm(theta, p=1)
-    elif scheme == 'normal':
+    elif scheme == 'normal_std':
         param = param if param is not None else 1.0
         theta = torch.randn(num_hops+1) * param
         return theta/torch.norm(theta, p=1)
-    elif scheme == 'chebyshev':
-        return (torch.cos((num_hops-torch.arange(num_hops+1)+0.5) * torch.pi/(num_hops+1))) ** 2
+    elif scheme == 'normal':
+        param = param if param is not None else [0.0, 1.0]
+        if isinstance(param, float):
+            param = [param, 1.0]
+        elif len(param) == 1:
+            param.append(1.0)
+        return torch.normal(param[0], param[1], size=(num_hops+1,))
     elif scheme == 'custom':
         return torch.tensor(param, dtype=torch.float)
     else:
@@ -141,6 +155,8 @@ class DecoupledFixed(BaseNN):
             conv_cls(num_hops=num_hops, hop=k, **kwargs) for k in range(num_hops+1)])
         for k, convk in enumerate(convs):
             convk.register_buffer('theta', theta[k].clone())
+            if hasattr(convk, '_init_with_theta'):
+                convk._init_with_theta()
         return convs
 
 
@@ -188,6 +204,8 @@ class DecoupledVar(BaseNN):
             conv_cls(num_hops=num_hops, hop=k, **kwargs) for k in range(num_hops+1)])
         for k, convk in enumerate(convs):
             convk.register_parameter('theta', nn.Parameter(self.theta_init[k].clone()))
+            if hasattr(convk, '_init_with_theta'):
+                convk._init_with_theta()
         return convs
 
     def reset_parameters(self):
@@ -196,7 +214,7 @@ class DecoupledVar(BaseNN):
         if self.out_layers > 0:
             self.out_mlp.reset_parameters()
         for k, conv in enumerate(self.convs):
-            conv.reset_parameters()
+            reset(conv)
             conv.theta.data = self.theta_init[k].clone()
 
 # FEATURE: DecoupledCpu class
