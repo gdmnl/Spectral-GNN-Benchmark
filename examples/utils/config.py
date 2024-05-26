@@ -104,6 +104,7 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     elif args.model in ['DecoupledVar', 'DecoupledVarCompose']:
         args.model_repr = 'DecoupledVar'
         args.conv_repr = args.conv
+    # FIXME: separate arch for AdaGNN
     elif args.model in ['AdaGNN']:
         args.model_repr = 'DecoupledVar'
         args.conv_repr = args.conv

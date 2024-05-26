@@ -1,7 +1,5 @@
 from typing import Optional, Any
 
-import torch
-import torch.nn as nn
 from torch import Tensor
 
 from torch_geometric.typing import Adj
@@ -11,16 +9,15 @@ from torch_geometric.utils import spmm
 from pyg_spectral.utils import get_laplacian
 
 
-class AdaConv(MessagePassing):
-    r"""Convolutional layer with AdaGNN.
+class LapiConv(MessagePassing):
+    r"""Iterative linear filter using the normalized adjacency matrix.
+    Used in AdaGNN.
     paper: AdaGNN: Graph Neural Networks with Adaptive Frequency Response Filter
     ref: https://github.com/yushundong/AdaGNN/blob/main/layers.py
 
     Args:
         num_hops (int), hop (int): total and current number of propagation hops.
             hop=0 explicitly handles x without propagation.
-        theta (nn.Parameter): transformation of propagation result
-            before applying to the output.
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
@@ -30,16 +27,14 @@ class AdaConv(MessagePassing):
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        theta: nn.Parameter = None,
         cached: bool = True,
         **kwargs
     ):
         kwargs.setdefault('aggr', 'add')
-        super(AdaConv, self).__init__(**kwargs)
+        super(LapiConv, self).__init__(**kwargs)
 
         self.num_hops = num_hops
         self.hop = hop
-        self.theta = theta
 
         self.cached = cached
         self._cache = None
@@ -47,10 +42,6 @@ class AdaConv(MessagePassing):
     def reset_cache(self):
         del self._cache
         self._cache = None
-
-    def reset_parameters(self):
-        if hasattr(self.theta, 'reset_parameters'):
-            self.theta.reset_parameters()
 
     def get_propagate_mat(self,
         x: Tensor,
@@ -95,7 +86,10 @@ class AdaConv(MessagePassing):
             'prop_mat': self.get_propagate_mat(x, edge_index)}
 
     def _forward_theta(self, x):
-        return torch.mm(x, torch.diag(self.theta))
+        if callable(self.theta):
+            return self.theta(x)
+        else:
+            return self.theta * x
 
     def forward(self,
         out: Tensor,

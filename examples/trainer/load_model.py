@@ -79,9 +79,9 @@ class ModelLoader(object):
                     kwargs['num_hops'] = int(kwargs['num_hops'] / 2)
 
             # Parse model args
-            if self.model in ['Iterative', 'AdaGNN', 'ACMGNN']:
+            if self.model in ['Iterative', 'ACMGNN']:
                 trn = TrnFullbatch
-            elif self.model in ['DecoupledFixed', 'DecoupledVar']:
+            elif self.model in ['DecoupledFixed', 'DecoupledVar', 'AdaGNN']:
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,))

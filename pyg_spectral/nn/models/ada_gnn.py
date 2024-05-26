@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
 from torch_geometric.nn.conv import MessagePassing
+from torch_geometric.nn.inits import reset
 
 from pyg_spectral.nn.models.base_nn import BaseNN
+from pyg_spectral.nn.models.decoupled import gen_theta
 from pyg_spectral.utils import load_import
 
 
@@ -37,17 +39,30 @@ class AdaGNN(BaseNN):
         lib: str,
         **kwargs
     ) -> MessagePassing:
+        self.theta_scheme = kwargs.pop('theta_scheme', 'ones')
+        self.theta_param = kwargs.pop('theta_param', 1.0)
+
         conv_cls = load_import(conv, lib)
-        return nn.ModuleList([
+        convs = nn.ModuleList([
             conv_cls(num_hops=num_hops, hop=k,
-                     theta=nn.Parameter(torch.FloatTensor(self.channel_list[self.in_layers+k])),
                      **kwargs) for k in range(num_hops)])
+        for k, convk in enumerate(convs):
+            convk.register_parameter('theta', nn.Parameter(torch.FloatTensor(self.channel_list[self.in_layers+k])))
+            if hasattr(convk, '_init_with_theta'):
+                convk._init_with_theta()
+        return convs
 
     def reset_parameters(self):
         if self.in_layers > 0:
             self.in_mlp.reset_parameters()
         if self.out_layers > 0:
             self.out_mlp.reset_parameters()
+
         for k, conv in enumerate(self.convs):
-            conv.reset_parameters()
-            nn.init.normal_(conv.theta, mean=0, std=1e-7)
+            f = conv.theta.size(0)
+            if self.theta_scheme.startswith(('uniform', 'normal')):
+                thetas = gen_theta(f, self.theta_scheme, self.theta_param)
+            else:
+                thetas = gen_theta(self.num_hops, self.theta_scheme, self.theta_param)[k].repeat(f)
+            conv.theta.data = thetas
+            reset(conv)

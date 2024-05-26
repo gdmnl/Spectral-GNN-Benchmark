@@ -5,7 +5,7 @@ SEED_P=1
 # SEED_S="20,21,22,23,24,25,26,27,28,29"
 SEED_S="20,21,22"
 ARGS_P=(
-    "--n_trials" "100"
+    "--n_trials" "50"
     "--loglevel" "30"
     "--num_hops" "10"
     "--in_layers" "1"

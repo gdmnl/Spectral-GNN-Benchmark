@@ -5,7 +5,7 @@ SEED_P=1
 # SEED_S="20,21,22,23,24,25,26,27,28,29"
 SEED_S="20,21,22"
 ARGS_P=(
-    "--n_trials" "300"
+    "--n_trials" "100"
     "--loglevel" "30"
     "--num_hops" "10"
     "--in_layers" "1"
@@ -43,13 +43,15 @@ for data in ${DATAS[@]}; do
         --data $data --model MLP \
         "${ARGS_S[@]}"
 
-    # AdaGNN
-    python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
-        --data $data --model AdaGNN --conv AdaConv \
-        "${ARGS_P[@]}"
-    python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
-        --data $data --model AdaGNN --conv AdaConv \
-        "${ARGS_S[@]}"
+    # AdaGNN, OptBasisGNN
+    for conv in "LapiConv" "OptBasisConv"; do
+        python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
+            --data $data --model AdaGNN --conv $conv \
+            "${ARGS_P[@]}"
+        python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
+            --data $data --model AdaGNN --conv $conv \
+            "${ARGS_S[@]}"
+    done
 
     # ACMGNN/FBGNN-I/II
     for alpha in 1 2; do
