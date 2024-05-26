@@ -1,9 +1,8 @@
-# run_param+run_best, fullbatch, Iterative/DecoupledVar, small-scale dataset
+# run_param+run_best, fullbatch, DecoupledVar, small-scale dataset
 source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=1
-# SEED_S="20,21,22,23,24,25,26,27,28,29"
-SEED_S="20,21,22"
+SEED_S="20,21,22,23,24,25,26,27,28,29"
 ARGS_P=(
     "--n_trials" "50"
     "--loglevel" "30"
@@ -34,19 +33,18 @@ ARGS_S=(
 # DATAS=("reddit" "ogbn-arxiv" "penn94" "arxiv-year")
 DATAS=("ogbn-arxiv" "penn94")
 MODELS=("DecoupledVar")
-CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "FavardConv" "JacobiConv")
+CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do
         for conv in ${CONVS[@]}; do
             PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
+            ARGS_C=()
             # Add model/conv-specific args/params here
             if [[ "$conv" == "HornerConv" || "$conv" == "ClenshawConv" ]]; then
                 PARLIST="$PARLIST,alpha"
             elif [[ "$conv" == "JacobiConv" ]]; then
                 PARLIST="$PARLIST,alpha,beta"
-            else
-                ARGS_C=()
             fi
 
             # Run hyperparameter search

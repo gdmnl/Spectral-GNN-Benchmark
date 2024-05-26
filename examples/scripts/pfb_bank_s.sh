@@ -2,8 +2,7 @@
 source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=1
-# SEED_S="20,21,22,23,24,25,26,27,28,29"
-SEED_S="20,21,22"
+SEED_S="20,21,22,23,24,25,26,27,28,29"
 ARGS_P=(
     "--n_trials" "100"
     "--loglevel" "30"
@@ -44,27 +43,13 @@ for data in ${DATAS[@]}; do
         "${ARGS_S[@]}"
 
     # AdaGNN, OptBasisGNN
-    for conv in "LapiConv" "OptBasisConv"; do
+    for conv in "LapiConv"; do
         python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
             --data $data --model AdaGNN --conv $conv \
             "${ARGS_P[@]}"
         python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
             --data $data --model AdaGNN --conv $conv \
             "${ARGS_S[@]}"
-    done
-
-    # ACMGNN/FBGNN-I/II
-    for alpha in 1 2; do
-        for theta_scheme in "low-high-id" "low-high"; do
-            python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
-                --data $data --model ACMGNN --conv ACMConv \
-                --alpha $alpha --theta_scheme $theta_scheme \
-                "${ARGS_P[@]}"
-            python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
-                --data $data --model ACMGNN --conv ACMConv \
-                --alpha $alpha --theta_scheme $theta_scheme \
-                "${ARGS_S[@]}"
-        done
     done
 
     # FiGURe

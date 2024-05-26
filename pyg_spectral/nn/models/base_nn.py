@@ -130,7 +130,6 @@ class BaseNN(nn.Module):
         return channel_list
 
     def init_conv(self, conv: str, num_hops: int, lib: str, **kwargs) -> MessagePassing:
-        # TODO: change to nn.Sequential
         raise NotImplementedError
 
     def _set_conv_func(self, func: str) -> Callable:

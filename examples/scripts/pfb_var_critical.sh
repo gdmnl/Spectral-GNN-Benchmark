@@ -11,13 +11,13 @@ ARGS_P=(
     "--theta_param" "1.0"
     "--suffix" "fb_var"
 )
-DATAS=("cora" "citeseer" "pubmed")
 MODELS=("Iterative" "DecoupledVar")
-CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "FavardConv" "JacobiConv")
+DATAS=("cora" "citeseer" "chameleon_filtered" "actor")
+CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
 PARLIST="num_hops,in_layers,out_layers,hidden,lr_lin,lr_conv"
 
-for data in ${DATAS[@]}; do
-    for model in ${MODELS[@]}; do
+for model in ${MODELS[@]}; do
+    for data in ${DATAS[@]}; do
         for conv in ${CONVS[@]}; do
             python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
                 --data $data --model $model --conv $conv \

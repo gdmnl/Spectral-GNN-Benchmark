@@ -1,4 +1,4 @@
-# run_param+run_best, fullbatch, DecoupledVar, small-scale dataset
+# run_param+run_best, fullbatch, Iterative/DecoupledVar, small-scale dataset
 source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=1
@@ -6,7 +6,7 @@ SEED_S="20,21,22,23,24,25,26,27,28,29"
 ARGS_P=(
     "--n_trials" "100"
     "--loglevel" "30"
-    "--num_hops" "10"
+    "--num_hops" "2"
     "--in_layers" "1"
     "--out_layers" "1"
     "--hidden" "128"
@@ -19,7 +19,7 @@ ARGS_P=(
 ARGS_S=(
     "--seed_param" "$SEED_P"
     "--loglevel" "25"
-    "--num_hops" "10"
+    "--num_hops" "2"
     "--in_layers" "1"
     "--out_layers" "1"
     "--hidden" "128"
@@ -33,7 +33,7 @@ ARGS_S=(
 # DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
 # DATAS=("amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94")
 DATAS=("ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" "ogbn-mag" "pokec")
-MODELS=("DecoupledVar")
+MODELS=("Iterative")
 CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
 
 for data in ${DATAS[@]}; do
@@ -46,6 +46,8 @@ for data in ${DATAS[@]}; do
                 PARLIST="$PARLIST,alpha"
             elif [[ "$conv" == "JacobiConv" ]]; then
                 PARLIST="$PARLIST,alpha,beta"
+            elif [[ "$conv" == "AdjiConv" ]]; then
+                ARGS_C=("--beta" "var")
             fi
 
             # Run hyperparameter search

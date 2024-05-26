@@ -40,11 +40,11 @@ for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do
         for scheme in ${SCHEMES[@]}; do
             # Add model/conv-specific args/params here
-            if [ "$scheme" = "gaussian" ]; then
-                ARGS_C=("--alpha" "1.0")
-            else
-                ARGS_C=()
-            fi
+            # if [ "$scheme" = "gaussian" ]; then
+            #     ARGS_C=("--alpha" "1.0")
+            # else
+            #     ARGS_C=()
+            # fi
 
             # Run hyperparameter search
             python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \

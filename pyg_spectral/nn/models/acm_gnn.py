@@ -51,11 +51,13 @@ class ACMGNN(BaseNN):
         for k in range(num_hops):
             in_channels = self.channel_list[self.in_layers + k]
             out_channels = self.channel_list[self.in_layers + k + 1]
-            theta = nn.ModuleDict({sch: Linear(
+            convs.append(conv_cls(num_hops=num_hops, hop=k, **kwargs))
+            convs[-1].theta = nn.ModuleDict({sch: Linear(
                 in_channels, out_channels,
                 bias=False,
                 weight_initializer=weight_initializer,
                 bias_initializer=bias_initializer) for sch in theta_scheme})
-            convs.append(conv_cls(num_hops=num_hops, hop=k, theta=theta, **kwargs))
+            if hasattr(convs[-1], '_init_with_theta'):
+                convs[-1]._init_with_theta()
 
         return convs

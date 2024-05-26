@@ -9,7 +9,7 @@ ARGS_P=(
     "--patience" "50"
     "--suffix" "fb_fix"
 )
-DATAS=("cora" "citeseer" "pubmed")
+DATAS=("cora" "citeseer" "chameleon_filtered" "actor")
 MODELS=("DecoupledFixed")
 CONVS=AdjConv
 SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")

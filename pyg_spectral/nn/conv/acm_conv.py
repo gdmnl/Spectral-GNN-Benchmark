@@ -23,8 +23,6 @@ class ACMConv(MessagePassing):
         num_hops (int), hop (int): total and current number of propagation hops.
             hop=0 explicitly handles x without propagation.
         alpha (int): variant I (propagate first) or II (act first)
-        theta (nn.ModuleDict): transformation of propagation result
-            before applying to the output.
         cached: whether cache the propagation matrix.
     """
     supports_batch: bool = False
@@ -34,8 +32,7 @@ class ACMConv(MessagePassing):
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        theta: nn.ModuleDict = None,
-        alpha: int = 1,
+        alpha: int = None,
         cached: bool = True,
         **kwargs
     ):
@@ -44,13 +41,16 @@ class ACMConv(MessagePassing):
 
         self.num_hops = num_hops
         self.hop = hop
-        self.theta = theta
-        self.schemes = theta.keys()
-        self.n_scheme = len(self.schemes)
-        self.alpha = 1 if alpha <= 0 else int(alpha)  #NOTE: set actual alpha default here
+        self.alpha = 1 if alpha is None else int(alpha)
 
         self.cached = cached
         self._cache = None
+
+    def _init_with_theta(self):
+        """theta (nn.ModuleDict): Linear transformation for each scheme.
+        """
+        self.schemes = self.theta.keys()
+        self.n_scheme = len(self.schemes)
 
         self.norms = nn.ModuleDict({
             sch: nn.LayerNorm(self.theta[sch].out_channels) for sch in self.schemes})
