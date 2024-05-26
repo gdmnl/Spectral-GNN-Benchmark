@@ -112,8 +112,8 @@ class TrnFullbatch(TrnBase):
 
         res_test = self._eval_split(['test_high', 'test_low'])
         res_test.concat([
-            ('num_high', self.mask['test_high'].sum().item()),
-            ('num_low', self.mask['test_low'].sum().item())])
+            ('deg_high', self.mask['test_high'].sum().item()),
+            ('deg_low', self.mask['test_low'].sum().item())])
         self.logger.log(logging.LTRN, res_test.get_str())
         return res_test
 

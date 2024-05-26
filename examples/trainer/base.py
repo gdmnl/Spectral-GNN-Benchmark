@@ -85,7 +85,7 @@ class TrnBase(object):
             period=self.period,
             prefix=('-'.join(filter(None, ['model', self.suffix]))),
             storage=self.storage)
-        self.metric_ckpt = 'fimacro_val' if self.multi else 'f1micro_val'
+        self.metric_ckpt = 's_f1a_val' if self.multi else 's_f1i_val'
 
     def setup_optimizer(self):
         if hasattr(self.model, 'get_optimizer'):

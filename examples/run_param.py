@@ -24,7 +24,7 @@ from utils import (
 
 
 class TrnWrapper(object):
-    metric_name = 'f1micro_val'
+    metric_name = 's_f1i_val'
 
     def __init__(self, data_loader, model_loader, args, res_logger = None):
         self.data_loader = data_loader
@@ -134,7 +134,7 @@ class TrnWrapper(object):
         trn()
 
         res_logger.save()
-        trial.set_user_attr("f1_test", res_logger._get(col='f1micro_test', row=0))
+        trial.set_user_attr("f1_test", res_logger._get(col='s_f1i_test', row=0))
         return res_logger.data.loc[0, self.metric_name]
 
 

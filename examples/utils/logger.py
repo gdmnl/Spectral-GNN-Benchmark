@@ -118,13 +118,13 @@ class ResLogger(object):
         if np.issubdtype(type(val), np.integer):
             return (lambda x: format(x, 'd'))
         if np.issubdtype(type(val), np.floating):
-            if key.startswith(('acc', 'f1', 'metric', 'score')):
+            if key.startswith(('acc', 'f1', 'metric', 'score', 's_')):
                 return (lambda x: format(x*100, '.3f'))
             if key.startswith(('loss',)):
                 return (lambda x: format(x, '.6f'))
-            if key.startswith(('time',)):
+            if key.startswith(('time', 't_')):
                 return (lambda x: format(x, '.4f'))
-            if key.startswith(('mem', 'num')):
+            if key.startswith(('mem', 'm_', 'num', 'n_')):
                 return (lambda x: format(x, '.3f'))
             return (lambda x: format(x, '.3e'))
         return (lambda x: str(x))

@@ -7,7 +7,9 @@ from typing import Tuple, List, Callable, Any
 from argparse import Namespace
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
-    MulticlassF1Score, MultilabelF1Score)
+    MulticlassF1Score, MultilabelF1Score,
+    MulticlassAUROC, MultilabelAUROC,
+    MulticlassAveragePrecision, MultilabelAveragePrecision,)
 
 
 
@@ -25,15 +27,19 @@ def metric_loader(args: Namespace) -> MetricCollection:
         args.multi (bool): True for multi-label classification.
         args.num_classes (int): Number of output classes/labels.
     """
-    # TODO: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)
+    # FEATURE: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)
     if args.multi:
         metric = ResCollection({
-            'f1micro': MultilabelF1Score(num_labels=args.num_classes, average='micro'),
-            'f1macro': MultilabelF1Score(num_labels=args.num_classes, average='macro'),
+            's_f1i': MultilabelF1Score(num_labels=args.num_classes, average='micro'),
+            # 's_f1a': MultilabelF1Score(num_labels=args.num_classes, average='macro'),
+            's_auroc': MultilabelAUROC(num_classes=args.num_classes),
+            's_ap': MultilabelAveragePrecision(num_classes=args.num_classes),
         })
     else:
         metric = ResCollection({
-            'f1micro': MulticlassF1Score(num_classes=args.num_classes, average='micro'),
-            'f1macro': MulticlassF1Score(num_classes=args.num_classes, average='macro'),
+            's_f1i': MulticlassF1Score(num_classes=args.num_classes, average='micro'),
+            # 's_f1a': MulticlassF1Score(num_classes=args.num_classes, average='macro'),
+            's_auroc': MulticlassAUROC(num_classes=args.num_classes),
+            's_ap': MulticlassAveragePrecision(num_classes=args.num_classes),
         })
     return metric

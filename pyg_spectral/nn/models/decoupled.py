@@ -19,6 +19,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         scheme (str): Method to generate parameters.
             - `ones`: all-same, :math:`\theta_k = p`.
             - `impulse`: K-hop, :math:`\theta_K = p, else 0`.
+            - `inverse`: Inverse, :math:`\theta_k = p/(k+1)`.
             - `mono`: Monomial, :math:`\theta_k = (1-p)/K, \theta_0 = p`.
             - 'appr': Approximate PPR, :math:`\theta_k = p (1 - p)^k`.
             - 'nappr': Negative PPR, :math:`\theta_k = p^k`.
@@ -31,6 +32,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         param (float, optional): Hyperparameter for the scheme.
             - `ones`: Value.
             - 'impulse': Value.
+            - 'inverse': Value.
             - 'mono': Decay factor, :math:`p \in [0, 1]`.
             - 'appr': Decay factor, :math:`p \in [0, 1]`.
             - 'nappr': Decay factor, :math:`p \in [-1, 1]`.
@@ -53,6 +55,9 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         theta = torch.zeros(num_hops+1, dtype=torch.float)
         theta[num_hops] = param
         return theta
+    elif scheme == 'inverse':
+        param = param if param is not None else 1.0
+        return torch.tensor([param/(k+1) for k in range(num_hops+1)], dtype=torch.float)
     elif scheme == 'mono':
         param = param if param is not None else 0.5
         theta = torch.zeros(num_hops+1, dtype=torch.float)
