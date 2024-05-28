@@ -35,8 +35,7 @@ class BaseNN(nn.Module):
             args for :class:`pyg.nn.models.MLP`.
         lib_conv (str, optional): Parent module library other than
             :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
     supports_edge_weight: Final[bool] = False
     supports_edge_attr: Final[bool] = False
@@ -139,7 +138,7 @@ class BaseNN(nn.Module):
             setattr(self, func, getattr(self.convs[0], func)) # use the first one.
             return getattr(self, func)
         else:
-            raise NotImplementedError(f"Method '{func}' not found in {self.convs[0].__name__}!")
+            raise NotImplementedError(f"Method '{func}' not found in {self.convs[0].__class__}!")
             # setattr(self, func, lambda x: x)
 
     def reset_cache(self):

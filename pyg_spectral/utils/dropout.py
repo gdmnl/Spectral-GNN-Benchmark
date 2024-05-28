@@ -26,5 +26,6 @@ def dropout_edge(edge_index: Tensor, p: float = 0.5,
 
         return edge_index.masked_select_nnz(edge_mask), edge_mask
 
+    # FEATURE: support torch.sparse.Tensor
     else:
         return dropout_edge_pyg(edge_index, p, force_undirected, training)

@@ -55,6 +55,32 @@ def get_laplacian(
             edge_index = edge_index.set_diag(deg)
         return edge_index
 
+    elif isinstance(edge_index, Tensor) and edge_index.is_sparse_csr:
+        import scipy.sparse as sp
+        data = edge_index.values().cpu().detach().numpy()
+        indices = edge_index.col_indices().cpu().detach().numpy()
+        indptr = edge_index.crow_indices().cpu().detach().numpy()
+        shape = edge_index.size()
+        ei = sp.csr_matrix((-data, indices, indptr), shape=list(shape))
+        edtype = edge_index.values().dtype
+        device = edge_index.device
+
+        ei.setdiag(0)
+        if normalization:
+            # L = diag * I - A
+            ei.setdiag(diag)
+        else:
+            # L = D - A
+            deg = -ei.sum(axis=0)
+            ei.setdiag(deg)
+        ei.eliminate_zeros()
+
+        return torch.sparse_csr_tensor(
+            crow_indices=torch.tensor(ei.indptr, dtype=torch.long),
+            col_indices=torch.tensor(ei.indices, dtype=torch.long),
+            values=torch.tensor(ei.data, dtype=edtype),
+            size=shape, device=device)
+
     else:
         edge_index, edge_weight = remove_self_loops(edge_index, edge_weight)
 

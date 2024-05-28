@@ -50,6 +50,16 @@ class GenNorm(BaseTransform):
             data.adj_t = data.adj_t.mul(deg_out.view(1, -1))
             return data
 
+        elif 'adj_t' in data and isinstance(data.adj_t, Tensor):
+            deg_out = torch.sparse.sum(data.adj_t, [0]).to_dense()
+            deg_out = pow_with_pinv(deg_out, -self.left)
+            deg_in = torch.sparse.sum(data.adj_t, [1]).to_dense()
+            deg_in = pow_with_pinv(deg_in, -self.right)
+
+            data.adj_t = data.adj_t.mul(deg_in.view(-1, 1))
+            data.adj_t = data.adj_t.mul(deg_out.view(1, -1))
+            return data
+
         elif 'edge_index' in data:
             num_nodes = data.num_nodes
             edge_index = data.edge_index
@@ -74,7 +84,8 @@ class GenNorm(BaseTransform):
             setattr(data, key, edge_weight)
             return data
 
-        raise NotImplementedError("Only support `edge_index` or `SparseTensor`!")
+        ttype = type(data.adj_t) if 'adj_t' in data else type(data.edge_index)
+        raise NotImplementedError(f"Type {ttype} not supported!")
 
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}('

@@ -48,15 +48,15 @@ class SingleGraphLoader(object):
         self.res_logger = res_logger or ResLogger()
         self.metric = None
 
-        # Always use [sparse tensor](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html) instead of edge_index
-        assert torch_geometric.typing.WITH_TORCH_SPARSE
+        # Prevent using `edge_index` for more [Memory-Efficient Computation](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html)
+        # assert torch_geometric.typing.WITH_TORCH_SPARSE
         self.transform = T.Compose([
-            # T.ToUndirected(),
             T.RemoveIsolatedNodes(),
             T.RemoveDuplicatedEdges(reduce='mean'),
             T.AddRemainingSelfLoops(fill_value=1.0),
             T.NormalizeFeatures(),
-            T.ToSparseTensor(remove_edge_index=True),
+            # T.ToSparseTensor(remove_edge_index=True),                         # torch_sparse.SparseTensor
+            T.ToSparseTensor(remove_edge_index=True, layout=torch.sparse_csr),  # torch.sparse.Tensor
         ])
         self.num_features = None
         self.num_classes = None
@@ -127,6 +127,7 @@ class SingleGraphLoader(object):
         if self.transform is None:
             self.transform = T.Compose([new_t])
         elif isinstance(self.transform, T.Compose):
+            index = len(self.transform.transforms) + 1 + index if index < 0 else index
             self.transform.transforms.insert(index, new_t)
         elif isinstance(self.transform, T.BaseTransform):
             self.transform = T.Compose([self.transform].insert(index, new_t))
@@ -247,7 +248,7 @@ class SingleGraphLoader(object):
         """
         self.logger.debug('-'*20 + f" Loading data: {self} " + '-'*20)
 
-        self._T_insert(Tspec.GenNorm(left=args.normg), index=-1)
+        self._T_insert(Tspec.GenNorm(left=args.normg), index=-2)
         module_name, class_name, kwargs, metric = self._resolve_import(args)
 
         dataset = load_import(class_name, module_name)(**kwargs)
