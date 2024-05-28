@@ -1,4 +1,4 @@
-# run_param (critical params), fullbatch, Filter bank model+conv
+# run_param (critical params), fullbatch, iterative, Filter bank model+conv
 source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=1

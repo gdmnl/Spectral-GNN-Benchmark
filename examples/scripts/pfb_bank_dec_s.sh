@@ -1,4 +1,4 @@
-# run_param (critical params), fullbatch, Filter bank model+conv
+# run_param (critical params), fullbatch, decoupled, Filter bank model+conv
 source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=1
@@ -42,7 +42,7 @@ for data in ${DATAS[@]}; do
         --data $data --model MLP \
         "${ARGS_S[@]}"
 
-    # AdaGNN, OptBasisGNN
+    # AdaGNN
     for conv in "LapiConv"; do
         python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
             --data $data --model AdaGNN --conv $conv \

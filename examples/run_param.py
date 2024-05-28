@@ -24,14 +24,13 @@ from utils import (
 
 
 class TrnWrapper(object):
-    metric_name = 's_f1i_val'
-
     def __init__(self, data_loader, model_loader, args, res_logger = None):
         self.data_loader = data_loader
         self.model_loader = model_loader
         self.args = args
         self.res_logger = res_logger or ResLogger()
         self.fmt_logger = {}
+        self.metric = None
 
         self.data, self.model, self.trn_cls = None, None, None
 
@@ -109,7 +108,7 @@ class TrnWrapper(object):
             raise optuna.TrialPruned()
 
         if self.data is None:
-            self.data = self.data_loader(args)
+            self.data, self.metric = self.data_loader(args)
             self.model, trn_cls = self.model_loader(args)
             self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
         self.data = self.data_loader.update(args, self.data)
@@ -134,8 +133,8 @@ class TrnWrapper(object):
         trn()
 
         res_logger.save()
-        trial.set_user_attr("f1_test", res_logger._get(col='s_f1i_test', row=0))
-        return res_logger.data.loc[0, self.metric_name]
+        trial.set_user_attr("s_test", res_logger._get(col=self.metric+'_test', row=0))
+        return res_logger.data.loc[0, self.metric+'_val']
 
 
 def main(args):

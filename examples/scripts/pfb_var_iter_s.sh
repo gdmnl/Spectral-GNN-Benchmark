@@ -1,4 +1,4 @@
-# run_param+run_best, fullbatch, Iterative/DecoupledVar, small-scale dataset
+# run_param+run_best, fullbatch, Iterative, small-scale dataset
 source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=1

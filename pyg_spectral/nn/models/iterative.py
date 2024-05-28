@@ -48,6 +48,7 @@ class Iterative(BaseNN):
 
         conv_cls = load_import(conv, lib)
         convs = nn.ModuleList()
+        # NOTE: There are (num_hops+1) conv layers in total.
         for k in range(num_hops+1):
             bias_default = (k == self.num_hops)
             convs.append(conv_cls(num_hops=num_hops, hop=k, **kwargs))

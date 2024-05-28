@@ -149,7 +149,7 @@ class DecoupledFixed(BaseNN):
         theta = gen_theta(num_hops, theta_scheme, theta_param)
 
         conv_cls = load_import(conv, lib)
-        # NOTE: k=0 layer explicitly handles x without propagation. So there is
+        # NOTE: k=0 layer explicitly handles x without propagation. So there are
         # (num_hops+1) conv layers in total.
         convs = nn.ModuleList([
             conv_cls(num_hops=num_hops, hop=k, **kwargs) for k in range(num_hops+1)])
@@ -198,7 +198,7 @@ class DecoupledVar(BaseNN):
         self.theta_init = gen_theta(num_hops, theta_scheme, theta_param)
 
         conv_cls = load_import(conv, lib)
-        # NOTE: k=0 layer explicitly handles x without propagation. So there is
+        # NOTE: k=0 layer explicitly handles x without propagation. So there are
         # (num_hops+1) conv layers in total.
         convs = nn.ModuleList([
             conv_cls(num_hops=num_hops, hop=k, **kwargs) for k in range(num_hops+1)])
@@ -216,6 +216,3 @@ class DecoupledVar(BaseNN):
         for k, conv in enumerate(self.convs):
             reset(conv)
             conv.theta.data = self.theta_init[k].clone()
-
-# FEATURE: DecoupledCpu class
-# TODO: PrecomputedFixed class inherited from DecoupledFixed

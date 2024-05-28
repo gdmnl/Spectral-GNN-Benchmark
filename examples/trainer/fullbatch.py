@@ -134,8 +134,3 @@ class TrnFullbatch(TrnBase):
         # res_run.merge(self.test_deg())
 
         return self.res_logger.merge(res_run)
-
-
-# FEATURE: possible to decouple model.conv on CPU?
-# class TrnFullbatchCpu(TrnBase):
-#     pass

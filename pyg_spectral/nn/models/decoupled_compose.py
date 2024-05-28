@@ -62,8 +62,8 @@ class DecoupledFixedCompose(BaseNNCompose):
                     else:
                         kwargs_c[k] = v
 
-            # NOTE: k=0 layer explicitly handles x without propagation. So there is
-            # (num_hops+1) conv layers in total.
+            # NOTE: k=0 layer explicitly handles x without propagation. So there
+            # are (num_hops+1) conv layers in total.
             convs.append(nn.ModuleList([
                 conv_cls(num_hops=num_hops, hop=k, **kwargs_c) for k in range(num_hops+1)]))
             for k, convk in enumerate(convs[-1]):
@@ -134,8 +134,8 @@ class DecoupledVarCompose(BaseNNCompose):
                     else:
                         kwargs_c[k] = v
 
-            # NOTE: k=0 layer explicitly handles x without propagation. So there is
-            # (num_hops+1) conv layers in total.
+            # NOTE: k=0 layer explicitly handles x without propagation. So there
+            # are (num_hops+1) conv layers in total.
             convs.append(nn.ModuleList([
                 conv_cls(num_hops=num_hops, hop=k, theta=nn.Parameter(self.theta_init[-1][k]), **kwargs_c) for k in range(num_hops+1)]))
             for k, convk in enumerate(convs[-1]):

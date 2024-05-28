@@ -25,6 +25,7 @@ class TrnBase(object):
         logger (Logger): Logger object.
         args (Namespace): Configuration arguments.
             device (str): torch device.
+            metric (str): Metric for evaluation.
             epoch (int): Number of training epochs.
             lr_[lin/conv] (float): Learning rate for linear/conv.
             wd_[lin/conv] (float): Weight decay for linear/conv.
@@ -85,7 +86,7 @@ class TrnBase(object):
             period=self.period,
             prefix=('-'.join(filter(None, ['model', self.suffix]))),
             storage=self.storage)
-        self.metric_ckpt = 's_f1a_val' if self.multi else 's_f1i_val'
+        self.metric_ckpt = args.metric + '_val'
 
     def setup_optimizer(self):
         if hasattr(self.model, 'get_optimizer'):

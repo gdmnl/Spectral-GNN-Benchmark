@@ -46,6 +46,7 @@ class SingleGraphLoader(object):
 
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
+        self.metric = None
 
         # Always use [sparse tensor](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html) instead of edge_index
         assert torch_geometric.typing.WITH_TORCH_SPARSE
@@ -122,24 +123,13 @@ class SingleGraphLoader(object):
             dataset._data_list = dataset.len() * [None]
         self.num_classes = dataset._infer_num_classes(y)
 
-    def _T_append(self, new_t: List[T.BaseTransform]) -> T.Compose:
+    def _T_insert(self, new_t: T.BaseTransform, index=-1) -> T.Compose:
         if self.transform is None:
-            self.transform = T.Compose(new_t)
+            self.transform = T.Compose([new_t])
         elif isinstance(self.transform, T.Compose):
-            self.transform.transforms.extend(new_t)
+            self.transform.transforms.insert(index, new_t)
         elif isinstance(self.transform, T.BaseTransform):
-            self.transform = T.Compose([self.transform] + new_t)
-        else:
-            raise TypeError(f"Invalid transform type: {type(self.transform)}")
-        return self.transform
-
-    def _T_prepend(self, new_t: List[T.BaseTransform]) -> T.Compose:
-        if self.transform is None:
-            self.transform = T.Compose(new_t)
-        elif isinstance(self.transform, T.Compose):
-            self.transform.transforms = new_t + self.transform.transforms
-        elif isinstance(self.transform, T.BaseTransform):
-            self.transform = T.Compose(new_t + [self.transform])
+            self.transform = T.Compose([self.transform].insert(index, new_t))
         else:
             raise TypeError(f"Invalid transform type: {type(self.transform)}")
         return self.transform
@@ -153,10 +143,14 @@ class SingleGraphLoader(object):
             kwargs = dict(
                 root=DATAPATH.joinpath('OGB'),
                 name=self.data,
-                transform=self._T_prepend([T.ToUndirected()]),)
+                transform=self._T_insert(T.ToUndirected(), index=0),)
             del self.data_split
             if self.data == 'ogbn-mag':
                 kwargs['pre_transform'] = T_ogbn_mag()
+            if self.data in ['ogbn-proteins']:
+                self.metric = 's_auroc'
+            else:
+                self.metric = 's_f1i'
         elif self.data in ['arxiv-year']:
             module_name = 'ogb.nodeproppred'
             class_name = 'PygNodePropPredDataset'
@@ -165,7 +159,8 @@ class SingleGraphLoader(object):
                 name='ogbn-arxiv',
                 pre_transform=T_arxiv_year(),
                 transform=self.transform,)
-        # FIXME: check ToUndirected in LINKX
+            self.metric = 's_f1i'
+            self._T_insert(T.ToUndirected(), index=0)
         elif self.data in ['genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki']:
             module_name = 'dataset_process'
             class_name = 'LINKX'
@@ -174,6 +169,12 @@ class SingleGraphLoader(object):
                 name=self.data,
                 transform=self.transform,)
             self.split_idx = self.seed
+            if self.data in ['genius', 'twitch-gamer']:
+                self.metric = 's_auroc'
+            else:
+                self.metric = 's_f1i'
+            if self.data not in ['snap-patents']:
+                self._T_insert(T.ToUndirected(), index=0)
         elif self.data in ['penn94', 'amherst41', 'cornell5', 'johns_hopkins55', 'reed98']:
             module_name = 'dataset_process'
             class_name = 'FB100'
@@ -181,6 +182,7 @@ class SingleGraphLoader(object):
                 root=DATAPATH.joinpath('LINKX'),
                 name=self.data,
                 transform=self.transform,)
+            self.metric = 's_f1i'
         elif self.data in ['chameleon_filtered', 'squirrel_filtered', \
                 'roman_empire', 'amazon_ratings', 'minesweeper', 'tolokers', 'questions']:
             module_name = 'dataset_process'
@@ -190,6 +192,10 @@ class SingleGraphLoader(object):
                 name=self.data,
                 pre_transform=T.ToUndirected(),
                 transform=self.transform)
+            if self.data in ['minesweeper', 'tolokers', 'questions']:
+                self.metric = 's_auroc'
+            else:
+                self.metric = 's_f1i'
         # Default to load from PyG
         else:
             module_name = 'torch_geometric.datasets'
@@ -223,9 +229,10 @@ class SingleGraphLoader(object):
                 kwargs.pop('name')
             else:
                 raise ValueError(f"Dataset '{self}' not found.")
+            self.metric = 's_f1i'
         # <<<<<<<<<<
 
-        return module_name, class_name, kwargs
+        return module_name, class_name, kwargs, self.metric
 
     def get(self, args: Namespace) -> Data:
         r"""Load data based on parameters.
@@ -240,8 +247,8 @@ class SingleGraphLoader(object):
         """
         self.logger.debug('-'*20 + f" Loading data: {self} " + '-'*20)
 
-        self._T_append([Tspec.GenNorm(left=args.normg),])
-        module_name, class_name, kwargs = self._resolve_import(args)
+        self._T_insert(Tspec.GenNorm(left=args.normg), index=-1)
+        module_name, class_name, kwargs, metric = self._resolve_import(args)
 
         dataset = load_import(class_name, module_name)(**kwargs)
         data = dataset[0]
@@ -250,6 +257,7 @@ class SingleGraphLoader(object):
         self._get_properties(dataset, data)
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
+        args.metric = self.metric = metric
 
         # Remaining resolvers
         if not args.multi and data.y.dim() > 1 and data.y.size(1) == 1:
@@ -257,24 +265,25 @@ class SingleGraphLoader(object):
 
         self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
         self.logger.info(f"[data]: {data}")
+        self.logger.info(f"[metric]: {metric}")
         split_dict = {k[:-5]: v.sum().item() for k, v in data.items() if k.endswith('_mask')}
         self.logger.info(f"[split]: {split_dict}")
-        self.res_logger.concat([('data', self.data)])
+        self.res_logger.concat([('data', self.data, str), ('metric', metric, str)])
         del dataset
-        return data
+        return data, metric
 
     def __call__(self, *args, **kwargs):
         return self.get(*args, **kwargs)
 
     def __str__(self) -> str:
-        return self.data
+        return f"{self.data}({self.metric})"
 
 
 class SingleGraphLoader_Trial(SingleGraphLoader):
     r"""Reuse necessary data for multiple runs.
     """
     def get(self, args: Namespace) -> Data:
-        module_name, class_name, kwargs = self._resolve_import(args)
+        module_name, class_name, kwargs, metric = self._resolve_import(args)
         dataset = load_import(class_name, module_name)(**kwargs)
         data = dataset[0]
         data = self._resolve_split(dataset, data)
@@ -282,13 +291,14 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
         self._get_properties(dataset, data)
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
+        args.metric = self.metric = metric
 
         # Remaining resolvers
         if not args.multi and data.y.dim() > 1 and data.y.size(1) == 1:
             data.y = data.y.flatten()
 
-        self.res_logger.concat([('data', self.data)])
-        return data
+        self.res_logger.concat([('data', self.data, str), ('metric', metric, str)])
+        return data, metric
 
     def update(self, args: Namespace, data: Data) -> Data:
         r"""Update data split for the next trial.

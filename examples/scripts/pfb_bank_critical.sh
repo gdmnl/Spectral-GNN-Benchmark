@@ -13,7 +13,7 @@ DATAS=("cora" "citeseer" "chameleon_filtered" "actor")
 PARLIST="num_hops,in_layers,out_layers,hidden,lr_lin,lr_conv"
 
 for data in ${DATAS[@]}; do
-    # AdaGNN, OptBasisGNN
+    # AdaGNN
     for conv in "LapiConv"; do
         python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
             --data $data --model AdaGNN --conv $conv \
