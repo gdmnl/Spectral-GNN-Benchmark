@@ -69,24 +69,21 @@ class AdjDiffConv(AdjConv):
         super(AdjDiffConv, self).__init__(num_hops, hop, alpha, cached, **kwargs)
         self.beta = beta or 1.0
 
-    def forward(self,
-        out: Tensor,
+    def _forward(self,
         x: Tensor,
         prop: Adj,
     ) -> dict:
+        r"""
+        Returns:
+            x (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
+            prop (Adj): propagation matrix
+        """
         if self.hop == 0:
             # I + beta * L -> (1+beta) * I - beta * A
-            out = self.propagate(prop, x=x)
-            out = self._forward_theta(x)
-            out = (1 + self.beta) * x - self.beta * out
-            return {'out': out, 'x': out.clone(), 'prop': prop}
+            h = self.propagate(prop, x=x)
+            h = (1 + self.beta) * x - self.beta * h
+            return {'x': h, 'prop': prop}
 
         # propagate_type: (x: Tensor)
         x = self.propagate(prop, x=x)
-
-        out += self._forward_theta(x)
-
-        return {
-            'out': out,
-            'x': x,
-            'prop': prop}
+        return {'x': x, 'prop': prop}

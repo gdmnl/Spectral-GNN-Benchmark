@@ -1,5 +1,4 @@
 from scipy.special import comb
-import torch
 from torch import Tensor
 import torch.nn.functional as F
 
@@ -27,40 +26,22 @@ class BernConv(BaseMP):
         kwargs.setdefault('propagate_mat', 'A+I,L')
         super(BernConv, self).__init__(num_hops, hop, cached, **kwargs)
 
-    def get_forward_mat(self,
-        x: Tensor,
-        edge_index: Adj,
-    ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
-
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result through (2I-L)
-            prop_0 (SparseTensor): L
-            prop_1 (SparseTensor): 2I - L
-        """
-        return {
-            'out': torch.zeros_like(x),
-            'x': x
-            } | self.get_propagate_mat(x, edge_index)
-
-    def _forward_theta(self, x):
+    def _forward_theta(self, **kwargs):
         if callable(self.theta):
-            return self.theta(x)
+            return self.theta(kwargs['x'])
         else:
-            return self.theta * F.relu(x)
+            return self.theta * F.relu(kwargs['x'])
 
-    def forward(self,
-        out: Tensor,
+    def _forward(self,
         x: Tensor,
         prop_0: Adj,
         prop_1: Adj,
     ) -> dict:
         r"""
-        Args & Returns: (dct): same with output of get_forward_mat()
+        Returns:
+            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result through (2I-L)
+            prop_0 (SparseTensor): L
+            prop_1 (SparseTensor): 2I - L
         """
         if self.hop > 0:
             # propagate_type: (x: Tensor)
@@ -71,12 +52,6 @@ class BernConv(BaseMP):
         for _ in range(self.num_hops - self.hop):
             # propagate_type: (x: Tensor)
             h = self.propagate(prop_0, x=h)
+        self.out_scale = comb(self.num_hops, self.num_hops-self.hop) / (2**self.num_hops)
 
-        h = self._forward_theta(h)
-        out += h * comb(self.num_hops, self.num_hops-self.hop) / (2**self.num_hops)
-
-        return {
-            'out': out,
-            'x': x,
-            'prop_0': prop_0,
-            'prop_1': prop_1}
+        return {'x': x, 'prop_0': prop_0, 'prop_1': prop_1}

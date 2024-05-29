@@ -20,6 +20,9 @@ class FavardConv(BaseMP):
         num_hops (int), hop (int): total and current number of propagation hops.
         cached: whether cache the propagation matrix.
     """
+    # FIXME: precomputed for 3-term recurrence
+    supports_batch: bool = False
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -46,37 +49,27 @@ class FavardConv(BaseMP):
             self.alpha.data = self.theta.data.clone()
             self.beta.data = self.theta.data.clone()
 
-    def get_forward_mat(self,
-        x: Tensor,
-        edge_index: Adj,
-    ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {
+            'x': x + torch.randn_like(x) * 1e-5,
+            'x_1': torch.zeros_like(x),}
 
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
-            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
-            prop (Adj): propagation matrix
+    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        r"""
             alpha_1: parameter for k-1
         """
-        return {
-            'out': torch.zeros_like(x),
-            'x': x + torch.randn_like(x) * 1e-5,
-            'x_1': torch.zeros_like(x),
-            'prop': self.get_propagate_mat(x, edge_index),
-            'alpha_1': None}
+        return {'out': torch.zeros_like(x), 'alpha_1': None}
 
-    def _mul_coeff(self, x, coeff, pos=True):
+    @staticmethod
+    def _mul_coeff(x, coeff, pos=True):
         if callable(coeff):
             return F.relu(coeff(x))
         else:
             coeff = torch.clamp(coeff, min=1e-2) if pos else coeff
             return coeff * x
 
-    def _div_coeff(self, x, coeff, pos=True):
+    @staticmethod
+    def _div_coeff(x, coeff, pos=True):
         if callable(coeff):
             assert hasattr(coeff, 'weight')
             # use L2 norm of weight
@@ -85,20 +78,22 @@ class FavardConv(BaseMP):
             coeff = torch.clamp(coeff, min=1e-2) if pos else coeff
             return x / coeff
 
-    def forward(self,
-        out: Tensor,
+    def _forward(self,
         x: Tensor,
         x_1: Tensor,
         prop: Adj,
         alpha_1: Union[nn.Parameter, nn.Module]
     ) -> dict:
         r"""
-        Args & Returns: (dct): same with output of get_forward_mat()
+        Returns:
+            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
+            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
+            prop (Adj): propagation matrix
+            alpha_1: parameter for k-1
         """
         if self.hop == 0:
             h = self._div_coeff(x, self.alpha, pos=True)
-            out = self._forward_theta(h)
-            return {'out': out, 'x': h, 'x_1': torch.zeros_like(x),
+            return {'x': h, 'x_1': torch.zeros_like(x),
                     'prop': prop, 'alpha_1': self.alpha}
 
         # propagate_type: (x: Tensor)
@@ -106,11 +101,5 @@ class FavardConv(BaseMP):
         h -= self._mul_coeff(x, self.beta, pos=False)
         h -= self._mul_coeff(x_1, alpha_1, pos=True)
         h = self._div_coeff(h, self.alpha, pos=True)
-        out += self._forward_theta(h)
 
-        return {
-            'out': out,
-            'x': h,
-            'x_1': x,
-            'prop': prop,
-            'alpha_1': self.alpha}
+        return {'x': h, 'x_1': x, 'prop': prop, 'alpha_1': self.alpha}

@@ -18,6 +18,9 @@ class HornerConv(BaseMP):
         num_hops (int), hop (int): total and current number of propagation hops.
         cached: whether cache the propagation matrix.
     """
+    # FIXME: precomputed for 3-term recurrence
+    supports_batch: bool = False
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -28,8 +31,7 @@ class HornerConv(BaseMP):
         kwargs.setdefault('propagate_mat', 'A')
         super(HornerConv, self).__init__(num_hops, hop, cached, **kwargs)
 
-        alpha = alpha or 0
-        if alpha == 0:
+        if alpha is None:
             self.alpha = 0.5
         else:
             self.alpha = np.log(alpha / (hop + 1) + 1)
@@ -42,47 +44,41 @@ class HornerConv(BaseMP):
         reset(self.theta)
         self.beta.data.fill_(self.beta_init)
 
-    def get_forward_mat(self,
-        x: Tensor,
-        edge_index: Adj,
-    ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
+    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': torch.zeros_like(x), 'x_0': x}
 
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': torch.zeros_like(x), 'x_0': x}
+
+    def _forward_out(self, **kwargs) -> Tensor:
+        r"""
+        Returns:
+            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
+                accumulating propagation results
+        """
+        out, x_0 = kwargs['out'], kwargs['x_0']
+        out = out + self.beta * x_0
+
+        res = self._forward_theta(x=out)
+        res = self.alpha * out + (1 - self.alpha) * res
+        return res
+
+    def _forward(self,
+        out: Tensor,
+        x_0: Tensor,
+        prop: Adj,
+    ) -> dict:
+        r"""
         Returns:
             out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
                 accumulating propagation results
             x_0 (:math:`(|\mathcal{V}|, F)` Tensor): initial input
             prop (Adj): propagation matrix
         """
-        return {
-            'out': torch.zeros_like(x),
-            'x_0': x,
-            'prop': self.get_propagate_mat(x, edge_index)}
-
-    def forward(self,
-        out: Tensor,
-        x_0: Tensor,
-        prop: Adj,
-    ) -> dict:
-        r"""
-        Args & Returns: (dct): same with output of get_forward_mat()
-        """
-        if self.hop == 0:
-            h = out
-        else:
+        if self.hop > 0:
             # propagate_type: (x: Tensor)
-            h = self.propagate(prop, x=out)
-        h += self.beta * x_0
-
-        out = self._forward_theta(h)
-        out = self.alpha * h + (1 - self.alpha) * out
-
-        return {
-            'out': out,
-            'x_0': x_0,
-            'prop': prop}
+            out = self.propagate(prop, x=out)
+        return {'out': out, 'x_0': x_0, 'prop': prop}
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(alpha={self.alpha})'

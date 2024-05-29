@@ -1,4 +1,4 @@
-from typing import Optional, Any, Tuple
+from typing import Optional, Any
 import re
 
 import torch
@@ -129,6 +129,19 @@ class BaseMP(MessagePassing):
             mats['prop'] = mats.pop('prop_0')
         return mats
 
+    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        r"""
+        Returns:
+            out (:math:`(|\mathcal{V}|, F)` Tensor: initial output tensor
+        """
+        return {'out': torch.zeros_like(x),}
+
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        r"""
+        Returns should match the arg list of `self._forward()`.
+        """
+        return {'x': x,}
+
     def get_forward_mat(self,
         x: Tensor,
         edge_index: Adj,
@@ -153,24 +166,24 @@ class BaseMP(MessagePassing):
             return self._get_convolute_mat(x, edge_index) \
                 | self.get_propagate_mat(x, edge_index)
 
-    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
-        return {'out': torch.zeros_like(x),}
-
-    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
-        return {'x': x,}
-
     # ==========
     def _forward_theta(self, **kwargs):
         r"""
         theta (nn.Parameter or nn.Module): transformation of propagation result
             before applying to the output.
         """
+        x = kwargs['x'] if 'x' in kwargs else kwargs['out']
         if callable(self.theta):
-            return self.theta(kwargs['x'])
+            return self.theta(x)
         else:
-            return self.theta * kwargs['x']
+            return self.theta * x
 
     def _forward_out(self, **kwargs) -> Tensor:
+        r"""
+        Returns:
+            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
+                accumulating propagation results
+        """
         if self.out_scale == 1:
             res = self._forward_theta(**kwargs)
         else:
@@ -182,8 +195,11 @@ class BaseMP(MessagePassing):
         Args & Returns (dct): same with output of get_forward_mat()
         """
         if self.comp_scheme is None or self.comp_scheme == 'convolute':
-            out = kwargs.pop('out')
-            kwargs = self._forward(**kwargs) | {'out': out}
+            fwd_kwargs, keys = {}, list(kwargs.keys())
+            for k in keys:
+                if k not in self._forward.__code__.co_varnames:
+                    fwd_kwargs[k] = kwargs.pop(k)
+            kwargs = self._forward(**kwargs) | fwd_kwargs
         kwargs['out'] = self._forward_out(**kwargs)
         return kwargs
 

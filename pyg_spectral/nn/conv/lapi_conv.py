@@ -24,33 +24,23 @@ class LapiConv(BaseMP):
         kwargs.setdefault('propagate_mat', 'L')
         super(LapiConv, self).__init__(num_hops, hop, cached, **kwargs)
 
-    def get_forward_mat(self,
-        x: Tensor,
-        edge_index: Adj,
-    ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
+    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': x,}
 
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
-            prop (Adj): propagation matrix
-        """
-        return {
-            'out': x,
-            'prop': self.get_propagate_mat(x, edge_index)}
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': x,}
 
-    def forward(self,
+    def _forward(self,
         out: Tensor,
         prop: Adj,
     ) -> dict:
         r"""
-        Args & Returns: (dct): same with output of get_forward_mat()
+        Returns:
+            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
+                accumulating propagation results
+            prop (Adj): propagation matrix
         """
         # propagate_type: (x: Tensor)
-        h = self.propagate(prop, x=out)
-        out = out - self._forward_theta(h)
-
-        return {
-            'out': out,
-            'prop': prop}
+        out = self.propagate(prop, x=out)
+        self.out_scale = -1.0
+        return {'out': out, 'prop': prop}

@@ -1,4 +1,3 @@
-import torch
 from torch import Tensor
 
 from torch_geometric.typing import Adj
@@ -32,48 +31,30 @@ class JacobiConv(BaseMP):
         self.l = -1.0
         self.r = 1.0
 
-    def get_forward_mat(self,
-        x: Tensor,
-        edge_index: Adj,
-    ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'x': x, 'x_1': x,}
 
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
-            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
-            prop (Adj): propagation matrix
-        """
-        return {
-            'out': torch.zeros_like(x),
-            'x': x,
-            'x_1': x,
-            'prop': self.get_propagate_mat(x, edge_index)}
-
-    def forward(self,
-        out: Tensor,
+    def _forward(self,
         x: Tensor,
         x_1: Tensor,
         prop: Adj,
     ) -> dict:
         r"""
-        Args & Returns: (dct): same with output of get_forward_mat()
+        Returns:
+            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
+            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
+            prop (Adj): propagation matrix
         """
         a, b, l, r, k = self.alpha, self.beta, self.l, self.r, self.hop
         if self.hop == 0:
-            out = self._forward_theta(x)
-            return {'out': out, 'x': x, 'x_1': x, 'prop': prop}
+            return {'x': x, 'x_1': x, 'prop': prop}
         elif self.hop == 1:
             coeff0 = (a+b+2.) / (r-l)
             coeff1 = (a-b)/2. - coeff0/2.*(l+r)
             # propagate_type: (x: Tensor)
             h = self.propagate(prop, x=x)
             h = coeff0 * h + coeff1 * x
-            out += self._forward_theta(h)
-            return {'out': out, 'x': h, 'x_1': x, 'prop': prop}
+            return {'x': h, 'x_1': x, 'prop': prop}
 
         cl = 2*k * (k + a + b) * (2*k + a + b - 2)
         c0 = (2*k + a + b - 1) * (2*k + a + b) * (2*k + a + b - 2) / cl
@@ -85,13 +66,8 @@ class JacobiConv(BaseMP):
         # propagate_type: (x: Tensor)
         h = self.propagate(prop, x=x)
         h = coeff0 * h + coeff1 * x - coeff2 * x_1
-        out += self._forward_theta(h)
 
-        return {
-            'out': out,
-            'x': h,
-            'x_1': x,
-            'prop': prop}
+        return {'x': h, 'x_1': x, 'prop': prop}
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(alpha={self.alpha}, beta={self.beta})'

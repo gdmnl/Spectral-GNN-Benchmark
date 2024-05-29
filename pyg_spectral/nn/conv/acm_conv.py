@@ -20,6 +20,8 @@ class ACMConv(BaseMP):
         alpha (int): variant I (propagate first) or II (act first)
         cached: whether cache the propagation matrix.
     """
+    supports_batch: bool = False
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -56,19 +58,11 @@ class ACMConv(BaseMP):
             v.reset_parameters()
         self.attentions_cat.reset_parameters()
 
-    def get_forward_mat(self,
-        x: Tensor,
-        edge_index: Adj,
-    ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
+    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': x}
 
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
-            prop_0, prop_1 (SparseTensor): propagation matrices
-        """
-        return {'out': x} | self.get_propagate_mat(x, edge_index)
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': x}
 
     def _forward_theta(self, x, scheme):
         return self.theta[scheme](x)
@@ -79,12 +73,14 @@ class ACMConv(BaseMP):
         prop_1: Adj,
     ) -> dict:
         r"""
-        Args & Returns: (dct): same with output of get_forward_mat()
+        Returns:
+            out (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
+            prop_0, prop_1 (SparseTensor): propagation matrices
         """
         h, a = {}, {}
         prop_mat = {'low': prop_0, 'high': prop_1}
         for sch in self.schemes:
-            h[sch] = self._forward_theta(out, scheme=sch)
+            h[sch] = self._forward_theta(x=out, scheme=sch)
             # propagate_type: (x: Tensor)
             if sch in ['low', 'high'] and self.alpha == 1:
                 h[sch] = self.propagate(prop_mat[sch], x=h[sch])
@@ -106,10 +102,7 @@ class ACMConv(BaseMP):
             out += h[sch]
         out *= self.n_scheme
 
-        return {
-            'out': out,
-            'prop_0': prop_0,
-            'prop_1': prop_1,}
+        return {'out': out, 'prop_0': prop_0, 'prop_1': prop_1,}
 
     def __repr__(self) -> str:
         if self.alpha == 1:

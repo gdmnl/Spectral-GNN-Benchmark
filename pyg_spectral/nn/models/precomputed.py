@@ -141,11 +141,13 @@ class PrecomputedVar(DecoupledVar):
         """
         conv_mat = self.get_forward_mat(x, edge_index, comp_scheme='convolute')
 
-        xs = [conv_mat['x']]
+        xi = conv_mat['x'] if 'x' in conv_mat else conv_mat['out']
+        xs = [xi]
         for conv in self.convs:
             conv.comp_scheme = 'convolute'
             conv_mat = conv._forward(**conv_mat)
-            xs.append(conv_mat['x'])
+            xi = conv_mat['x'] if 'x' in conv_mat else conv_mat['out']
+            xs.append(xi)
 
         return torch.stack(xs, dim=xs[0].dim())
 
@@ -172,7 +174,8 @@ class PrecomputedVar(DecoupledVar):
         conv_mat = self.get_forward_mat(xs[..., 0], None, comp_scheme='forward')
         for k, conv in enumerate(self.convs):
             conv.comp_scheme = 'forward'
-            conv_mat['x'] = xs[..., k+1]
+            key = 'x' if 'x' in conv._forward.__code__.co_varnames else 'out'
+            conv_mat[key] = xs[..., k+1]
             conv_mat = conv(**conv_mat)
         out = conv_mat['out']
         if self.out_layers > 0:

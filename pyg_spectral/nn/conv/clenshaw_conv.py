@@ -18,6 +18,9 @@ class ClenshawConv(BaseMP):
         num_hops (int), hop (int): total and current number of propagation hops.
         cached: whether cache the propagation matrix.
     """
+    # FIXME: precomputed for 3-term recurrence
+    supports_batch: bool = False
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -42,14 +45,19 @@ class ClenshawConv(BaseMP):
         reset(self.theta)
         self.beta.data.fill_(self.beta_init)
 
-    def get_forward_mat(self,
-        x: Tensor,
-        edge_index: Adj,
-    ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
+    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': torch.zeros_like(x), 'out_1': x, 'x_0': x}
 
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': torch.zeros_like(x), 'out_1': x, 'x_0': x}
+
+    def _forward(self,
+        out: Tensor,
+        out_1: Tensor,
+        x_0: Tensor,
+        prop: Adj,
+    ) -> dict:
+        r"""
         Returns:
             out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
                 accumulating propagation results
@@ -57,33 +65,14 @@ class ClenshawConv(BaseMP):
             x_0 (:math:`(|\mathcal{V}|, F)` Tensor): initial input
             prop (Adj): propagation matrix
         """
-        return {
-            'out': torch.zeros_like(x),
-            'out_1': x,
-            'x_0': x,
-            'prop': self.get_propagate_mat(x, edge_index)}
-
-    def forward(self,
-        out: Tensor,
-        out_1: Tensor,
-        x_0: Tensor,
-        prop: Adj,
-    ) -> dict:
-        r"""
-        Args & Returns: (dct): same with output of get_forward_mat()
-        """
         # propagate_type: (x: Tensor)
         h = self.propagate(prop, x=out)
         h = self.beta * x_0 + 2. * h - out_1
 
-        h2 = self._forward_theta(h)
+        h2 = self._forward_theta(x=h)
         h2 = self.alpha * h + (1 - self.alpha) * h2
 
-        return {
-            'out': h2,
-            'out_1': out,
-            'x_0': x_0,
-            'prop': prop}
+        return {'out': h2, 'out_1': out, 'x_0': x_0, 'prop': prop}
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(alpha={self.alpha})'

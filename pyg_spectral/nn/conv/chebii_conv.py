@@ -58,20 +58,11 @@ class ChebIIConv(BaseMP):
         else:
             self.coeffs_data[self.hop] = self.theta.data
 
-    def get_forward_mat(self,
-        x: Tensor,
-        edge_index: Adj,
-    ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'x': x, 'x_1': x,}
 
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
-            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
-            prop (Adj): propagation matrix
+    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        r"""
             thetas (Tensor): learnable/fixed (wrt decoupled/iterative model)
                 scalar parameters representing cheb(x)
         """
@@ -85,48 +76,37 @@ class ChebIIConv(BaseMP):
                 thetas[i] = coeffs[i] + thetas[j] * cheby(i, x_j)
             thetas[i] = 2*thetas[i]/(self.num_hops+1)
         thetas[0] = thetas[0]/2
+        return {'out': torch.zeros_like(x), 'thetas': thetas}
 
-        return {
-            'out': torch.zeros_like(x),
-            'x': x,
-            'x_1': x,
-            'prop': self.get_propagate_mat(x, edge_index),
-            'thetas': thetas}
-
-    def _forward_theta(self, x, thetas):
+    def _forward_theta(self, **kwargs):
+        x, thetas = kwargs['x'], kwargs['thetas']
         if callable(self.theta):
             return self.theta(x) * thetas[self.hop]
         else:
             return thetas[self.hop] * x
 
-    def forward(self,
-        out: Tensor,
+    def _forward(self,
         x: Tensor,
         x_1: Tensor,
         prop: Adj,
-        thetas: Tensor
     ) -> dict:
         r"""
-        Args & Returns: (dct): same with output of get_forward_mat()
+        Returns:
+            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
+            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
+            prop (Adj): propagation matrix
         """
         if self.hop == 0:
-            out = self._forward_theta(x, thetas)
-            return {'out': out, 'x': x, 'x_1': x, 'prop': prop, 'thetas': thetas}
+            # No propagation
+            return {'x': x, 'x_1': x, 'prop': prop}
         elif self.hop == 1:
             h = self.propagate(prop, x=x)
-            out += self._forward_theta(h, thetas)
-            return {'out': out, 'x': h, 'x_1': x, 'prop': prop, 'thetas': thetas}
+            return {'x': h, 'x_1': x, 'prop': prop}
 
         h = self.propagate(prop, x=x)
         h = 2. * h - x_1
-        out += self._forward_theta(h, thetas)
 
-        return {
-            'out': out,
-            'x': h,
-            'x_1': x,
-            'prop': prop,
-            'thetas': thetas}
+        return { 'x': h, 'x_1': x, 'prop': prop}
 
     def __repr__(self) -> str:
         if len(self.coeffs_data) > 0:

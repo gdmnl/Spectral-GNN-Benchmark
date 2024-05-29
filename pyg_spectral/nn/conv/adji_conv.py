@@ -13,8 +13,9 @@ class AdjiConv(BaseMP):
     Args:
         alpha (float): decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
             Can be :math:`\alpha < 0`.
-        beta (float): scaling for self-loop in adjacency matrix, i.e.
-            `improved` in PyG GCNConv and `eps` in GINConv. Can be :math:`\beta < 0`.
+        beta (float): scaling for skip connection,  i.e., self-loop in adjacency
+            matrix, i.e. `improved` in PyG GCNConv and `eps` in GINConv.
+            Can be :math:`\beta < 0`.
             beta = 'var' for learnable beta as parameter.
         --- BaseMP Args ---
         num_hops (int), hop (int): total and current number of propagation hops.
@@ -45,49 +46,37 @@ class AdjiConv(BaseMP):
         reset(self.theta)
         self.beta.data.fill_(self.beta_init)
 
-    def get_forward_mat(self,
-        x: Tensor,
-        edge_index: Adj,
-    ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
+    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': x,}
 
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
-            x (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
-            prop (Adj): propagation matrix
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': x,}
+
+    def _forward_theta(self, **kwargs):
+        r"""
+        theta (nn.Parameter or nn.Module): transformation of propagation result
+            before applying to the output.
         """
-        return {
-            'out': x,
-            'prop': self.get_propagate_mat(x, edge_index)}
+        x = kwargs['out']
+        if callable(self.theta):
+            return self.beta * self.theta(x)
+        else:
+            return self.beta * self.theta * x
 
-    def forward(self,
+    def _forward(self,
         out: Tensor,
         prop: Adj,
     ) -> dict:
         r"""
-        Args & Returns: (dct): same with output of get_forward_mat()
+        Returns:
+            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
+                accumulating propagation results
+            prop (Adj): propagation matrix
         """
-        if isinstance(out, Tensor):
-            out = (out, out)
-
         # propagate_type: (x: OptPairTensor)
-        h = self.propagate(prop, x=out)
-
-        x_r = out[1]
-        if x_r is not None:
-            h = h + self.beta * self._forward_theta(x_r)
-            h *= self.alpha
-
-        return {
-            'out': h,
-            'prop': prop}
-
-    def message_and_aggregate(self, adj_t: Adj, x: OptPairTensor) -> Tensor:
-        # return spmm(adj_t, x[0], reduce=self.aggr)
-        return torch.spmm(adj_t, x[0])
+        out = self.propagate(prop, x=out)
+        self.out_scale = self.alpha
+        return {'out': out, 'prop': prop}
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(alpha={self.alpha}, beta={self.beta})'
@@ -100,16 +89,15 @@ class Adji2Conv(AdjiConv):
     Args:
         num_hops (int): total number of propagation hops. NOTE that there are
             only :math:`\text{num_hops} / 2` conv layers.
-        hop (int): current number of propagation hops.
         alpha (float): decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
             Can be :math:`\alpha < 0`.
         beta (float): scaling for self-loop in adjacency matrix, i.e.
             `improved` in PyG GCNConv and `eps` in GINConv. Can be :math:`\beta < 0`.
             beta = 'var' for learnable beta as parameter.
-        theta (nn.Parameter or nn.Module): transformation of propagation result
-            before applying to the output.
+        --- BaseMP Args ---
+        hop (int): current number of propagation hops.
         cached: whether cache the propagation matrix.
     """
-    def message_and_aggregate(self, adj_t: Adj, x: OptPairTensor) -> Tensor:
-        # return spmm(adj_t, spmm(adj_t, x[0], reduce=self.aggr), reduce=self.aggr)
-        return torch.spmm(adj_t, torch.spmm(adj_t, x[0]))
+    def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
+        # return spmm(adj_t, spmm(adj_t, x, reduce=self.aggr), reduce=self.aggr)
+        return torch.spmm(adj_t, torch.spmm(adj_t, x))
