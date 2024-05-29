@@ -109,6 +109,7 @@ class TrnWrapper(object):
 
         if self.data is None:
             self.data, self.metric = self.data_loader(args)
+            self.args.metric = self.metric
             self.model, trn_cls = self.model_loader(args)
             self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
         self.data = self.data_loader.update(args, self.data)

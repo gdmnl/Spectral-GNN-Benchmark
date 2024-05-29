@@ -1,19 +1,14 @@
-from typing import Optional, Any, Dict
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
 from torch_geometric.typing import Adj
-from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.dense.linear import Linear
-from torch_geometric.utils import spmm
-
-from pyg_spectral.utils import get_laplacian
+from pyg_spectral.nn.conv.base_mp import BaseMP
 
 
-class ACMConv(MessagePassing):
+class ACMConv(BaseMP):
     r"""Convolutional layer of FBGNN & ACMGNN(I & II).
     paper: Revisiting Heterophily For Graph Neural Networks
     paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
@@ -25,10 +20,6 @@ class ACMConv(MessagePassing):
         alpha (int): variant I (propagate first) or II (act first)
         cached: whether cache the propagation matrix.
     """
-    supports_batch: bool = False
-    supports_norm_batch: bool = False
-    _cache: Optional[Any]
-
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -36,15 +27,9 @@ class ACMConv(MessagePassing):
         cached: bool = True,
         **kwargs
     ):
-        kwargs.setdefault('aggr', 'add')
-        super(ACMConv, self).__init__(**kwargs)
-
-        self.num_hops = num_hops
-        self.hop = hop
+        kwargs.setdefault('propagate_mat', 'A,L')
+        super(ACMConv, self).__init__(num_hops, hop, cached, **kwargs)
         self.alpha = 1 if alpha is None else int(alpha)
-
-        self.cached = cached
-        self._cache = None
 
     def _init_with_theta(self):
         """theta (nn.ModuleDict): Linear transformation for each scheme.
@@ -62,10 +47,6 @@ class ACMConv(MessagePassing):
             self.n_scheme, self.n_scheme,
             bias=False, weight_initializer='uniform')
 
-    def reset_cache(self):
-        del self._cache
-        self._cache = None
-
     def reset_parameters(self):
         for v in self.theta.values():
             v.reset_parameters()
@@ -74,34 +55,6 @@ class ACMConv(MessagePassing):
         for v in self.attentions_vec.values():
             v.reset_parameters()
         self.attentions_cat.reset_parameters()
-
-    def get_propagate_mat(self,
-        x: Tensor,
-        edge_index: Adj
-    ) -> Dict[str, Adj]:
-        r"""Get matrices for self.propagate(). Called before each forward() with
-            same input.
-
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Returns:
-            prop_mat_low, prop_mat_high (SparseTensor): propagation matrices
-        """
-        cache = self._cache
-        if cache is None:
-            prop_mat_low = edge_index
-            # A_norm -> L_norm
-            prop_mat_high = get_laplacian(
-                edge_index.clone(),
-                normalization=True,
-                dtype=x.dtype)
-
-            if self.cached:
-                dct = {'prop_mat_low': prop_mat_low, 'prop_mat_high': prop_mat_high}
-                self._cache = dct
-        else:
-            dct = cache
-        return dct
 
     def get_forward_mat(self,
         x: Tensor,
@@ -113,7 +66,7 @@ class ACMConv(MessagePassing):
             x (Tensor), edge_index (Adj): from pyg.data.Data
         Returns:
             out (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
-            prop_mat_low, prop_mat_high (SparseTensor): propagation matrices
+            prop_0, prop_1 (SparseTensor): propagation matrices
         """
         return {'out': x} | self.get_propagate_mat(x, edge_index)
 
@@ -122,14 +75,14 @@ class ACMConv(MessagePassing):
 
     def forward(self,
         out: Tensor,
-        prop_mat_low: Adj,
-        prop_mat_high: Adj,
+        prop_0: Adj,
+        prop_1: Adj,
     ) -> dict:
         r"""
         Args & Returns: (dct): same with output of get_forward_mat()
         """
         h, a = {}, {}
-        prop_mat = {'low': prop_mat_low, 'high': prop_mat_high}
+        prop_mat = {'low': prop_0, 'high': prop_1}
         for sch in self.schemes:
             h[sch] = self._forward_theta(out, scheme=sch)
             # propagate_type: (x: Tensor)
@@ -155,11 +108,8 @@ class ACMConv(MessagePassing):
 
         return {
             'out': out,
-            'prop_mat_low': prop_mat_low,
-            'prop_mat_high': prop_mat_high,}
-
-    def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
-        return spmm(adj_t, x, reduce=self.aggr)
+            'prop_0': prop_0,
+            'prop_1': prop_1,}
 
     def __repr__(self) -> str:
         if self.alpha == 1:

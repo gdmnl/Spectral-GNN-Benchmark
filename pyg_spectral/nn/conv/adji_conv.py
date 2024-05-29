@@ -1,31 +1,25 @@
-from typing import Optional, Any
-
 import torch
 import torch.nn as nn
 from torch import Tensor
 
 from torch_geometric.typing import Adj, OptPairTensor
-from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.inits import reset
-from torch_geometric.utils import spmm
+from pyg_spectral.nn.conv.base_mp import BaseMP
 
 
-class AdjiConv(MessagePassing):
+class AdjiConv(BaseMP):
     r"""Iterative linear filter using the normalized adjacency matrix for augmented propagation.
 
     Args:
-        num_hops (int), hop (int): total and current number of propagation hops.
         alpha (float): decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
             Can be :math:`\alpha < 0`.
         beta (float): scaling for self-loop in adjacency matrix, i.e.
             `improved` in PyG GCNConv and `eps` in GINConv. Can be :math:`\beta < 0`.
             beta = 'var' for learnable beta as parameter.
+        --- BaseMP Args ---
+        num_hops (int), hop (int): total and current number of propagation hops.
         cached: whether cache the propagation matrix.
     """
-    supports_batch: bool = False
-    supports_norm_batch: bool = False
-    _cache: Optional[Any]
-
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -34,11 +28,9 @@ class AdjiConv(MessagePassing):
         cached: bool = True,
         **kwargs
     ):
-        kwargs.setdefault('aggr', 'add')
-        super(AdjiConv, self).__init__(**kwargs)
+        kwargs.setdefault('propagate_mat', 'A')
+        super(AdjiConv, self).__init__(num_hops, hop, cached, **kwargs)
 
-        self.num_hops = num_hops
-        self.hop = hop
         alpha = alpha or 1.0
         self.register_buffer('alpha', torch.tensor(alpha))
         if beta is None:
@@ -49,36 +41,9 @@ class AdjiConv(MessagePassing):
             self.register_buffer('beta', torch.tensor(float(beta)))
         self.beta_init = self.beta.data.item()
 
-        self.cached = cached
-        self._cache = None
-
-    def reset_cache(self):
-        del self._cache
-        self._cache = None
-
     def reset_parameters(self):
         reset(self.theta)
         self.beta.data.fill_(self.beta_init)
-
-    def get_propagate_mat(self,
-        x: Tensor,
-        edge_index: Adj
-    ) -> Adj:
-        r"""Get matrices for self.propagate(). Called before each forward() with
-            same input.
-
-        Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Returns:
-            prop_mat (SparseTensor): propagation matrix
-        """
-        cache = self._cache
-        if cache is None:
-            if self.cached:
-                self._cache = edge_index
-        else:
-            edge_index = cache
-        return edge_index
 
     def get_forward_mat(self,
         x: Tensor,
@@ -92,21 +57,15 @@ class AdjiConv(MessagePassing):
             out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
                 accumulating propagation results
             x (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
-            prop_mat (Adj): propagation matrix
+            prop (Adj): propagation matrix
         """
         return {
             'out': x,
-            'prop_mat': self.get_propagate_mat(x, edge_index)}
-
-    def _forward_theta(self, x):
-        if callable(self.theta):
-            return self.theta(x)
-        else:
-            return self.theta * x
+            'prop': self.get_propagate_mat(x, edge_index)}
 
     def forward(self,
         out: Tensor,
-        prop_mat: Adj,
+        prop: Adj,
     ) -> dict:
         r"""
         Args & Returns: (dct): same with output of get_forward_mat()
@@ -115,7 +74,7 @@ class AdjiConv(MessagePassing):
             out = (out, out)
 
         # propagate_type: (x: OptPairTensor)
-        h = self.propagate(prop_mat, x=out)
+        h = self.propagate(prop, x=out)
 
         x_r = out[1]
         if x_r is not None:
@@ -124,10 +83,11 @@ class AdjiConv(MessagePassing):
 
         return {
             'out': h,
-            'prop_mat': prop_mat}
+            'prop': prop}
 
     def message_and_aggregate(self, adj_t: Adj, x: OptPairTensor) -> Tensor:
-        return spmm(adj_t, x[0], reduce=self.aggr)
+        # return spmm(adj_t, x[0], reduce=self.aggr)
+        return torch.spmm(adj_t, x[0])
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(alpha={self.alpha}, beta={self.beta})'
@@ -151,4 +111,5 @@ class Adji2Conv(AdjiConv):
         cached: whether cache the propagation matrix.
     """
     def message_and_aggregate(self, adj_t: Adj, x: OptPairTensor) -> Tensor:
-        return spmm(adj_t, spmm(adj_t, x[0], reduce=self.aggr), reduce=self.aggr)
+        # return spmm(adj_t, spmm(adj_t, x[0], reduce=self.aggr), reduce=self.aggr)
+        return torch.spmm(adj_t, torch.spmm(adj_t, x[0]))

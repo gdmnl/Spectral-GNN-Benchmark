@@ -14,9 +14,11 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
+import warnings
 
 
 LOGPATH = Path('../log')
+warnings.filterwarnings('ignore', '.*Sparse CSR tensor support is in beta state.*')
 
 
 def setup_logger(logpath: Union[Path, str] = LOGPATH,

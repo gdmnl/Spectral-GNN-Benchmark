@@ -3,7 +3,7 @@ source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=0
 ARGS_P=(
-    "--n_trials" "100"
+    "--n_trials" "50"
     "--loglevel" "30"
     "--epoch" "200"
     "--patience" "50"

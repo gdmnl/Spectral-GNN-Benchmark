@@ -51,13 +51,15 @@ class GenNorm(BaseTransform):
             return data
 
         elif 'adj_t' in data and isinstance(data.adj_t, Tensor):
-            deg_out = torch.sparse.sum(data.adj_t, [0]).to_dense()
+            adj_t = data.adj_t.to_sparse_coo()
+            deg_out = torch.sparse.sum(adj_t, [0]).to_dense()
             deg_out = pow_with_pinv(deg_out, -self.left)
-            deg_in = torch.sparse.sum(data.adj_t, [1]).to_dense()
+            deg_in = torch.sparse.sum(adj_t, [1]).to_dense()
             deg_in = pow_with_pinv(deg_in, -self.right)
 
-            data.adj_t = data.adj_t.mul(deg_in.view(-1, 1))
-            data.adj_t = data.adj_t.mul(deg_out.view(1, -1))
+            adj_t = adj_t.mul(deg_in.view(-1, 1))
+            adj_t = adj_t.mul(deg_out.view(1, -1))
+            data.adj_t = adj_t.to_sparse_csr()
             return data
 
         elif 'edge_index' in data:
