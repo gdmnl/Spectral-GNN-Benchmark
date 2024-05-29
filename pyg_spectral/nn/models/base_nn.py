@@ -268,6 +268,11 @@ class BaseNNCompose(BaseNN):
         for i in range(self.out_layers - 1):
             # (in_layers+num_hops+1):(total_layers-1)
             channel_list[self.in_layers+self.num_hops + i + 1] = hidden_channels
+
+        if self.combine == 'sum_weighted':
+            self.gamma = nn.Parameter(torch.ones(len(conv), 1))
+        elif self.combine == 'sum_vec':
+            self.gamma = nn.Parameter(torch.ones(len(conv), channel_list[self.in_layers + self.num_hops]))
         return channel_list
 
     def _set_conv_func(self, func: str) -> List[Callable]:
@@ -331,7 +336,7 @@ class BaseNNCompose(BaseNN):
             else:
                 if self.combine == 'sum':
                     out = out + conv_mat['out']
-                elif self.combine == 'sum_weighted':
+                elif self.combine in ['sum_weighted', 'sum_vec']:
                     out = out + self.gamma[i] * conv_mat['out']
                 elif self.combine == 'cat':
                     out = torch.cat((out, conv_mat['out']), dim=-1)

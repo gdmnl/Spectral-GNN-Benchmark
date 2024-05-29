@@ -47,8 +47,6 @@ class DecoupledFixedCompose(BaseNNCompose):
         theta_params = kwargs.pop('theta_param', [0.5])
         conv = conv.split(',')
         convs = nn.ModuleList()
-        if self.combine == 'sum_weighted':
-            self.gamma = nn.Parameter(torch.ones(len(conv), 1))
 
         for c, scheme, param in zip(conv, theta_schemes, theta_params):
             theta = gen_theta(num_hops, scheme, param)
@@ -118,8 +116,6 @@ class DecoupledVarCompose(BaseNNCompose):
         if len(theta_params) == 1:
             theta_params = theta_params * len(conv)
         convs = nn.ModuleList()
-        if self.combine == 'sum_weighted':
-            self.gamma = nn.Parameter(torch.ones(len(conv), 1))
 
         self.theta_init = []
         for c, scheme, param in zip(conv, theta_schemes, theta_params):

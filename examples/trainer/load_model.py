@@ -92,6 +92,11 @@ class ModelLoader(object):
                     theta_param=args.theta_param,
                     combine=args.combine,))
                 trn = TrnFullbatch
+            elif self.model in ['PrecomputedFixed', 'PrecomputedVar']:
+                kwargs.update(dict(
+                    theta_scheme=args.theta_scheme,
+                    theta_param=args.theta_param,))
+                trn = TrnMinibatch
             else:
                 raise ValueError(f"Model '{self}' not found.")
         # <<<<<<<<<<

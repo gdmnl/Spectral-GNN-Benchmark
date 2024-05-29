@@ -1,4 +1,4 @@
-from typing import Optional, Any
+from typing import Optional, Any, Tuple
 import re
 
 import torch
@@ -40,6 +40,8 @@ class BaseMP(MessagePassing):
         self.num_hops = num_hops
         self.hop = hop
 
+        self.precomputed = False
+        self.out_scale = 1.0
         self.cached = cached
         self._cache = None
 
@@ -77,7 +79,8 @@ class BaseMP(MessagePassing):
         x: Tensor,
         edge_index: Adj
     ) -> Adj:
-        """edge_index (SparseTensor or torch.sparse_csr_tensor)
+        """ Shadow function for self.get_propagate_mat().
+            edge_index (SparseTensor or torch.sparse_csr_tensor)
         """
         def _get_adj(mat: Adj, diag: float):
             if diag != 0:
@@ -140,7 +143,7 @@ class BaseMP(MessagePassing):
         raise NotImplementedError
 
     def _forward_theta(self, x):
-        """
+        r"""
         theta (nn.Parameter or nn.Module): transformation of propagation result
             before applying to the output.
         """
@@ -149,13 +152,37 @@ class BaseMP(MessagePassing):
         else:
             return self.theta * x
 
-    def forward(self,
-        out: Tensor,
+    def _forward_out(self, out: Tensor, conv_out: dict) -> Tensor:
+        r"""Default to use the first tensor for calculating output."""
+        x = next(iter(conv_out.values()))
+        if self.out_scale == 1:
+            out += self._forward_theta(x)
+        else:
+            out += self._forward_theta(x) * self.out_scale
+        return out
+
+    def forward(self, **kwargs) -> dict:
+        r""" Wrapper for distinguishing precomputed outputs.
+        Args & Returns (dct): same with output of get_forward_mat()
+        """
+        if self.precomputed:
+            return self._forward_out(**kwargs)
+        else:
+            out = kwargs.pop('out')
+            conv_out, rest_out = self._forward(**kwargs)
+            out = self._forward_out(out, conv_out)
+            return {'out': out, **conv_out, **rest_out}
+
+    def _forward(self,
         x: Tensor,
         prop: Adj,
-    ) -> dict:
-        r"""
-        Args & Returns (dct): same with output of get_forward_mat()
+    ) -> Tuple[dict, dict]:
+        r""" Shadow function for self.forward() to be implemented in subclasses
+            without calculating output.
+            if `self.supports_batch == True`, then should not contain derivable computations.
+        Returns:
+            conv_out (dict): tensors for calculating output
+            rest_out (dict): remained tensors for next layer
         """
         raise NotImplementedError
 

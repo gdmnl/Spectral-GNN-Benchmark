@@ -28,15 +28,33 @@ class TrnMinibatch(TrnBase):
     Args:
         args.batch (int): Batch size.
         args.normf (int): Embedding normalization.
+        --- TrnBase Args ---
+        model (nn.Module): Pytorch model to be trained.
+        data (Data): PyG style data.
+        logger (Logger): Logger object.
+        args (Namespace): Configuration arguments.
+            device (str): torch device.
+            metric (str): Metric for evaluation.
+            epoch (int): Number of training epochs.
+            lr_[lin/conv] (float): Learning rate for linear/conv.
+            wd_[lin/conv] (float): Weight decay for linear/conv.
+            patience (int): Patience for early stopping.
+            period (int): Period for checkpoint saving.
+            suffix (str): Suffix for checkpoint saving.
+            storage (str): Storage scheme for checkpoint saving.
+            logpath (Path): Path for logging.
+            multi (bool): True for multi-label classification.
+            num_features (int): Number of data input features.
+            num_classes (int): Number of data output classes.
     """
     name: str = 'mb'
 
     def __init__(self,
                  model: nn.Module,
-                 dataset: Dataset,
+                 data: Dataset,
                  args: Namespace,
                  **kwargs):
-        super(TrnMinibatch, self).__init__(model, dataset, args, **kwargs)
+        super(TrnMinibatch, self).__init__(model, data, args, **kwargs)
         self.batch = args.batch
         if args.normf is not None:
             assert isinstance(args.normf, int)
@@ -46,19 +64,18 @@ class TrnMinibatch(TrnBase):
         self.embed = None
 
     def clear(self):
-        del self.data
+        del self.data, self.embed
         return super().clear()
 
     def _fetch_data(self) -> Tuple[Data, dict]:
-        data = self.data
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
-        if not pyg_utils.is_sparse(data.adj_t):
+        if not pyg_utils.is_sparse(self.data.adj_t):
             raise NotImplementedError
         # if pyg_utils.contains_isolated_nodes(self.data.edge_index):
         #     self.logger.warning(f"Graph {self.data} contains isolated nodes.")
 
-        mask = {k: getattr(data, f'{k}_mask') for k in self.splits}
-        return data, mask
+        mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
+        return self.data, mask
 
     def _fetch_preprocess(self, data: Data) -> tuple:
         input, label = (data.x, data.adj_t), data.y
@@ -113,7 +130,7 @@ class TrnMinibatch(TrnBase):
 
     # ===== Run block
     @TrnBase._log_memory(split='pre')
-    def preprocess(self) -> dict:
+    def preprocess(self) -> ResLogger:
         self.logger.debug('-'*20 + f" Start propagation: pre " + '-'*20)
 
         data, mask = self._fetch_data()
@@ -121,7 +138,7 @@ class TrnMinibatch(TrnBase):
         del self.data
 
         embed = self.model.convolute(*input)
-        if self.norm_prop:
+        if hasattr(self, 'norm_prop'):
             self.norm_prop.fit(embed[mask['train']])
             embed = self.norm_prop(embed)
 
@@ -132,15 +149,13 @@ class TrnMinibatch(TrnBase):
                                       batch_size=self.batch,
                                       shuffle=self.shuffle[k],
                                       num_workers=0)
-            self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.data[k])}")
+            self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.embed[k])}")
         return ResLogger()
 
     # ===== Run pipeline
     def run(self) -> ResLogger:
-        raise DeprecationWarning
         res_run = ResLogger()
 
-        # TODO: check behavior of trainable parameters in propagate
         res_pre = self.preprocess()
         res_run.merge(res_pre)
 

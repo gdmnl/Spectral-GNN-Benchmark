@@ -49,8 +49,8 @@ class LapiConv(BaseMP):
         """
         # propagate_type: (x: Tensor)
         h = self.propagate(prop, x=out)
-        h = out - self._forward_theta(h)
+        out = out - self._forward_theta(h)
 
         return {
-            'out': h,
+            'out': out,
             'prop': prop}

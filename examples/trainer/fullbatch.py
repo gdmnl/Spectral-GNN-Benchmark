@@ -22,6 +22,26 @@ class TrnFullbatch(TrnBase):
     r"""Fullbatch trainer class for node classification.
         - Model forward input: separate edge index and node features.
         - Run pipeline: train_val -> test.
+
+    Args:
+        --- TrnBase Args ---
+        model (nn.Module): Pytorch model to be trained.
+        data (Data): PyG style data.
+        logger (Logger): Logger object.
+        args (Namespace): Configuration arguments.
+            device (str): torch device.
+            metric (str): Metric for evaluation.
+            epoch (int): Number of training epochs.
+            lr_[lin/conv] (float): Learning rate for linear/conv.
+            wd_[lin/conv] (float): Weight decay for linear/conv.
+            patience (int): Patience for early stopping.
+            period (int): Period for checkpoint saving.
+            suffix (str): Suffix for checkpoint saving.
+            storage (str): Storage scheme for checkpoint saving.
+            logpath (Path): Path for logging.
+            multi (bool): True for multi-label classification.
+            num_features (int): Number of data input features.
+            num_classes (int): Number of data output classes.
     """
     name: str = 'fb'
 
@@ -114,7 +134,7 @@ class TrnFullbatch(TrnBase):
         res_test.concat([
             ('deg_high', self.mask['test_high'].sum().item()),
             ('deg_low', self.mask['test_low'].sum().item())])
-        self.logger.log(logging.LTRN, res_test.get_str())
+        # self.logger.log(logging.LTRN, res_test.get_str())
         return res_test
 
     # ===== Run pipeline

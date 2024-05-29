@@ -19,6 +19,8 @@ import warnings
 
 LOGPATH = Path('../log')
 warnings.filterwarnings('ignore', '.*Sparse CSR tensor support is in beta state.*')
+warnings.filterwarnings('ignore', '.*Average precision score for one or more classes.*')
+warnings.filterwarnings('ignore', '.*No positive samples in targets.*')
 
 
 def setup_logger(logpath: Union[Path, str] = LOGPATH,

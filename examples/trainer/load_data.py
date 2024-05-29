@@ -232,7 +232,7 @@ class SingleGraphLoader(object):
                 raise ValueError(f"Dataset '{self}' not found.")
             self.metric = 's_f1i'
         # <<<<<<<<<<
-
+        kwargs['root'] = kwargs['root'].resolve().absolute()
         return module_name, class_name, kwargs, self.metric
 
     def get(self, args: Namespace) -> Data:
