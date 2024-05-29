@@ -4,4 +4,4 @@ from .decoupled_compose import DecoupledFixedCompose, DecoupledVarCompose
 from .ada_gnn import AdaGNN
 from .acm_gnn import ACMGNN
 
-from .precomputed import PrecomputedFixed
+from .precomputed import PrecomputedFixed, PrecomputedVar

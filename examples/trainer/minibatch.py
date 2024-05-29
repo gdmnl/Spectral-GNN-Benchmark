@@ -159,6 +159,7 @@ class TrnMinibatch(TrnBase):
         res_pre = self.preprocess()
         res_run.merge(res_pre)
 
+        self.model.reset_cache()
         self.model = self.model.to(self.device)
         self.setup_optimizer()
 

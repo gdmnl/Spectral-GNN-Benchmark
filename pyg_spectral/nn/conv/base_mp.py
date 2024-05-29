@@ -22,8 +22,8 @@ class BaseMP(MessagePassing):
         cached: whether cache the propagation matrix.
         **kwargs: Additional arguments of :class:`pyg.nn.conv.MessagePassing`.
     """
-    supports_batch: bool = False
-    supports_norm_batch: bool = False
+    supports_batch: bool = True
+    supports_norm_batch: bool = True
     _cache: Optional[Any]
 
     def __init__(self,
@@ -40,7 +40,7 @@ class BaseMP(MessagePassing):
         self.num_hops = num_hops
         self.hop = hop
 
-        self.precomputed = False
+        self.comp_scheme = None
         self.out_scale = 1.0
         self.cached = cached
         self._cache = None
@@ -49,6 +49,7 @@ class BaseMP(MessagePassing):
         del self._cache
         self._cache = None
 
+    # ==========
     def get_propagate_mat(self,
         x: Tensor,
         edge_index: Adj
@@ -125,12 +126,13 @@ class BaseMP(MessagePassing):
                 mats[f'prop_{i}'] = _get_lap(edge_index, diag)
 
         if len(mats) == 1:
-            return mats['prop_0']
+            mats['prop'] = mats.pop('prop_0')
         return mats
 
     def get_forward_mat(self,
         x: Tensor,
         edge_index: Adj,
+        comp_scheme: Optional[str] = None
     ) -> dict:
         r"""Get matrices for self.forward(). Called during forward().
 
@@ -140,52 +142,65 @@ class BaseMP(MessagePassing):
             out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor
             prop (Adj): propagation matrix
         """
-        raise NotImplementedError
+        comp_scheme = comp_scheme or self.comp_scheme
+        if comp_scheme is None:
+            return self._get_forward_mat(x, edge_index) \
+                | self._get_convolute_mat(x, edge_index) \
+                | self.get_propagate_mat(x, edge_index)
+        if comp_scheme == 'forward':
+            return self._get_forward_mat(x, edge_index)
+        else:
+            return self._get_convolute_mat(x, edge_index) \
+                | self.get_propagate_mat(x, edge_index)
 
-    def _forward_theta(self, x):
+    def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'out': torch.zeros_like(x),}
+
+    def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
+        return {'x': x,}
+
+    # ==========
+    def _forward_theta(self, **kwargs):
         r"""
         theta (nn.Parameter or nn.Module): transformation of propagation result
             before applying to the output.
         """
         if callable(self.theta):
-            return self.theta(x)
+            return self.theta(kwargs['x'])
         else:
-            return self.theta * x
+            return self.theta * kwargs['x']
 
-    def _forward_out(self, out: Tensor, conv_out: dict) -> Tensor:
-        r"""Default to use the first tensor for calculating output."""
-        x = next(iter(conv_out.values()))
+    def _forward_out(self, **kwargs) -> Tensor:
         if self.out_scale == 1:
-            out += self._forward_theta(x)
+            res = self._forward_theta(**kwargs)
         else:
-            out += self._forward_theta(x) * self.out_scale
-        return out
+            res = self._forward_theta(**kwargs) * self.out_scale
+        return kwargs['out'] + res
 
     def forward(self, **kwargs) -> dict:
         r""" Wrapper for distinguishing precomputed outputs.
         Args & Returns (dct): same with output of get_forward_mat()
         """
-        if self.precomputed:
-            return self._forward_out(**kwargs)
-        else:
+        if self.comp_scheme is None or self.comp_scheme == 'convolute':
             out = kwargs.pop('out')
-            conv_out, rest_out = self._forward(**kwargs)
-            out = self._forward_out(out, conv_out)
-            return {'out': out, **conv_out, **rest_out}
+            kwargs = self._forward(**kwargs) | {'out': out}
+        kwargs['out'] = self._forward_out(**kwargs)
+        return kwargs
 
     def _forward(self,
         x: Tensor,
         prop: Adj,
-    ) -> Tuple[dict, dict]:
+    ) -> dict:
         r""" Shadow function for self.forward() to be implemented in subclasses
             without calculating output.
             if `self.supports_batch == True`, then should not contain derivable computations.
+        Dicts of Args & Returns should be matched.
         Returns:
-            conv_out (dict): tensors for calculating output
-            rest_out (dict): remained tensors for next layer
+            x (Tensor): tensor for calculating `out`
         """
         raise NotImplementedError
 
+    # ==========
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         # return spmm(adj_t, x, reduce=self.aggr)   # torch_sparse.SparseTensor
         return torch.spmm(adj_t, x)                 # torch.sparse.Tensor

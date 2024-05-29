@@ -145,10 +145,8 @@ class ModelLoader_Trial(ModelLoader):
 
         class_name, module_name, kwargs, trn = self._resolve_import(args)
         model = load_import(class_name, module_name)(**kwargs)
-        if hasattr(model, 'reset_parameters'):
-            model.reset_parameters()
-        if hasattr(model, 'reset_cache'):
-            model.reset_cache()
+        model.reset_parameters()
+        model.reset_cache()
 
         self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
         return model, trn
