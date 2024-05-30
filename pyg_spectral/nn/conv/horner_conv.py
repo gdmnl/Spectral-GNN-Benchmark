@@ -18,9 +18,6 @@ class HornerConv(BaseMP):
         num_hops (int), hop (int): total and current number of propagation hops.
         cached: whether cache the propagation matrix.
     """
-    # FIXME: precomputed for 3-term recurrence
-    supports_batch: bool = False
-
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -78,6 +75,8 @@ class HornerConv(BaseMP):
         if self.hop > 0:
             # propagate_type: (x: Tensor)
             out = self.propagate(prop, x=out)
+        elif self.comp_scheme is not None:
+            out = x_0.clone()
         return {'out': out, 'x_0': x_0, 'prop': prop}
 
     def __repr__(self) -> str:

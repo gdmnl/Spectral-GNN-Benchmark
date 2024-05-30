@@ -131,6 +131,8 @@ class BaseMP(MessagePassing):
 
     def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
         r"""
+        Returns should match the arg list of `self.forward()` when
+            self.comp_scheme == 'forward'.
         Returns:
             out (:math:`(|\mathcal{V}|, F)` Tensor: initial output tensor
         """

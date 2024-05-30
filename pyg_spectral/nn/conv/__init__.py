@@ -1,5 +1,5 @@
 from .adj_conv import AdjConv, AdjDiffConv
-from .adji_conv import AdjiConv, Adji2Conv
+from .adji_conv import AdjiConv, Adji2Conv, AdjResConv
 from .lapi_conv import LapiConv
 from .horner_conv import HornerConv
 from .clenshaw_conv import ClenshawConv

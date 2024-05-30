@@ -51,7 +51,7 @@ class ClenshawConv(BaseMP):
     def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
         return {'out': torch.zeros_like(x), 'out_1': x, 'x_0': x}
 
-    def _forward(self,
+    def forward(self,
         out: Tensor,
         out_1: Tensor,
         x_0: Tensor,

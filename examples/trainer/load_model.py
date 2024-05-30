@@ -71,7 +71,7 @@ class ModelLoader(object):
             if self.conv in ['AdjConv', 'ChebConv', 'HornerConv', 'ClenshawConv']:
                 kwargs.update(dict(
                     alpha=args.alpha,))
-            elif self.conv in ['JacobiConv', 'AdjDiffConv', 'AdjiConv', 'Adji2Conv']:
+            elif self.conv in ['JacobiConv', 'AdjDiffConv', 'AdjiConv', 'Adji2Conv', 'AdjResConv']:
                 kwargs.update(dict(
                     alpha=args.alpha,
                     beta=args.beta,))
