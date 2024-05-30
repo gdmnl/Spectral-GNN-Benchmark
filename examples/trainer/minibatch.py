@@ -137,7 +137,8 @@ class TrnMinibatch(TrnBase):
         input, label = self._fetch_preprocess(data)
         del self.data
 
-        embed = self.model.convolute(*input)
+        with Stopwatch() as stopwatch:
+            embed = self.model.convolute(*input)
         if hasattr(self, 'norm_prop'):
             self.norm_prop.fit(embed[mask['train']])
             embed = self.norm_prop(embed)
@@ -150,7 +151,8 @@ class TrnMinibatch(TrnBase):
                                       shuffle=self.shuffle[k],
                                       num_workers=0)
             self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.embed[k])}")
-        return ResLogger()
+        return ResLogger()(
+            [('time_pre', stopwatch.data)])
 
     # ===== Run pipeline
     def run(self) -> ResLogger:
