@@ -20,7 +20,6 @@ class FavardConv(BaseMP):
         num_hops (int), hop (int): total and current number of propagation hops.
         cached: whether cache the propagation matrix.
     """
-    # FIXME: precomputed for 3-term recurrence
     supports_batch: bool = False
 
     def __init__(self,

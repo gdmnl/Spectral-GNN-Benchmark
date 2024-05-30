@@ -18,9 +18,6 @@ class ClenshawConv(BaseMP):
         num_hops (int), hop (int): total and current number of propagation hops.
         cached: whether cache the propagation matrix.
     """
-    # FIXME: precomputed for 3-term recurrence
-    supports_batch: bool = False
-
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -31,8 +28,7 @@ class ClenshawConv(BaseMP):
         kwargs.setdefault('propagate_mat', 'A')
         super(ClenshawConv, self).__init__(num_hops, hop, cached, **kwargs)
 
-        alpha = alpha or 0
-        if alpha == 0:
+        if alpha is None:
             self.alpha = 0.5
         else:
             self.alpha = np.log(alpha / (hop + 1) + 1)
@@ -51,7 +47,20 @@ class ClenshawConv(BaseMP):
     def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
         return {'out': torch.zeros_like(x), 'out_1': x, 'x_0': x}
 
-    def forward(self,
+    def _forward_out(self, **kwargs) -> Tensor:
+        r"""
+        Returns:
+            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
+                accumulating propagation results
+        """
+        out, x_0 = kwargs['out'], kwargs['x_0']
+        out = out + self.beta * x_0
+
+        res = self._forward_theta(x=out)
+        res = self.alpha * out + (1 - self.alpha) * res
+        return res
+
+    def _forward(self,
         out: Tensor,
         out_1: Tensor,
         x_0: Tensor,
@@ -67,12 +76,8 @@ class ClenshawConv(BaseMP):
         """
         # propagate_type: (x: Tensor)
         h = self.propagate(prop, x=out)
-        h = self.beta * x_0 + 2. * h - out_1
-
-        h2 = self._forward_theta(x=h)
-        h2 = self.alpha * h + (1 - self.alpha) * h2
-
-        return {'out': h2, 'out_1': out, 'x_0': x_0, 'prop': prop}
+        h = 2. * h - out_1
+        return {'out': h, 'out_1': out, 'x_0': x_0, 'prop': prop}
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(alpha={self.alpha})'
