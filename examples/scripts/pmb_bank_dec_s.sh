@@ -46,4 +46,36 @@ for data in ${DATAS[@]}; do
         --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv \
         "${ARGS_S[@]}"
 
+    PARLIST="$PARLIST,beta"
+    # FAGNN
+    python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
+        --data $data --model PrecomputedFixedCompose --conv AdjSkipConv,AdjSkipConv \
+        --theta_scheme ones,ones --theta_param 1,1 --alpha 1.0,-1.0 \
+        "${ARGS_P[@]}"
+    python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
+        --data $data --model PrecomputedFixedCompose --conv AdjSkipConv,AdjSkipConv \
+        --theta_scheme ones,ones --theta_param 1,1 --alpha 1.0,-1.0 \
+        "${ARGS_S[@]}"
+
+    PARLIST="$PARLIST,theta_param"
+    # G2CN
+    python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
+        --data $data --model DecoupledFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv \
+        --theta_scheme gaussian,gaussian --alpha="-1.0,-1,0" \
+        "${ARGS_P[@]}"
+    python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
+        --data $data --model DecoupledFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv \
+        --theta_scheme gaussian,gaussian --alpha="-1.0,-1,0" \
+        "${ARGS_S[@]}"
+
+    # GNN-LF/HF
+    python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
+        --data $data --model DecoupledFixedCompose --conv AdjDiffConv,AdjDiffConv \
+        --theta_scheme appr,appr --alpha 1.0,1.0 \
+        "${ARGS_P[@]}"
+    python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
+        --data $data --model DecoupledFixedCompose --conv AdjDiffConv,AdjDiffConv \
+        --theta_scheme appr,appr --alpha 1.0,1.0 \
+        "${ARGS_S[@]}"
+
 done

@@ -76,15 +76,17 @@ class ModelLoader(object):
             )
 
             # Parse conv args
-            if self.conv in ['AdjConv', 'ChebConv', 'HornerConv', 'ClenshawConv', 'ACMConv']:
-                kwargs.update(dict(
-                    alpha=args.alpha,))
-            elif self.conv in ['JacobiConv', 'AdjDiffConv', 'AdjiConv', 'Adji2Conv', 'AdjResConv']:
-                kwargs.update(dict(
-                    alpha=args.alpha,
-                    beta=args.beta,))
-                if self.conv == 'Adji2Conv':
-                    kwargs['num_hops'] = int(kwargs['num_hops'] / 2)
+            for conv in self.conv.split(','):
+                if conv in ['AdjConv', 'ChebConv', 'HornerConv', 'ClenshawConv', 'ACMConv']:
+                    kwargs.update(dict(
+                        alpha=args.alpha,))
+                elif conv in ['JacobiConv', 'AdjDiffConv', 'AdjiConv', 'Adji2Conv', \
+                            'AdjSkipConv', 'AdjSkip2Conv', 'AdjResConv']:
+                    kwargs.update(dict(
+                        alpha=args.alpha,
+                        beta=args.beta,))
+                    if conv == 'Adji2Conv':
+                        kwargs['num_hops'] = int(kwargs['num_hops'] / 2)
 
             # Parse model args
             if self.model in ['Iterative', 'ACMGNN']:

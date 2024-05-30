@@ -48,6 +48,14 @@ for data in ${DATAS[@]}; do
         --data $data --model MLP --theta_scheme impulse \
         "${ARGS_S[@]}"
 
+    # Linear
+    python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
+        --data $data --model $model --conv AdjSkipConv --theta_scheme ones \
+        --beta 1.0 "${ARGS_P[@]}"
+    python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
+        --data $data --model $model --conv AdjSkipConv --theta_scheme ones \
+        --beta 1.0 "${ARGS_S[@]}"
+
     PARLIST="theta_param,$PARLIST"
     for scheme in ${SCHEMES[@]}; do
         ARGS_C=()

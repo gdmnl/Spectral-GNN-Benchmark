@@ -97,6 +97,17 @@ class BaseNNCompose(BaseNN):
         if hasattr(self, 'gamma'):
             nn.init.ones_(self.gamma)
 
+    def get_optimizer(self, dct):
+        res = []
+        if self.in_layers > 0:
+            res.append({'params': self.in_mlp.parameters(), **dct['lin']})
+        if self.out_layers > 0:
+            res.append({'params': self.out_mlp.parameters(), **dct['lin']})
+        if hasattr(self, 'gamma'):
+            res.append({'params': self.gamma, **dct['conv']})
+        res.append({'params': self.convs.parameters(), **dct['conv']})
+        return res
+
     def preprocess(self,
         x: Tensor,
         edge_index: Adj
@@ -178,15 +189,15 @@ class DecoupledFixedCompose(BaseNNCompose):
         conv = conv.split(',')
         convs = nn.ModuleList()
 
-        for c, scheme, param in zip(conv, theta_schemes, theta_params):
-            theta = gen_theta(num_hops, scheme, param)
-            conv_cls = load_import(c, lib)
+        for i, channel in enumerate(conv):
+            theta = gen_theta(num_hops, theta_schemes[i], theta_params[i])
+            conv_cls = load_import(channel, lib)
             kwargs_c = {}
             for k, v in kwargs.items():
                 # Find required arguments for current conv class
                 if k in conv_cls.__init__.__code__.co_varnames:
                     if isinstance(v, list) and len(v) == len(conv):
-                        kwargs_c[k] = v[c]
+                        kwargs_c[k] = v[i]
                     else:
                         kwargs_c[k] = v
 
@@ -248,15 +259,16 @@ class DecoupledVarCompose(BaseNNCompose):
         convs = nn.ModuleList()
 
         self.theta_init = []
-        for c, scheme, param in zip(conv, theta_schemes, theta_params):
-            self.theta_init.append(gen_theta(num_hops, scheme, param))
-            conv_cls = load_import(c, lib)
+
+        for i, channel in enumerate(conv):
+            self.theta_init.append(gen_theta(num_hops, theta_schemes[i], theta_params[i]))
+            conv_cls = load_import(channel, lib)
             kwargs_c = {}
             for k, v in kwargs.items():
                 # Find required arguments for current conv class
                 if k in conv_cls.__init__.__code__.co_varnames:
                     if isinstance(v, list) and len(v) == len(conv):
-                        kwargs_c[k] = v[c]
+                        kwargs_c[k] = v[i]
                     else:
                         kwargs_c[k] = v
 

@@ -87,7 +87,9 @@ class TrnWrapper(object):
                 func, fargs, fkwargs, fmt = suggest_dct[key]
                 beta_c = {
                     'AdjiConv':     [(0.0, 1.0), (0.0, 1.0)],   # FAGNN
+                    'AdjSkipConv':  [(0.0, 1.0), (0.0, 1.0)],   # FAGNN
                     'Adji2Conv':    [(1.0, 2.0), (0.0, 1.0)],   # G2CN
+                    'AdjSkip2Conv': [(1.0, 2.0), (0.0, 1.0)],   # G2CN
                     'AdjDiffConv':  [(0.0, 1.0), (-1.0, 0.0)],  # GNN-LF/HF
                 }
                 return list2str([func(key+'-'+str(i), *beta_i, **fkwargs) for i,beta_i in enumerate(beta_c[convs[0]])]), str

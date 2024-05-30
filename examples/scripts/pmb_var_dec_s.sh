@@ -38,7 +38,7 @@ DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filter
 # DATAS=("amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94")
 # DATAS=("ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" "ogbn-mag" "pokec")
 MODELS=("PrecomputedVar")
-CONVS=("AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "OptBasisConv")
+CONVS=("AdjSkipConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "OptBasisConv")
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do
