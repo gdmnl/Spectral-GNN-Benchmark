@@ -16,7 +16,7 @@ for data in ${DATAS[@]}; do
     # AdaGNN
     for conv in "LapiConv"; do
         python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
-            --data $data --model AdaGNN --conv $conv \
+            --data $data --model AdaGNN --conv $conv --theta_scheme normal --theta_param 0,1e-7 \
             "${ARGS_P[@]}"
     done
 

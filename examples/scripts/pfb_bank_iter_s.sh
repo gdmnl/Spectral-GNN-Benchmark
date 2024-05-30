@@ -48,4 +48,12 @@ for data in ${DATAS[@]}; do
         done
     done
 
+    # FiGURe
+    python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
+        --data $data --model IterativeCompose --conv AdjConv,ChebConv,BernConv \
+        "${ARGS_P[@]}"
+    python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
+        --data $data --model IterativeCompose --conv AdjConv,ChebConv,BernConv \
+        "${ARGS_S[@]}"
+
 done

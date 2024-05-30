@@ -15,6 +15,9 @@ class LapiConv(BaseMP):
         num_hops (int), hop (int): total and current number of propagation hops.
         cached: whether cache the propagation matrix.
     """
+    # For similar convs supporting batching, use LapSkipConv
+    supports_batch: bool = False
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -30,7 +33,7 @@ class LapiConv(BaseMP):
     def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
         return {'out': x,}
 
-    def _forward(self,
+    def forward(self,
         out: Tensor,
         prop: Adj,
     ) -> dict:
@@ -41,6 +44,9 @@ class LapiConv(BaseMP):
             prop (Adj): propagation matrix
         """
         # propagate_type: (x: Tensor)
-        out = self.propagate(prop, x=out)
-        self.out_scale = -1.0
+        h = self.propagate(prop, x=out)
+        out = out - self._forward_theta(x=h)
         return {'out': out, 'prop': prop}
+
+
+# TODO: LapSkipConv

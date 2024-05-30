@@ -106,9 +106,12 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     elif args.model in ['PrecomputedFixed', 'PrecomputedFixedCompose']:
         args.model_repr = 'PrecomputedFixed'
         args.conv_repr = f'{args.conv}-{args.theta_scheme}'
-    elif args.model in ['Iterative'] and 'fix' in args.suffix:
+    elif args.model in ['Iterative', 'IterativeCompose'] and (args.suffix is not None and 'fix' in args.suffix):
         args.model_repr = 'IterativeFixed'
         args.conv_repr = f'{args.conv}-{args.theta_scheme}'
+    elif args.model in ['IterativeCompose']:
+        args.model_repr = 'Iterative'
+        args.conv_repr = args.conv
     elif args.model in ['DecoupledVar', 'DecoupledVarCompose']:
         args.model_repr = 'DecoupledVar'
         args.conv_repr = args.conv

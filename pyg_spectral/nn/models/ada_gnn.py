@@ -61,7 +61,7 @@ class AdaGNN(BaseNN):
         for k, conv in enumerate(self.convs):
             f = conv.theta.size(0)
             if self.theta_scheme.startswith(('uniform', 'normal')):
-                thetas = gen_theta(f, self.theta_scheme, self.theta_param)
+                thetas = gen_theta(f-1, self.theta_scheme, self.theta_param)
             else:
                 thetas = gen_theta(self.num_hops, self.theta_scheme, self.theta_param)[k].repeat(f)
             conv.theta.data = thetas

@@ -1,4 +1,4 @@
-from .iterative import Iterative
+from .iterative import Iterative, IterativeCompose
 from .decoupled import DecoupledFixed, DecoupledVar
 from .decoupled_compose import DecoupledFixedCompose, DecoupledVarCompose
 from .ada_gnn import AdaGNN
