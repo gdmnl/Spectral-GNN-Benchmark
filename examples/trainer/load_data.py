@@ -161,7 +161,6 @@ class SingleGraphLoader(object):
                 pre_transform=T_arxiv_year(),
                 transform=self.transform,)
             self.metric = 's_f1i'
-            self._T_insert(T.ToUndirected(), index=0)
         elif self.data in ['genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki']:
             module_name = 'dataset_process'
             class_name = 'LINKX'

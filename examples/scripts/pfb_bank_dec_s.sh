@@ -34,14 +34,6 @@ DATAS=("ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" "ogbn-mag" "pokec")
 
 for data in ${DATAS[@]}; do
     PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
-    # MLP
-    python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
-        --data $data --model MLP \
-        "${ARGS_P[@]}"
-    python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
-        --data $data --model MLP \
-        "${ARGS_S[@]}"
-
     # AdaGNN
     for conv in "LapiConv"; do
         python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \

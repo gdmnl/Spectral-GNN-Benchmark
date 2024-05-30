@@ -40,13 +40,21 @@ class ModelLoader(object):
                 'MLP': 'Identity',
             }
             self.conv_repr = conv_dct[self.model]   # Sometimes need to manually fix repr for logging
+            # workaround for aligning MLP num_layers
+            if args.theta_scheme == 'ones':
+                num_layers = args.in_layers + args.out_layers
+            elif args.theta_scheme == 'appr':
+                num_layers = args.in_layers + args.num_hops + args.out_layers
+            else:
+                num_layers = args.out_layers
+
             module_name = 'torch_geometric.nn.models'
             class_name = self.model
             kwargs = dict(
                 in_channels=args.num_features,
                 out_channels=args.num_classes,
                 hidden_channels=args.hidden,
-                num_layers=args.in_layers+args.out_layers,
+                num_layers=num_layers,
                 dropout=args.dp_lin,
             )
             trn = TrnFullbatch
@@ -68,7 +76,7 @@ class ModelLoader(object):
             )
 
             # Parse conv args
-            if self.conv in ['AdjConv', 'ChebConv', 'HornerConv', 'ClenshawConv']:
+            if self.conv in ['AdjConv', 'ChebConv', 'HornerConv', 'ClenshawConv', 'ACMConv']:
                 kwargs.update(dict(
                     alpha=args.alpha,))
             elif self.conv in ['JacobiConv', 'AdjDiffConv', 'AdjiConv', 'Adji2Conv', 'AdjResConv']:
@@ -145,8 +153,10 @@ class ModelLoader_Trial(ModelLoader):
 
         class_name, module_name, kwargs, trn = self._resolve_import(args)
         model = load_import(class_name, module_name)(**kwargs)
-        model.reset_parameters()
-        model.reset_cache()
+        if hasattr(model, 'reset_parameters'):
+            model.reset_parameters()
+        if hasattr(model, 'reset_cache'):
+            model.reset_cache()
 
         self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
         return model, trn
