@@ -47,7 +47,8 @@ class AdaGNN(BaseNN):
             conv_cls(num_hops=num_hops, hop=k,
                      **kwargs) for k in range(num_hops)])
         for k, convk in enumerate(convs):
-            convk.register_parameter('theta', nn.Parameter(torch.FloatTensor(self.channel_list[self.in_layers+k])))
+            # hop k, input:output size: [in_layers+k:in_layers+k+1]
+            convk.register_parameter('theta', nn.Parameter(torch.FloatTensor(self.channel_list[self.in_layers+k+1])))
             if hasattr(convk, '_init_with_theta'):
                 convk._init_with_theta()
         return convs

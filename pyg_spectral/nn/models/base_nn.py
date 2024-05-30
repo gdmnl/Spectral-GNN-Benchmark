@@ -63,6 +63,7 @@ class BaseNN(nn.Module):
         super(BaseNN, self).__init__()
 
         self.num_hops = num_hops
+        self.conv_layers = num_hops + 1
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
         self.out_channels = out_channels
@@ -98,7 +99,7 @@ class BaseNN(nn.Module):
 
         if self.out_layers > 0:
             self.out_mlp = myMLP(
-                channel_list=self.channel_list[self.in_layers+self.num_hops:],
+                channel_list=self.channel_list[self.in_layers+self.conv_layers:],
                 num_layers=self.out_layers,
                 dropout=dropout_lin,
                 act=act,
@@ -113,19 +114,19 @@ class BaseNN(nn.Module):
 
     def init_channel_list(self, conv: str, in_channels: int, hidden_channels: int, out_channels: int, **kwargs) -> List[int]:
         # assert (self.in_layers+self.out_layers > 0) or (self.in_channels == self.out_channels)
-        total_layers = self.in_layers + self.num_hops + self.out_layers
+        total_layers = self.in_layers + self.conv_layers + self.out_layers
         channel_list = [in_channels] + [None] * (total_layers - 1) + [out_channels]
         for i in range(self.in_layers - 1):
             # 1:in_layers-1
             channel_list[i + 1] = hidden_channels
         if self.in_layers > 0:
             channel_list[self.in_layers] = hidden_channels if self.out_layers > 0 else self.out_channels
-        for i in range(self.num_hops):
-            # (in_layers+1):(in_layers+num_hops)
+        for i in range(self.conv_layers):
+            # (in_layers+1):(in_layers+conv_layers)
             channel_list[self.in_layers + i + 1] = channel_list[self.in_layers]
         for i in range(self.out_layers - 1):
-            # (in_layers+num_hops+1):(total_layers-1)
-            channel_list[self.in_layers+self.num_hops + i + 1] = hidden_channels
+            # (in_layers+conv_layers+1):(total_layers-1)
+            channel_list[self.in_layers+self.conv_layers + i + 1] = hidden_channels
         return channel_list
 
     def init_conv(self, conv: str, num_hops: int, lib: str, **kwargs) -> MessagePassing:
@@ -252,7 +253,7 @@ class BaseNNCompose(BaseNN):
         n_conv = len(conv.split(','))
 
         # assert (self.in_layers+self.out_layers > 0) or (self.in_channels == self.out_channels)
-        total_layers = self.in_layers + self.num_hops + self.out_layers
+        total_layers = self.in_layers + self.conv_layers + self.out_layers
         channel_list = [in_channels] + [None] * (total_layers - 1) + [out_channels]
         for i in range(self.in_layers - 1):
             # 1:in_layers-1
@@ -260,20 +261,20 @@ class BaseNNCompose(BaseNN):
         if self.in_layers > 0:
             channel_list[self.in_layers] = hidden_channels if self.out_layers > 0 else self.out_channels
 
-        for i in range(self.num_hops):
-            # (in_layers+1):(in_layers+num_hops)
+        for i in range(self.conv_layers):
+            # (in_layers+1):(in_layers+conv_layers)
             channel_list[self.in_layers + i + 1] = channel_list[self.in_layers]
         if self.combine in ['cat']:
-            channel_list[self.in_layers + self.num_hops] *= n_conv
+            channel_list[self.in_layers + self.conv_layers] *= n_conv
 
         for i in range(self.out_layers - 1):
-            # (in_layers+num_hops+1):(total_layers-1)
-            channel_list[self.in_layers+self.num_hops + i + 1] = hidden_channels
+            # (in_layers+conv_layers+1):(total_layers-1)
+            channel_list[self.in_layers+self.conv_layers + i + 1] = hidden_channels
 
         if self.combine == 'sum_weighted':
             self.gamma = nn.Parameter(torch.ones(n_conv, 1))
         elif self.combine == 'sum_vec':
-            self.gamma = nn.Parameter(torch.ones(n_conv, channel_list[self.in_layers + self.num_hops]))
+            self.gamma = nn.Parameter(torch.ones(n_conv, channel_list[self.in_layers + self.conv_layers]))
         return channel_list
 
     def _set_conv_func(self, func: str) -> List[Callable]:

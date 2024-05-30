@@ -47,6 +47,8 @@ class DecoupledFixedCompose(BaseNNCompose):
         theta_schemes = kwargs.pop('theta_scheme', 'appr')
         theta_schemes = theta_schemes.split(',')
         theta_params = kwargs.pop('theta_param', [0.5])
+        if not isinstance(theta_params, list):
+            theta_params = [theta_params] * len(conv)
 
         for i, channel in enumerate(conv):
             theta = gen_theta(num_hops, theta_schemes[i], theta_params[i])

@@ -41,7 +41,6 @@ class Iterative(BaseNN):
         lib: str,
         **kwargs
     ) -> MessagePassing:
-        assert self.in_layers > 0 and self.out_layers > 0, "In/out MLPs are required to ensure conv shape consistency."
         bias = kwargs.pop('bias', None)
         weight_initializer = kwargs.pop('weight_initializer', 'glorot')
         bias_initializer = kwargs.pop('bias_initializer', None)
@@ -52,8 +51,10 @@ class Iterative(BaseNN):
         for k in range(num_hops+1):
             bias_default = (k == num_hops)
             convs.append(conv_cls(num_hops=num_hops, hop=k, **kwargs))
+            # hop k, input:output size: [in_layers+k:in_layers+k+1]
             convs[-1].theta = Linear(
-                self.hidden_channels, self.hidden_channels,
+                self.channel_list[self.in_layers+k],
+                self.channel_list[self.in_layers+k+1],
                 bias=(bias or bias_default),
                 weight_initializer=weight_initializer,
                 bias_initializer=bias_initializer)
@@ -123,8 +124,13 @@ class IterativeCompose(BaseNNCompose):
             for k in range(num_hops+1):
                 bias_default = (k == num_hops)
                 convsi.append(conv_cls(num_hops=num_hops, hop=k, **kwargs_c))
+
+                out_channels = self.channel_list[self.in_layers+k+1]
+                if k == num_hops and self.combine in ['cat']:
+                    out_channels = out_channels // len(conv)
                 convsi[-1].theta = Linear(
-                    self.hidden_channels, self.hidden_channels,
+                    self.channel_list[self.in_layers+k],
+                    out_channels,
                     bias=(bias or bias_default),
                     weight_initializer=weight_initializer,
                     bias_initializer=bias_initializer)
