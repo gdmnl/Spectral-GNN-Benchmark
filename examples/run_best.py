@@ -34,7 +34,7 @@ def main(args):
 
     # ========== Load data
     data_loader = SingleGraphLoader(args, res_logger)
-    data = data_loader(args)
+    data, metric = data_loader(args)
 
     # ========== Load model
     model_loader = ModelLoader(args, res_logger)

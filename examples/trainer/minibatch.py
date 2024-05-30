@@ -156,6 +156,7 @@ class TrnMinibatch(TrnBase):
     def run(self) -> ResLogger:
         res_run = ResLogger()
 
+        self.model = self.model.cpu()
         res_pre = self.preprocess()
         res_run.merge(res_pre)
 
