@@ -40,7 +40,7 @@ for data in ${DATAS[@]}; do
     # FAGNN
     python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
         --data $data --model DecoupledFixedCompose --conv AdjiConv,AdjiConv \
-        --theta_scheme mono,mono --theta_param 1,1 --alpha 1.0,-1.0 \
+        --theta_scheme ones,ones --theta_param 1,1 --alpha 1.0,-1.0 \
         "${ARGS_P[@]}"
 
     PARLIST="$PARLIST,theta_param"

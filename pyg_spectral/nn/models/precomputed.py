@@ -7,6 +7,7 @@ from pyg_spectral.nn.models.decoupled import DecoupledFixed, DecoupledVar
 
 
 class PrecomputedFixed(DecoupledFixed):
+    # TODO: docstring
     def __init__(self,
             conv: str,
             num_hops: int = 0,
@@ -136,7 +137,7 @@ class PrecomputedVar(DecoupledVar):
         r"""Decoupled propagation step for calling the convolutional module.
             `self._forward()` should not contain derivable computations.
         Returns:
-            embed (list): List of precomputed node embeddings of each hop.
+            embed (Tensor): List of precomputed node embeddings of each hop.
                 Each shape is :math:`(|\mathcal{V}|, F, len(convs)+1)`.
         """
         conv_mat = self.get_forward_mat(x, edge_index, comp_scheme='convolute')

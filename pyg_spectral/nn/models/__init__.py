@@ -5,3 +5,4 @@ from .ada_gnn import AdaGNN
 from .acm_gnn import ACMGNN
 
 from .precomputed import PrecomputedFixed, PrecomputedVar
+from .precomputed_compose import PrecomputedFixedCompose, PrecomputedVarCompose
