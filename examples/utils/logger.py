@@ -80,13 +80,13 @@ def setup_logpath(dir: Union[Path, str] = LOGPATH,
         logpath (Path): Path for log directory.
         logid (str): Path relative to dir.
     """
-    dir = Path(dir)
+    dir_root = dir = Path(dir)
     flag = str(uuid.uuid4())[:6]
     if folder_args is not None:
         folder_args = tuple(arg or flag for arg in folder_args)
         dir = dir.joinpath(*folder_args)
 
-    logid = str(dir.relative_to(LOGPATH))
+    logid = str(dir.relative_to(dir_root))
     dir = dir.resolve().absolute()
     if not quiet:
         dir.mkdir(parents=True, exist_ok=True)

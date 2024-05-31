@@ -60,7 +60,7 @@ def setup_argparse():
     # Model configuration
     parser.add_argument('-m', '--model', type=str, default='DecoupledVar', help='Model class name')
     # parser.add_argument('-m', '--model', type=str, default='PrecomputedVar', help='Model class name')
-    parser.add_argument('-c', '--conv', type=str, default='AdjiConv', help='Conv class name')
+    parser.add_argument('-c', '--conv', type=str, default='AdjConv', help='Conv class name')
     parser.add_argument('-k', '--num_hops', type=int, default=10, help='Number of conv hops')
     parser.add_argument('-l1', '--in_layers',  type=int, default=1, help='Number of MLP layers before conv')
     # parser.add_argument('-l1', '--in_layers',  type=int, default=0, help='Number of MLP layers before conv')
@@ -92,6 +92,9 @@ def setup_argparse():
     # - AdjiConv
     parser.add_argument('--beta', type=list_float, help='Scaling factor')
     # <<<<<<<<<<
+
+    # Test flags
+    parser.add_argument('--test_deg', action='store_true', help='Call TrnFullbatch.test_deg()')
     return parser
 
 

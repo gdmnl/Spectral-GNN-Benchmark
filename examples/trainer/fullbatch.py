@@ -52,6 +52,7 @@ class TrnFullbatch(TrnBase):
                  **kwargs):
         super(TrnFullbatch, self).__init__(model, data, args, **kwargs)
         self.mask: dict = None
+        self.flag_test_deg = args.test_deg if hasattr(args, 'test_deg') else False
 
     def clear(self):
         del self.mask, self.data
@@ -116,9 +117,16 @@ class TrnFullbatch(TrnBase):
     # ===== Run block
     def test_deg(self) -> ResLogger:
         import logging
+        from torch_geometric.typing import SparseTensor
 
         adj_t = self.data.adj_t
-        deg = adj_t.sum(dim=0).cpu()
+        if isinstance(adj_t, SparseTensor):
+            deg = adj_t.sum(dim=0).cpu()
+        elif isinstance(adj_t, torch.Tensor) and adj_t.is_sparse_csr:
+            deg = torch.sparse.sum(adj_t.to_sparse_coo(), [0]).cpu().to_dense()
+        else:
+            raise NotImplementedError(f"Type {type(adj_t)} not supported!")
+
         _, idx_high = torch.topk(deg, k=int(0.2*deg.size(0)))
         mask_high = torch.zeros_like(deg, dtype=torch.bool, device=self.device)
         mask_high[idx_high] = True
@@ -151,6 +159,7 @@ class TrnFullbatch(TrnBase):
         res_test = self.test()
         res_run.merge(res_test)
 
-        # res_run.merge(self.test_deg())
+        if self.flag_test_deg:
+            res_run.merge(self.test_deg())
 
         return self.res_logger.merge(res_run)

@@ -3,6 +3,8 @@ backup/*
 save
 save/*
 save_*
+config
+config/*
 log
 log/*
 log_*

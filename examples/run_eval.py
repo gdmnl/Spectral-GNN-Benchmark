@@ -1,13 +1,15 @@
 # -*- coding:utf-8 -*-
-"""Run with a single data+model+conv loading hyperparams from optuna.
+"""Run with a single data+model+conv selecting hyperparams from optuna.
 Author: nyLiao
-File Created: 2024-04-29
+File Created: 2024-05-31
 """
 import logging
 import json
+from pathlib import Path
 
 from trainer import SingleGraphLoader, ModelLoader
 from utils import (
+    force_list_str,
     setup_seed,
     setup_argparse,
     setup_args,
@@ -28,9 +30,13 @@ def reverse_parse(parser, key, val):
 
 def main(args):
     # ========== Run configuration
-    logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
-    res_logger = ResLogger(quiet=True)
+    quiet = args.seed % 10 != 0
+    logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=quiet)
+    res_logger = ResLogger(prefix=args.eval_name, quiet=args.quiet)
     res_logger.concat([('seed', args.seed),])
+
+    for key in args.param:
+        res_logger.concat([(key, args.__dict__[key])])
 
     # ========== Load data
     data_loader = SingleGraphLoader(args, res_logger)
@@ -53,30 +59,35 @@ def main(args):
     logger.info(f"[args]: {args}")
     logger.log(logging.LRES, f"[res]: {res_logger}")
     res_logger.save()
-    save_args(args.logpath, vars(args))
+    # save_args(args.logpath, vars(args))
     clear_logger(logger)
 
 
 if __name__ == '__main__':
     parser = setup_argparse()
     # Experiment-specific arguments
+    parser.add_argument('--eval_name', type=str, default='eval', help='Exp name')
+    parser.add_argument('--param', type=force_list_str, help='List of hyperparameters to loop')
     parser.add_argument('--seed_param', type=int, default=1, help='Seed for optuna search')
     args = setup_args(parser)
 
     study_path, _ = setup_logpath(
+        dir=Path('../config'),
         folder_args=(args.data, args.model_repr, args.conv_repr, f'param-{args.seed_param}',
                      'config.json'))
     with open(study_path, 'r') as config_file:
         best_params = json.load(config_file)
     for key, value in best_params.items():
-        setattr(args, key, reverse_parse(parser, key, value))
+        if key not in args.param:
+            setattr(args, key, reverse_parse(parser, key, value))
 
     seed_lst = args.seed.copy()
     for seed in seed_lst:
+        quiet = seed % 10 != 0
         args.seed = setup_seed(seed, args.cuda)
-        args.flag = f'{args.seed}'
+        args.flag = f'{args.seed}-{args.__dict__[args.param[0]]}'
         args.logpath, _ = setup_logpath(
             folder_args=(args.data, args.model_repr, args.conv_repr, args.flag),
-            quiet=args.quiet)
+            quiet=quiet)
 
         main(args)
