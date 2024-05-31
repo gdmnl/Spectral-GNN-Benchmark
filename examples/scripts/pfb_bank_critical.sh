@@ -47,7 +47,7 @@ for data in ${DATAS[@]}; do
     # G2CN
     python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
         --data $data --model DecoupledFixedCompose --conv Adji2Conv,Adji2Conv \
-        --theta_scheme gaussian,gaussian --alpha="-1.0,-1,0" \
+        --theta_scheme gaussian,gaussian --alpha="-1.0,-1.0" \
         "${ARGS_P[@]}"
 
     # GNN-LF/HF

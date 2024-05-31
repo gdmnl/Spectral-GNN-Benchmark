@@ -4,7 +4,7 @@ DEV=${1:--1}
 SEED_P=1
 SEED_S="20,21,22,23,24,25,26,27,28,29"
 ARGS_P=(
-    "--n_trials" "100"
+    "--n_trials" "50"
     "--loglevel" "30"
     "--num_hops" "10"
     "--in_layers" "0"
@@ -30,10 +30,8 @@ ARGS_S=(
     "--suffix" "mb_fix"
 )
 
-DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
-# DATAS=("amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94")
-# DATAS=("ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" "ogbn-mag" "pokec")
-# DATAS=("twitch-gamer" "ogbn-mag" "pokec")
+# DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
+DATAS=("amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94" "ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" "ogbn-mag" "pokec")
 model=PrecomputedFixed
 conv=AdjConv
 SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")

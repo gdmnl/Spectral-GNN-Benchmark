@@ -11,7 +11,7 @@ ARGS_P=(
     "--out_layers" "2"
     "--hidden" "128"
     "--epoch" "200"
-    "--batch" "512"
+    "--batch" "4096"
     "--patience" "50"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
@@ -26,7 +26,7 @@ ARGS_S=(
     "--out_layers" "2"
     "--hidden" "128"
     "--epoch" "500"
-    "--batch" "512"
+    "--batch" "4096"
     "--patience" "-1"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
@@ -38,7 +38,8 @@ DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filter
 # DATAS=("amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94")
 # DATAS=("ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" "ogbn-mag" "pokec")
 MODELS=("PrecomputedVar")
-CONVS=("AdjSkipConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "OptBasisConv")
+# CONVS=("AdjSkipConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "OptBasisConv")
+CONVS=("HornerConv" "ClenshawConv" "ChebIIConv" "LegendreConv" "JacobiConv" )
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do

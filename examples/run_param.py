@@ -92,7 +92,9 @@ class TrnWrapper(object):
                     'AdjSkip2Conv': [(1.0, 2.0), (0.0, 1.0)],   # G2CN
                     'AdjDiffConv':  [(0.0, 1.0), (-1.0, 0.0)],  # GNN-LF/HF
                 }
-                return list2str([func(key+'-'+str(i), *beta_i, **fkwargs) for i,beta_i in enumerate(beta_c[convs[0]])]), str
+                lst = [func(key+'-'+str(i), *beta_i, **fkwargs) for i,beta_i in enumerate(beta_c[convs[0]])]
+                # return list2str(lst), str
+                return lst, fmt
             else:
                 func, fargs, fkwargs, fmt = suggest_dct[key]
                 return func(key, *fargs, **fkwargs), fmt
