@@ -4,7 +4,7 @@ DEV=${1:--1}
 SEED_P=1
 SEED_S="20,21,22,23,24,25,26,27,28,29"
 ARGS_P=(
-    "--n_trials" "100"
+    "--n_trials" "50"
     "--loglevel" "30"
     "--num_hops" "10"
     "--in_layers" "0"
@@ -60,21 +60,21 @@ for data in ${DATAS[@]}; do
     PARLIST="$PARLIST,theta_param"
     # G2CN
     python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
-        --data $data --model DecoupledFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv \
+        --data $data --model PrecomputedFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv \
         --theta_scheme gaussian,gaussian --alpha="-1.0,-1,0" \
         "${ARGS_P[@]}"
     python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
-        --data $data --model DecoupledFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv \
+        --data $data --model PrecomputedFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv \
         --theta_scheme gaussian,gaussian --alpha="-1.0,-1,0" \
         "${ARGS_S[@]}"
 
     # GNN-LF/HF
     python run_param.py --dev $DEV --seed $SEED_P --param $PARLIST \
-        --data $data --model DecoupledFixedCompose --conv AdjDiffConv,AdjDiffConv \
+        --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv \
         --theta_scheme appr,appr --alpha 1.0,1.0 \
         "${ARGS_P[@]}"
     python run_best.py --dev $DEV --seed $SEED_S --seed_param $SEED_P \
-        --data $data --model DecoupledFixedCompose --conv AdjDiffConv,AdjDiffConv \
+        --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv \
         --theta_scheme appr,appr --alpha 1.0,1.0 \
         "${ARGS_S[@]}"
 

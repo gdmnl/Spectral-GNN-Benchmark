@@ -72,7 +72,7 @@ def setup_argparse():
     parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
     parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
-    parser.add_argument('-b', '--batch', type=int, default=512, help='Batch size')
+    parser.add_argument('-b', '--batch', type=int, default=4096, help='Batch size')
     parser.add_argument('--lr_lin', type=float, default=1.0e-2, help='Learning rate for linear')
     parser.add_argument('-lr', '--lr_conv', type=float, default=1.0e-3, help='Learning rate for conv')
     parser.add_argument('--wd_lin', type=float, default=5e-6, help='Weight decay for linear')

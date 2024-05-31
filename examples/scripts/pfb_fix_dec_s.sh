@@ -26,10 +26,8 @@ ARGS_S=(
     "--suffix" "fb_fix"
 )
 
-DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
-# DATAS=("amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94")
-# DATAS=("ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" "ogbn-mag" "pokec")
-# DATAS=("twitch-gamer" "ogbn-mag" "pokec")
+# DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
+DATAS=("amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94" "ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" "ogbn-mag" "pokec")
 model=DecoupledFixed
 conv=AdjConv
 SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")
