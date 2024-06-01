@@ -78,10 +78,10 @@ class LINKX(InMemoryDataset):
 
         for fname in self.dataset_drive_url:
             if fname.startswith(self.name):
-                download_google_url(self.dataset_drive_url[fname], self.processed_dir, filename=fname)
+                download_google_url(self.dataset_drive_url[fname], self.raw_dir, filename=fname)
         for fname in self.splits_drive_url:
             if fname.startswith(self.name):
-                download_google_url(self.splits_drive_url[fname], self.processed_dir, filename=fname)
+                download_google_url(self.splits_drive_url[fname], self.raw_dir, filename=fname)
 
     def process(self) -> None:
         if self.name in ['twitch-gamer']:

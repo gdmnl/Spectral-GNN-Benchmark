@@ -36,7 +36,7 @@ ARGS_S=(
 
 DATAS=("ogbn-products" "snap-patents")
 MODELS=("PrecomputedVar")
-CONVS=("AdjiConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
+CONVS=("AdjSkipConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "OptBasisConv")
 
 for data in ${DATAS[@]}; do
     for model in ${MODELS[@]}; do
