@@ -9,7 +9,7 @@ ARGS_P=(
     "--num_hops" "10"
     "--in_layers" "1"
     "--out_layers" "1"
-    "--hidden" "512"
+    "--hidden" "128"
     "--epoch" "200"
     "--patience" "30"
     "--theta_scheme" "ones"
@@ -22,7 +22,7 @@ ARGS_S=(
     "--num_hops" "10"
     "--in_layers" "1"
     "--out_layers" "1"
-    "--hidden" "512"
+    "--hidden" "128"
     "--epoch" "300"
     "--patience" "-1"
     "--theta_scheme" "ones"
@@ -30,8 +30,8 @@ ARGS_S=(
     "--suffix" "fb_var"
 )
 
-# DATAS=("reddit" "ogbn-arxiv" "penn94" "arxiv-year")
-DATAS=("ogbn-arxiv" "penn94")
+DATAS=("ogbn-products" "snap-patents")
+DATAS=("wiki" "ogbn-papers100m")
 MODELS=("DecoupledVar")
 CONVS=("AdjiConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
 

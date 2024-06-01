@@ -128,13 +128,13 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     elif args.model in ['ACMGNN']:
         args.model_repr = 'Iterative'
         args.conv_repr = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
-    elif args.model in ['MLP']:
+    elif args.model in ['GCN', 'MLP']:
         args.model_repr = {
             'ones': 'DecoupledFixed',
             'appr': 'IterativeFixed',
             'impulse': 'PrecomputedFixed',
             }[args.theta_scheme]
-        args.conv_repr = 'MLP'
+        args.conv_repr = args.model
     else:
         args.model_repr = args.model
         args.conv_repr = args.conv

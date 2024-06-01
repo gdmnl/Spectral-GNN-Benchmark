@@ -29,7 +29,7 @@ def reverse_parse(parser, key, val):
 def main(args):
     # ========== Run configuration
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
-    res_logger = ResLogger(quiet=True)
+    res_logger = ResLogger(quiet=False)
     res_logger.concat([('seed', args.seed),])
 
     # ========== Load data

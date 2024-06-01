@@ -35,11 +35,13 @@ class ModelLoader(object):
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict, TrnBase]:
         # >>>>>>>>>>
         if self.model in ['GCN', 'MLP']:
+            # manually fix repr for logging
             conv_dct = {
                 'GCN': 'GCNConv',
                 'MLP': 'Identity',
             }
-            self.conv_repr = conv_dct[self.model]   # Sometimes need to manually fix repr for logging
+            self.conv_repr = '-'.join(conv_dct[self.model], args.theta_scheme)
+
             # workaround for aligning MLP num_layers
             if args.theta_scheme == 'ones':
                 num_layers = args.in_layers + args.out_layers

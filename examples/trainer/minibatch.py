@@ -84,7 +84,15 @@ class TrnMinibatch(TrnBase):
         return input, label
 
     def _fetch_input(self, split: str) -> Generator:
-        for input, label in self.embed[split]:
+        # for input, label in self.embed[split]:
+        #     yield input.to(self.device), label.to(self.device)
+        # =====
+        if self.shuffle[split]:
+            idxs = torch.randperm(len(self.embed[split]))
+        else:
+            idxs = torch.arange(len(self.embed[split]))
+        for idx in idxs.split(self.batch):
+            input, label = self.embed[split][idx]
             yield input.to(self.device), label.to(self.device)
 
     # ===== Epoch run
@@ -146,11 +154,12 @@ class TrnMinibatch(TrnBase):
         self.embed = {}
         for k in self.splits:
             dataset = TensorDataset(embed[mask[k]], label[mask[k]])
-            self.embed[k] = DataLoader(dataset,
-                                      batch_size=self.batch,
-                                      shuffle=self.shuffle[k],
-                                      num_workers=0)
-            self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.embed[k])}")
+            # self.embed[k] = DataLoader(dataset,
+            #                           batch_size=self.batch,
+            #                           shuffle=self.shuffle[k],
+            #                           num_workers=0)
+            self.embed[k] = dataset
+            self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.embed[k]) // self.batch}")
         return ResLogger()(
             [('time_pre', stopwatch.data)])
 
