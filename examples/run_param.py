@@ -10,7 +10,8 @@ from copy import deepcopy
 from trainer import (
     SingleGraphLoader_Trial,
     ModelLoader_Trial,
-    TrnBase_Trial)
+    TrnFullbatch,
+    TrnMinibatch_Trial, TrnBase_Trial)
 from utils import (
     force_list_str,
     setup_seed,
@@ -32,7 +33,7 @@ class TrnWrapper(object):
         self.fmt_logger = {}
         self.metric = None
 
-        self.data, self.model, self.trn_cls = None, None, None
+        self.data, self.model, self.trn_cls, self.trn = None, None, None, None
 
     def _get_suggest(self, trial, key):
         list2str = lambda x: ','.join(map(str, x))
@@ -115,7 +116,10 @@ class TrnWrapper(object):
             self.data, self.metric = self.data_loader(args)
             self.args.metric = self.metric
             self.model, trn_cls = self.model_loader(args)
-            self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
+            if trn_cls == TrnFullbatch:
+                self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
+            else:
+                self.trn_cls = TrnMinibatch_Trial
         self.data = self.data_loader.update(args, self.data)
         self.model = self.model_loader.update(args, self.model)
         res_logger = deepcopy(self.res_logger)
@@ -129,11 +133,26 @@ class TrnWrapper(object):
             res_logger.concat([(key, vali, fmt)])
             self.fmt_logger[key] = fmt_logger[key]
 
-        trn = self.trn_cls(
-            model=self.model,
-            data=self.data,
-            args=args,
-            res_logger=res_logger,)
+        if self.trn_cls.__name__ == 'Trn_Trial':
+            trn = self.trn_cls(
+                model=self.model,
+                data=self.data,
+                args=args,
+                res_logger=res_logger,)
+        else:
+            if self.trn is None:
+                self.trn = self.trn_cls(
+                    model=self.model,
+                    data=self.data,
+                    args=args,
+                    res_logger=res_logger,)
+            else:
+                self.trn.update(
+                    model=self.model,
+                    data=self.data,
+                    args=args,
+                    res_logger=res_logger,)
+            trn = self.trn
         trn.trial = trial
         trn()
 

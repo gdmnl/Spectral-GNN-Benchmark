@@ -3,7 +3,7 @@
 Author: nyLiao
 File Created: 2024-02-26
 """
-from typing import List, Tuple
+from typing import Tuple
 from pathlib import Path
 from argparse import Namespace
 import logging
@@ -283,12 +283,15 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
     r"""Reuse necessary data for multiple runs.
     """
     def get(self, args: Namespace) -> Data:
-        module_name, class_name, kwargs, metric = self._resolve_import(args)
-        dataset = load_import(class_name, module_name)(**kwargs)
-        data = dataset[0]
-        data = self._resolve_split(dataset, data)
+        self.signature_lst = ['normg']
+        self.signature = {key: args.__dict__[key] for key in self.signature_lst}
 
-        self._get_properties(dataset, data)
+        module_name, class_name, kwargs, metric = self._resolve_import(args)
+        self.dataset = load_import(class_name, module_name)(**kwargs)
+        data = self.dataset[0]
+        data = self._resolve_split(self.dataset, data)
+
+        self._get_properties(self.dataset, data)
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
         args.metric = self.metric = metric
@@ -303,6 +306,15 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
     def update(self, args: Namespace, data: Data) -> Data:
         r"""Update data split for the next trial.
         """
+        signature = {key: args.__dict__[key] for key in self.signature_lst}
+        if self.signature != signature:
+            self.transform.transforms[-2] = Tspec.GenNorm(left=args.normg)
+            data = self.dataset[0]
+            data = self._resolve_split(self.dataset, data)
+
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
-        return Tspec.GenNorm(left=args.normg)(data)
+        args.metric = self.metric
+        if not args.multi and data.y.dim() > 1 and data.y.size(1) == 1:
+            data.y = data.y.flatten()
+        return data

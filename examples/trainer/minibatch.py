@@ -16,8 +16,9 @@ import torch_geometric.utils as pyg_utils
 from pyg_spectral.nn.norm import TensorStandardScaler
 from pyg_spectral.profile import Stopwatch, Accumulator
 
-from .base import TrnBase
-from utils import ResLogger
+from .base import TrnBase, TrnBase_Trial
+from .load_metric import metric_loader
+from utils import CkptLogger, ResLogger
 
 
 class TrnMinibatch(TrnBase):
@@ -189,3 +190,54 @@ class TrnMinibatch(TrnBase):
         res_run.merge(res_test)
 
         return self.res_logger.merge(res_run)
+
+
+class TrnMinibatch_Trial(TrnMinibatch, TrnBase_Trial):
+    def run(self) -> ResLogger:
+        res_run = ResLogger()
+
+        if self.embed is None:
+            self.model = self.model.cpu()
+            res_pre = self.preprocess()
+        else:
+            res_pre = ResLogger()(
+                [('time_pre', 0), ('mem_ram_pre', 0), ('mem_cuda_pre', 0)])
+        res_run.merge(res_pre)
+
+        if hasattr(self.model, 'reset_cache'):
+            self.model.reset_cache()
+        self.model = self.model.to(self.device)
+        self.setup_optimizer()
+
+        res_train = self.train_val()
+        res_run.merge(res_train)
+
+        self.model = self.ckpt_logger.load('best', model=self.model)
+        res_test = self.test()
+        res_run.merge(res_test)
+
+        return self.res_logger.merge(res_run)
+
+    def update(self,
+                 model: nn.Module,
+                 data: Data,
+                 args: Namespace,
+                 res_logger: ResLogger = None,
+                 **kwargs):
+        self.model = model
+        self.data = data
+        self.res_logger = res_logger or ResLogger()
+        metric = metric_loader(args).to(self.device)
+        self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
+        self.ckpt_logger = CkptLogger(
+            self.logpath,
+            patience=self.patience,
+            period=self.period,
+            prefix=('-'.join(filter(None, ['model', self.suffix]))),
+            storage=self.storage)
+
+        self.signature_lst = ['normg', 'alpha', 'beta', 'theta_param']
+        signature = {key: args.__dict__[key] for key in self.signature_lst}
+        if not hasattr(self, 'signature') or self.signature != signature:
+            self.signature = signature
+            self.embed = None

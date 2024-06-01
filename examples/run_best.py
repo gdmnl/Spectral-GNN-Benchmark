@@ -29,7 +29,7 @@ def reverse_parse(parser, key, val):
 def main(args):
     # ========== Run configuration
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
-    res_logger = ResLogger(quiet=False)
+    res_logger = ResLogger(prefix=args.eval_name, quiet=False)
     res_logger.concat([('seed', args.seed),])
 
     # ========== Load data
@@ -60,6 +60,7 @@ def main(args):
 if __name__ == '__main__':
     parser = setup_argparse()
     # Experiment-specific arguments
+    parser.add_argument('--eval_name', type=str, default='summary', help='Exp name')
     parser.add_argument('--seed_param', type=int, default=1, help='Seed for optuna search')
     args = setup_args(parser)
 
