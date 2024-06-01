@@ -1,4 +1,4 @@
-# run_param+run_best, fullbatch, DecoupledVar, small-scale dataset
+# run_param+run_best, minibatch, PrecomputedVar, lar-scale dataset
 source scripts/ck_path.sh
 DEV=${1:--1}
 SEED_P=1
@@ -7,32 +7,35 @@ ARGS_P=(
     "--n_trials" "50"
     "--loglevel" "30"
     "--num_hops" "10"
-    "--in_layers" "1"
-    "--out_layers" "1"
+    "--in_layers" "0"
+    "--out_layers" "2"
     "--hidden" "128"
     "--epoch" "200"
-    "--patience" "30"
+    "--batch" "4096"
+    "--patience" "50"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
-    "--suffix" "fb_var"
+    "--normf"
+    "--suffix" "mb_var"
 )
 ARGS_S=(
     "--seed_param" "$SEED_P"
     "--loglevel" "25"
     "--num_hops" "10"
-    "--in_layers" "1"
-    "--out_layers" "1"
+    "--in_layers" "0"
+    "--out_layers" "2"
     "--hidden" "128"
-    "--epoch" "300"
+    "--epoch" "500"
+    "--batch" "4096"
     "--patience" "-1"
     "--theta_scheme" "ones"
     "--theta_param" "1.0"
-    "--suffix" "fb_var"
+    "--normf"
+    "--suffix" "mb_var"
 )
 
 DATAS=("ogbn-products" "snap-patents")
-# DATAS=("wiki" "ogbn-papers100m")
-MODELS=("DecoupledVar")
+MODELS=("PrecomputedVar")
 CONVS=("AdjiConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
 
 for data in ${DATAS[@]}; do

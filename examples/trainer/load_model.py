@@ -40,15 +40,18 @@ class ModelLoader(object):
                 'GCN': 'GCNConv',
                 'MLP': 'Identity',
             }
-            self.conv_repr = '-'.join(conv_dct[self.model], args.theta_scheme)
+            self.conv_repr = '-'.join((conv_dct[self.model], args.theta_scheme))
 
             # workaround for aligning MLP num_layers
             if args.theta_scheme == 'ones':
                 num_layers = args.in_layers + args.out_layers
+                trn = TrnFullbatch
             elif args.theta_scheme == 'appr':
                 num_layers = args.in_layers + args.num_hops + args.out_layers
+                trn = TrnFullbatch
             else:
                 num_layers = args.out_layers
+                trn = TrnMinibatch
 
             module_name = 'torch_geometric.nn.models'
             class_name = self.model
@@ -59,7 +62,6 @@ class ModelLoader(object):
                 num_layers=num_layers,
                 dropout=args.dp_lin,
             )
-            trn = TrnFullbatch
 
         # Default to load from `pyg_spectral`
         else:

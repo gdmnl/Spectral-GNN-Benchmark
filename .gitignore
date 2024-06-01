@@ -11,6 +11,7 @@ log_*
 data
 data/*
 data_*
+examples/scripts
 
 # User specific
 try*

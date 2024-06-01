@@ -145,8 +145,13 @@ class TrnMinibatch(TrnBase):
         input, label = self._fetch_preprocess(data)
         del self.data
 
-        with Stopwatch() as stopwatch:
-            embed = self.model.convolute(*input)
+        stopwatch = Stopwatch()
+        if hasattr(self.model, 'convolute'):
+            with stopwatch:
+                embed = self.model.convolute(*input)
+        else:
+            embed = input[0]
+
         if hasattr(self, 'norm_prop'):
             self.norm_prop.fit(embed[mask['train']])
             embed = self.norm_prop(embed)
@@ -171,7 +176,8 @@ class TrnMinibatch(TrnBase):
         res_pre = self.preprocess()
         res_run.merge(res_pre)
 
-        self.model.reset_cache()
+        if hasattr(self.model, 'reset_cache'):
+            self.model.reset_cache()
         self.model = self.model.to(self.device)
         self.setup_optimizer()
 
