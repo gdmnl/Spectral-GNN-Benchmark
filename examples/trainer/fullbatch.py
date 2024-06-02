@@ -154,3 +154,118 @@ class TrnFullbatch(TrnBase):
         # res_run.merge(self.test_deg())
 
         return self.res_logger.merge(res_run)
+
+
+class TrnFullbatchFilter(TrnBase):
+    r"""Fullbatch trainer class for node classification.
+        - Model forward input: separate edge index and node features.
+        - Run pipeline: train_val -> test.
+
+    Args:
+        --- TrnBase Args ---
+        model (nn.Module): Pytorch model to be trained.
+        data (Data): PyG style data.
+        logger (Logger): Logger object.
+        args (Namespace): Configuration arguments.
+            device (str): torch device.
+            metric (str): Metric for evaluation.
+            epoch (int): Number of training epochs.
+            lr_[lin/conv] (float): Learning rate for linear/conv.
+            wd_[lin/conv] (float): Weight decay for linear/conv.
+            patience (int): Patience for early stopping.
+            period (int): Period for checkpoint saving.
+            suffix (str): Suffix for checkpoint saving.
+            storage (str): Storage scheme for checkpoint saving.
+            logpath (Path): Path for logging.
+            multi (bool): True for multi-label classification.
+            num_features (int): Number of data input features.
+            num_classes (int): Number of data output classes.
+    """
+    name: str = 'fb'
+
+    def __init__(self,
+                 model: nn.Module,
+                 data: Dataset,
+                 args: Namespace,
+                 **kwargs):
+        super(TrnFullbatchFilter, self).__init__(model, data, args, **kwargs)
+        self.mask: dict = None
+        self.img_idx = args.img_idx
+
+    def clear(self):
+        del self.mask, self.data
+        return super().clear()
+
+    def _fetch_data(self) -> Tuple[Data, dict]:
+        t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'train_mask', 'val_mask', 'test_mask'])
+        self.data = t_to_device(self.data)
+        # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
+        if not pyg_utils.is_sparse(self.data.adj_t):
+            raise NotImplementedError
+        # if pyg_utils.contains_isolated_nodes(self.data.edge_index):
+        #     self.logger.warning(f"Graph {self.data} contains isolated nodes.")
+
+        self.mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
+        return self.data, self.mask
+
+    def _fetch_input(self) -> tuple:
+        input, label = (self.data.x[:, self.img_idx:self.img_idx+1], self.data.adj_t), self.data.y[:, self.img_idx:self.img_idx+1]
+        if hasattr(self.model, 'preprocess'):
+            self.model.preprocess(*input)
+        return input, label
+
+    # ===== Epoch run
+    def _learn_split(self, split: list = ['train']) -> ResLogger:
+        assert len(split) == 1
+        self.model.train()
+        input, label = self._fetch_input()
+        with Stopwatch() as stopwatch:
+            self.optimizer.zero_grad()
+            output = self.model(*input)
+
+            mask_split = self.mask[split[0]]
+            loss = self.criterion(output[mask_split], label[mask_split])
+            loss.backward()
+            self.optimizer.step()
+
+        return ResLogger()(
+            [('time_learn', stopwatch.data),
+             (f'loss_{split[0]}', loss.item())])
+
+    @torch.no_grad()
+    def _eval_split(self, split: list = ['test']) -> ResLogger:
+        self.model.eval()
+        res = ResLogger()
+
+        input, label = self._fetch_input()
+        with Stopwatch() as stopwatch:
+            output = self.model(*input)
+        # print(self.evaluator)
+        for k in split:
+            mask_split = self.mask[k]
+            self.evaluator[k](output[mask_split], label[mask_split])
+            # print(output[mask_split][:10], label[mask_split][:10])
+            res.concat(self.evaluator[k].compute())
+            self.evaluator[k].reset()
+
+        return res.concat(
+            [('time_eval', stopwatch.data)])
+
+    # ===== Run pipeline
+    def run(self) -> ResLogger:
+        res_run = ResLogger()
+        self._fetch_data()
+        self.model = self.model.to(self.device)
+        self.setup_optimizer()
+
+        res_train = self.train_val()
+        res_run.merge(res_train)
+
+        self.model = self.ckpt_logger.load('best', model=self.model)
+        res_test = self.test()
+        res_run.merge(res_test)
+
+        # res_run.merge(self.test_deg())
+
+        return self.res_logger.merge(res_run)
+

@@ -66,14 +66,18 @@ class TrnBase(object):
         # Get entities
         self.model = model
         self.data = data
-        self.criterion = nn.CrossEntropyLoss()
-
+        if args.task == 'classification':
+            self.criterion = nn.CrossEntropyLoss()
+        elif args.task == 'filtering':
+            self.criterion = nn.MSELoss()
+        
         # Evaluation metrics
         self.splits = ['train', 'val', 'test']
         self.multi = args.multi
         self.num_features = args.num_features
         self.num_classes = args.num_classes
         metric = metric_loader(args).to(self.device)
+        # print(metric)
         self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
 
         # Loggers

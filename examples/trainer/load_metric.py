@@ -11,6 +11,7 @@ from torchmetrics.classification import (
     MulticlassF1Score, MultilabelF1Score,
     MulticlassAUROC, MultilabelAUROC,
     MulticlassAveragePrecision, MultilabelAveragePrecision,)
+from torchmetrics.regression import R2Score
 
 
 
@@ -29,20 +30,25 @@ def metric_loader(args: Namespace) -> MetricCollection:
         args.num_classes (int): Number of output classes/labels.
     """
     # FEATURE: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)
-    if args.multi:
+    if args.task == 'classification':
+        if args.multi:
+            metric = ResCollection({
+                's_acc': MultilabelAccuracy(num_classes=args.num_classes),
+                's_f1i': MultilabelF1Score(num_labels=args.num_classes, average='micro'),
+                # 's_f1a': MultilabelF1Score(num_labels=args.num_classes, average='macro'),
+                's_auroc': MultilabelAUROC(num_classes=args.num_classes),
+                's_ap': MultilabelAveragePrecision(num_classes=args.num_classes),
+            })
+        else:
+            metric = ResCollection({
+                's_acc': MulticlassAccuracy(num_classes=args.num_classes),
+                's_f1i': MulticlassF1Score(num_classes=args.num_classes, average='micro'),
+                # 's_f1a': MulticlassF1Score(num_classes=args.num_classes, average='macro'),
+                's_auroc': MulticlassAUROC(num_classes=args.num_classes),
+                's_ap': MulticlassAveragePrecision(num_classes=args.num_classes),
+            })
+    elif args.task == 'filtering':
         metric = ResCollection({
-            's_acc': MultilabelAccuracy(num_classes=args.num_classes),
-            's_f1i': MultilabelF1Score(num_labels=args.num_classes, average='micro'),
-            # 's_f1a': MultilabelF1Score(num_labels=args.num_classes, average='macro'),
-            's_auroc': MultilabelAUROC(num_classes=args.num_classes),
-            's_ap': MultilabelAveragePrecision(num_classes=args.num_classes),
-        })
-    else:
-        metric = ResCollection({
-            's_acc': MulticlassAccuracy(num_classes=args.num_classes),
-            's_f1i': MulticlassF1Score(num_classes=args.num_classes, average='micro'),
-            # 's_f1a': MulticlassF1Score(num_classes=args.num_classes, average='macro'),
-            's_auroc': MulticlassAUROC(num_classes=args.num_classes),
-            's_ap': MulticlassAveragePrecision(num_classes=args.num_classes),
+            's_r2': R2Score()
         })
     return metric

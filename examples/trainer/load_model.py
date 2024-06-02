@@ -10,7 +10,7 @@ import torch.nn as nn
 from pyg_spectral.utils import load_import
 
 from .base import TrnBase
-from .fullbatch import TrnFullbatch
+from .fullbatch import TrnFullbatch, TrnFullbatchFilter
 from .minibatch import TrnMinibatch
 from utils import ResLogger
 
@@ -49,7 +49,10 @@ class ModelLoader(object):
                 num_layers=args.in_layers+args.out_layers,
                 dropout=args.dp_lin,
             )
-            trn = TrnFullbatch
+            if args.task == 'classification':
+                trn = TrnFullbatch
+            elif args.task == 'filtering':
+                trn = TrnFullbatchFilter
 
         # Default to load from `pyg_spectral`
         else:
@@ -80,18 +83,27 @@ class ModelLoader(object):
 
             # Parse model args
             if self.model in ['Iterative', 'ACMGNN']:
-                trn = TrnFullbatch
+                if args.task == 'classification':
+                    trn = TrnFullbatch
+                elif args.task == 'filtering':
+                    trn = TrnFullbatchFilter
             elif self.model in ['DecoupledFixed', 'DecoupledVar', 'AdaGNN']:
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,))
-                trn = TrnFullbatch
+                if args.task == 'classification':
+                    trn = TrnFullbatch
+                elif args.task == 'filtering':
+                    trn = TrnFullbatchFilter
             elif self.model in ['DecoupledFixedCompose', 'DecoupledVarCompose']:
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,
                     combine=args.combine,))
-                trn = TrnFullbatch
+                if args.task == 'classification':
+                    trn = TrnFullbatch
+                elif args.task == 'filtering':
+                    trn = TrnFullbatchFilter
             elif self.model in ['PrecomputedFixed', 'PrecomputedVar']:
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,

@@ -91,7 +91,15 @@ def setup_argparse():
     parser.add_argument('--alpha', type=list_float, help='Decay factor')
     # - AdjiConv
     parser.add_argument('--beta', type=list_float, help='Scaling factor')
+    
+    # >>>>>>>>>>
+    # filter learning-specific
+    parser.add_argument('--task', type=str, choices=['classification','filtering'], default='classification')
+    parser.add_argument('--filter_type', type=str, choices=['low','high','band','rejection','comb','low_band'], default='band')
+    parser.add_argument('--img_idx', type=int, default=0, help='filtering image index')
+    parser.add_argument('--multi', type=bool, default=False, help='if multi classifications')
     # <<<<<<<<<<
+    
     return parser
 
 

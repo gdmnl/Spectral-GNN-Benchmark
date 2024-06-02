@@ -5,7 +5,7 @@ File Created: 2023-08-03
 """
 import logging
 
-from trainer import SingleGraphLoader, ModelLoader
+from trainer import SingleGraphLoader, ModelLoader, SingleFilterLoader
 from utils import (
     setup_seed,
     setup_argparse,
@@ -23,9 +23,15 @@ def main(args):
     res_logger = ResLogger(quiet=args.quiet)
     res_logger.concat([('seed', args.seed),])
 
-    # ========== Load data
-    data_loader = SingleGraphLoader(args, res_logger)
-    data, metric = data_loader(args)
+    # ========== Run classification
+    if args.task == 'classification':
+        # ========== Load data
+        data_loader = SingleGraphLoader(args, res_logger)
+        data, metric = data_loader(args)
+    elif args.task == 'filtering':
+        # ========== Load data
+        data_loader = SingleFilterLoader(args, res_logger)
+        data, metric = data_loader(args)
 
     # ========== Load model
     model_loader = ModelLoader(args, res_logger)

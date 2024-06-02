@@ -20,7 +20,7 @@ from pyg_spectral.utils import load_import
 from utils import ResLogger
 from dataset_process import idx2mask, split_random, get_iso_nodes_mapping
 from dataset_process.linkx import T_arxiv_year, T_ogbn_mag
-
+import numpy as np
 
 DATAPATH = Path('../data')
 
@@ -197,6 +197,14 @@ class SingleGraphLoader(object):
                 self.metric = 's_auroc'
             else:
                 self.metric = 's_f1i'
+        elif self.data in ['2dgrid']:
+            module_name = 'dataset_process'
+            class_name = 'Filter'
+            kwargs = dict(
+                root=DATAPATH.joinpath('Filter'),
+                name=self.data,
+                transform=self.transform)
+            self.metric = 's_r2'
         # Default to load from PyG
         else:
             module_name = 'torch_geometric.datasets'
@@ -307,3 +315,69 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.multi = False
         return Tspec.GenNorm(left=args.normg)(data)
+
+
+
+class SingleFilterLoader(object):
+    r"""Loader for filter learning datas.
+    """
+
+    def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
+        r"""Assigning dataset identity.
+        """
+        self.seed = args.seed
+        self.data = args.data.lower()
+        self.logger = logging.getLogger('log')
+        self.res_logger = res_logger or ResLogger()
+        self.metric = None
+        self.num_features = 1 # default 1 for regression
+        self.num_classes = 1 # default 1 for regression
+        self.transform = T.Compose([
+            T.ToSparseTensor(remove_edge_index=True, layout=torch.sparse_csr),  # torch.sparse.Tensor
+        ])
+
+    # ===== Data acquisition
+    def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
+        
+        # >>>>>>>>>>
+        assert self.data in ['2dgrid']
+        module_name = 'dataset_process'
+        class_name = 'Filter'
+        kwargs = dict(
+            root=DATAPATH.joinpath('Filter'),
+            name=self.data,
+            transform=self.transform)
+        self.metric = 's_r2'
+        
+        # <<<<<<<<<<
+        kwargs['root'] = kwargs['root'].resolve().absolute()
+        return module_name, class_name, kwargs, self.metric
+
+    def get(self, args: Namespace) -> Data:
+        r"""Load data based on parameters.
+        """
+    
+        self.logger.debug('-'*20 + f" Loading data: {self} " + '-'*20)
+
+        module_name, class_name, kwargs, metric = self._resolve_import(args)
+        
+        dataset = load_import(class_name, module_name)(**kwargs)
+        data = dataset[0]
+
+        # get specific filtered graph signal.
+        data.y = torch.tensor(np.load(DATAPATH.joinpath(f'Filter/y_{args.filter_type}.npy')), dtype=torch.float)
+        args.num_features, args.num_classes = self.num_features, self.num_classes
+        args.metric = self.metric
+
+        self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
+        self.logger.info(f"[data]: {data}")
+        self.logger.info(f"[metric]: {metric}")
+        self.res_logger.concat([('data', self.data, str), ('metric', metric, str)])
+        del dataset
+        return data, metric
+
+    def __call__(self, *args, **kwargs):
+        return self.get(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.data}({self.metric})"
