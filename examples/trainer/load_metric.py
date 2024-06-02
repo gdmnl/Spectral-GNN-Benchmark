@@ -11,7 +11,7 @@ from torchmetrics.classification import (
     MulticlassF1Score, MultilabelF1Score,
     MulticlassAUROC, MultilabelAUROC,
     MulticlassAveragePrecision, MultilabelAveragePrecision,)
-from torchmetrics.regression import R2Score
+from torchmetrics.regression import R2Score, MeanAbsoluteError
 
 
 
@@ -49,6 +49,7 @@ def metric_loader(args: Namespace) -> MetricCollection:
             })
     elif args.task == 'filtering':
         metric = ResCollection({
-            's_r2': R2Score()
+            's_r2': R2Score(),
+            's_mae': MeanAbsoluteError(),
         })
     return metric
