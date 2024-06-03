@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch_geometric.data import Data, Dataset
 import torch_geometric.transforms as T
 import torch_geometric.utils as pyg_utils
-
+from torchmetrics.functional import r2_score
 from pyg_spectral.profile import Stopwatch
 
 from .base import TrnBase
@@ -106,7 +106,6 @@ class TrnFullbatch(TrnBase):
         for k in split:
             mask_split = self.mask[k]
             self.evaluator[k](output[mask_split], label[mask_split])
-
             res.concat(self.evaluator[k].compute())
             self.evaluator[k].reset()
 
@@ -245,6 +244,7 @@ class TrnFullbatchFilter(TrnBase):
             mask_split = self.mask[k]
             self.evaluator[k](output[mask_split], label[mask_split])
             # print(output[mask_split][:10], label[mask_split][:10])
+            # print(r2_score(output[mask_split], label[mask_split]))
             res.concat(self.evaluator[k].compute())
             self.evaluator[k].reset()
 

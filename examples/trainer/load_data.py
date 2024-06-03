@@ -369,6 +369,13 @@ class SingleFilterLoader(object):
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.metric = self.metric
 
+        (r_train, r_val) = map(int, args.data_split.split('/')[:2])
+        r_train, r_val = r_train / 100, r_val / 100
+        train_mask, val_mask, test_mask = split_random(data.y[:,args.img_idx], r_train, r_val)
+        data.train_mask = torch.as_tensor(train_mask)
+        data.val_mask = torch.as_tensor(val_mask)
+        data.test_mask = torch.as_tensor(test_mask)
+
         self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
         self.logger.info(f"[data]: {data}")
         self.logger.info(f"[metric]: {metric}")
