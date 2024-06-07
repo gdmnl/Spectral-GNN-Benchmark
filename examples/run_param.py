@@ -174,8 +174,7 @@ def main(args):
         study_name=args.logid,
         storage=f'sqlite:///{str(study_path)}',
         direction='maximize',
-        sampler=optuna.samplers.TPESampler(
-            seed=args.seed),
+        sampler=optuna.samplers.TPESampler(),
         pruner=optuna.pruners.HyperbandPruner(
             min_resource=2,
             max_resource=args.epoch,

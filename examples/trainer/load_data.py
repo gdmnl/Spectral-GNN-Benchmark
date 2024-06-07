@@ -64,7 +64,7 @@ class SingleGraphLoader(object):
     # ===== Data processing
     def _resolve_split(self, dataset: Dataset, data: Data) -> None:
         if self.data in ['genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki']:
-            if hasattr(data, 'train_mask'):
+            if hasattr(data, 'train_mask') and hasattr(self, 'data_split'):
                 del self.data_split
 
         if hasattr(self, 'data_split'):

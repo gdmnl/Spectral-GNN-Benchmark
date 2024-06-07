@@ -106,10 +106,12 @@ class LINKX(InMemoryDataset):
             edge_index = coalesce(edge_index, num_nodes=n)
         else:
             data = scipy.io.loadmat(osp.join(self.raw_dir, f'{self.name}.mat'))
-            x = torch.tensor(data['node_feat'], dtype=torch.float)
             if self.name in ['snap-patents']:
-                y = even_quantile_labels(data['year'].flatten(), NCLASS_Q, verbose=False)
+                x = torch.tensor(data['node_feat'].todense(), dtype=torch.float)
+                y = even_quantile_labels(data['years'].flatten(), NCLASS_Q, verbose=False)
+                y = torch.tensor(y, dtype=torch.long)
             else:
+                x = torch.tensor(data['node_feat'], dtype=torch.float)
                 y = torch.tensor(data['label'], dtype=torch.long).flatten()
             n = y.shape[0]
             edge_index = torch.tensor(data['edge_index'], dtype=torch.long).contiguous()

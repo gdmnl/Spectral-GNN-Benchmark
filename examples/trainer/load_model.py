@@ -93,7 +93,7 @@ class ModelLoader(object):
                         kwargs['num_hops'] = int(kwargs['num_hops'] / 2)
 
             # Parse model args
-            if self.model in ['Iterative', 'IterativeCompose', 'ACMGNN']:
+            if self.model in ['Iterative', 'IterativeCompose', 'ACMGNN', 'ACMGNNDec']:
                 trn = TrnFullbatch
             elif self.model in ['DecoupledFixed', 'DecoupledVar', 'AdaGNN']:
                 kwargs.update(dict(
