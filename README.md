@@ -13,8 +13,8 @@ pip install -e .
 The installation script already covers the following dependencies:
 * [PyTorch](https://github.com/pytorch/pytorch) (`>=2.0`): please follow the [official guide](https://pytorch.org/get-started/locally/) if a specific CUDA version is required.
 * [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) (`>=2.5.3`)
-* [TorchMetrics](https://github.com/Lightning-AI/torchmetrics) (`>=1.0`): only required for `examples/` experiments.
-* [Optuna](https://github.com/optuna/optuna) (`>=3.4`): only required for hyperparameter search in `examples/` experiments.
+* [TorchMetrics](https://github.com/Lightning-AI/torchmetrics) (`>=1.0`): only required for `benchmark/` experiments.
+* [Optuna](https://github.com/optuna/optuna) (`>=3.4`): only required for hyperparameter search in `benchmark/` experiments.
 
 ## Reproduce Experiments
 ### Main Experitmet
@@ -23,7 +23,7 @@ Datasets will be automatically downloaded and processed by the code.
 
 Script for full-batch models (*Table 2, 8, 9*):
 ```bash
-cd examples
+cd benchmark
 bash scripts/runfb.sh
 ```
 
@@ -50,11 +50,11 @@ bash scripts/eval_hop.sh
 ### Configure Experiment Parameters
 Refer to help text by:
 ```bash
-python examples/run_single.py --help
+python benchmark/run_single.py --help
 ```
 
 ### Add New Experiment Dataset
-In `examples/trainer/load_data.py`, edit the `SingleGraphLoader._resolve_import()` method to include new datasets under respective protocols.
+In `benchmark/trainer/load_data.py`, edit the `SingleGraphLoader._resolve_import()` method to include new datasets under respective protocols.
 
 ### Add New Spectral Filter
 
@@ -78,7 +78,7 @@ In `examples/trainer/load_data.py`, edit the `SingleGraphLoader._resolve_import(
 
 ### Code Structure
 
-* `examples/`: codes for benchmark experiments.
+* `benchmark/`: codes for benchmark experiments.
 * `pyg_spectral/`: core codes for spectral GNNs designs, arranged in [PyG](https://github.com/pyg-team/pytorch_geometric) structure.
   * `nn.conv`: spectral spectral filters, similar to [`torch_geometric.nn.conv`](https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html#convolutional-layers).
   * `nn.models`: common neural network architectures, similar to [`torch_geometric.nn.models`](https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html#models).
@@ -94,7 +94,5 @@ In `examples/trainer/load_data.py`, edit the `SingleGraphLoader._resolve_import(
 
 ## Misc
 * This project is licensed under the [MIT LICENSE](LICENSE).
-
 * Please refer to the [CONTRIBUTING](docs/CONTRIBUTING.md) guide for contributing to this project.
-
 * Use the "Cite this repository" on the right column for [CITATION](docs/CITATION.md)
