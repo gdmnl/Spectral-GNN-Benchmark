@@ -1,7 +1,6 @@
 # Workspace specific
 backup/
 *_bak/
-config/
 log
 log/
 data
