@@ -1,17 +1,11 @@
 # Workspace specific
-backup/*
-save
-save/*
-save_*
-config
-config/*
+backup/
+*_bak/
+config/
 log
-log/*
-log_*
+log/
 data
-data/*
-data_*
-examples/scripts
+data/
 
 # User specific
 try*
