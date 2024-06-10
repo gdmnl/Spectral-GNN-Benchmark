@@ -22,8 +22,7 @@ class ACMGNN(BaseNN):
         --- BaseNN Args ---
         conv (str): Name of :class:`pyg_spectral.nn.conv` module.
         num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
+        in_channels (int): Size of each input sample.
         hidden_channels (int): Size of each hidden sample.
         out_channels (int): Size of each output sample.
         in_layers (int): Number of MLP layers before conv.
@@ -80,8 +79,7 @@ class ACMGNNDec(BaseNN):
         --- BaseNN Args ---
         conv (str): Name of :class:`pyg_spectral.nn.conv` module.
         num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample, or :obj:`-1` to derive
-            the size from the first input(s) to the forward method.
+        in_channels (int): Size of each input sample.
         hidden_channels (int): Size of each hidden sample.
         out_channels (int): Size of each output sample.
         in_layers (int): Number of MLP layers before conv.

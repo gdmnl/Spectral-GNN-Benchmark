@@ -10,8 +10,8 @@ from torchmetrics.classification import (
     MulticlassAccuracy, MultilabelAccuracy,
     MulticlassF1Score, MultilabelF1Score,
     MulticlassAUROC, MultilabelAUROC,
-    MulticlassAveragePrecision, MultilabelAveragePrecision,)
-
+    MulticlassAveragePrecision, MultilabelAveragePrecision,
+)
 
 
 class ResCollection(MetricCollection):

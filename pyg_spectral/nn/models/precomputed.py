@@ -7,7 +7,30 @@ from pyg_spectral.nn.models.decoupled import DecoupledFixed, DecoupledVar
 
 
 class PrecomputedFixed(DecoupledFixed):
-    # TODO: docstring
+    r"""Decoupled structure with precomputation separating propagation from transformation.
+        Fixed scalar propagation parameters and accumulating precompute results.
+    NOTE: Only apply propagation in `convolute()`. Not to be mixed with :class:`Decoupled` models.
+
+    Args:
+        theta_scheme (str): Method to generate decoupled parameters.
+        theta_param (float, optional): Hyperparameter for the scheme.
+        --- BaseNN Args ---
+        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
+        num_hops (int): Total number of conv hops.
+        in_channels (int): Size of each input sample.
+        hidden_channels (int): Size of each hidden sample.
+        out_channels (int): Size of each output sample.
+        out_layers (int): Number of MLP layers after conv.
+        dropout_lin (float, optional): Dropout probability for both MLPs.
+        dropout_conv (float, optional): Dropout probability before conv.
+        act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
+            args for :class:`pyg.nn.models.MLP`.
+        lib_conv (str, optional): Parent module library other than
+            :class:`pyg_spectral.nn.conv`.
+        **kwargs (optional): Additional arguments of the
+            :class:`pyg_spectral.nn.conv` module.
+    """
+
     def __init__(self,
             conv: str,
             num_hops: int = 0,
@@ -89,6 +112,30 @@ class PrecomputedFixed(DecoupledFixed):
 
 
 class PrecomputedVar(DecoupledVar):
+    r"""Decoupled structure with precomputation separating propagation from transformation.
+        Learnable scalar propagation parameters and storing all intermediate precompute results.
+    NOTE: Only apply propagation in `convolute()`. Not to be mixed with :class:`Decoupled` models.
+
+    Args:
+        theta_scheme (str): Method to generate decoupled parameters.
+        theta_param (float, optional): Hyperparameter for the scheme.
+        --- BaseNN Args ---
+        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
+        num_hops (int): Total number of conv hops.
+        in_channels (int): Size of each input sample.
+        hidden_channels (int): Size of each hidden sample.
+        out_channels (int): Size of each output sample.
+        out_layers (int): Number of MLP layers after conv.
+        dropout_lin (float, optional): Dropout probability for both MLPs.
+        dropout_conv (float, optional): Dropout probability before conv.
+        act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
+            args for :class:`pyg.nn.models.MLP`.
+        lib_conv (str, optional): Parent module library other than
+            :class:`pyg_spectral.nn.conv`.
+        **kwargs (optional): Additional arguments of the
+            :class:`pyg_spectral.nn.conv` module.
+    """
+
     def __init__(self,
             conv: str,
             num_hops: int = 0,

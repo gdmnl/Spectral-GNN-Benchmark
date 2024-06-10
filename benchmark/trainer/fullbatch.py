@@ -59,6 +59,7 @@ class TrnFullbatch(TrnBase):
         return super().clear()
 
     def _fetch_data(self) -> Tuple[Data, dict]:
+        r"""Process the single graph data."""
         t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'train_mask', 'val_mask', 'test_mask'])
         self.data = t_to_device(self.data)
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
@@ -71,6 +72,7 @@ class TrnFullbatch(TrnBase):
         return self.data, self.mask
 
     def _fetch_input(self) -> tuple:
+        r"""Process each sample of model input and label."""
         input, label = (self.data.x, self.data.adj_t), self.data.y
         if hasattr(self.model, 'preprocess'):
             self.model.preprocess(*input)
@@ -78,6 +80,7 @@ class TrnFullbatch(TrnBase):
 
     # ===== Epoch run
     def _learn_split(self, split: list = ['train']) -> ResLogger:
+        r"""Actual train iteration on the given splits."""
         assert len(split) == 1
         self.model.train()
 
@@ -97,6 +100,7 @@ class TrnFullbatch(TrnBase):
 
     @torch.no_grad()
     def _eval_split(self, split: list = ['test']) -> ResLogger:
+        r"""Actual test on the given splits."""
         self.model.eval()
         res = ResLogger()
 
@@ -116,8 +120,10 @@ class TrnFullbatch(TrnBase):
 
     # ===== Run block
     def test_deg(self) -> ResLogger:
+        r"""Separate high/low degree subsets and evaluate."""
         import logging
         from torch_geometric.typing import SparseTensor
+        RATIO_HIGH = 0.2
 
         adj_t = self.data.adj_t
         if isinstance(adj_t, SparseTensor):
@@ -127,7 +133,7 @@ class TrnFullbatch(TrnBase):
         else:
             raise NotImplementedError(f"Type {type(adj_t)} not supported!")
 
-        _, idx_high = torch.topk(deg, k=int(0.2*deg.size(0)))
+        _, idx_high = torch.topk(deg, k=int(RATIO_HIGH * deg.size(0)))
         mask_high = torch.zeros_like(deg, dtype=torch.bool, device=self.device)
         mask_high[idx_high] = True
 

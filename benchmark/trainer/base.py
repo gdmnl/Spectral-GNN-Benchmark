@@ -135,6 +135,12 @@ class TrnBase(object):
     def train_val(self,
                   split_train: List[str] = ['train'],
                   split_val: List[str] = ['val']) -> ResLogger:
+        r"""Pipeline for iterative training.
+
+        Args:
+            split_train (list): Training splits.
+            split_val (list): Validation splits.
+        """
         self.logger.debug('-'*20 + f" Start training: {self.epoch} " + '-'*20)
 
         time_learn = profile.Accumulator()
@@ -170,6 +176,10 @@ class TrnBase(object):
     @_log_memory(split='eval')
     def test(self,
              split_test: List[str] = ['train', 'val', 'test']) -> ResLogger:
+        r"""Pipeline for testing.
+        Args:
+            split_test (list): Testing splits.
+        """
         self.logger.debug('-'*20 + f" Start evaluating: {'+'.join(split_test)} " + '-'*20)
 
         res_test = self._eval_split(split_test)
@@ -177,17 +187,19 @@ class TrnBase(object):
 
     # ===== Run helpers
     def _fetch_data(self):
-        r"""Dataset to single graph data."""
+        r"""Process the single graph data."""
         raise NotImplementedError
 
     def _fetch_input(self) -> tuple:
-        r"""Data to model input and label."""
+        r"""Process each sample of model input and label."""
         raise NotImplementedError
 
     def _learn_split(self, split: List[str] = ['train']) -> ResLogger:
+        r"""Actual train iteration on the given splits."""
         raise NotImplementedError
 
     def _eval_split(self, split: List[str]) -> ResLogger:
+        r"""Actual test on the given splits."""
         raise NotImplementedError
 
     def run(self) -> ResLogger:

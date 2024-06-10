@@ -7,6 +7,32 @@ from pyg_spectral.nn.models.decoupled_compose import DecoupledFixedCompose, Deco
 
 
 class PrecomputedFixedCompose(DecoupledFixedCompose):
+    r"""Decoupled structure with precomputation separating propagation from transformation.
+        Fixed scalar propagation parameters and accumulating precompute results.
+
+    Args:
+        theta_scheme (List[str]): Method to generate decoupled parameters.
+        theta_param (List[float], optional): Hyperparameter for the scheme.
+        combine (str): How to combine different channels of convs. (one of
+            "sum", "sum_weighted", "cat").
+        --- BaseNN Args ---
+        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
+        num_hops (int): Total number of conv hops.
+        in_channels (int): Size of each input sample.
+        hidden_channels (int): Size of each hidden sample.
+        out_channels (int): Size of each output sample.
+        in_layers (int): Number of MLP layers before conv.
+        out_layers (int): Number of MLP layers after conv.
+        dropout_lin (float, optional): Dropout probability for both MLPs.
+        dropout_conv (float, optional): Dropout probability before conv.
+        act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
+            args for :class:`pyg.nn.models.MLP`.
+        lib_conv (str, optional): Parent module library other than
+            :class:`pyg_spectral.nn.conv`.
+        **kwargs (optional): Additional arguments of the
+            :class:`pyg_spectral.nn.conv` module.
+    """
+
     def convolute(self,
         x: Tensor,
         edge_index: Adj,
@@ -66,6 +92,32 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
 
 
 class PrecomputedVarCompose(DecoupledVarCompose):
+    r"""Decoupled structure with precomputation separating propagation from transformation.
+        Learnable scalar propagation parameters and storing all intermediate precompute results.
+
+    Args:
+        theta_scheme (List[str]): Method to generate decoupled parameters.
+        theta_param (List[float], optional): Hyperparameter for the scheme.
+        combine (str): How to combine different channels of convs. (one of
+            "sum", "sum_weighted", "cat").
+        --- BaseNN Args ---
+        conv (List[str]): Name of :class:`pyg_spectral.nn.conv` module.
+        num_hops (int): Total number of conv hops.
+        in_channels (int): Size of each input sample.
+        hidden_channels (int): Size of each hidden sample.
+        out_channels (int): Size of each output sample.
+        in_layers (int): Number of MLP layers before conv.
+        out_layers (int): Number of MLP layers after conv.
+        dropout_lin (float, optional): Dropout probability for both MLPs.
+        dropout_conv (float, optional): Dropout probability before conv.
+        act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
+            args for :class:`pyg.nn.models.MLP`.
+        lib_conv (str, optional): Parent module library other than
+            :class:`pyg_spectral.nn.conv`.
+        **kwargs (optional): Additional arguments of the
+            :class:`pyg_spectral.nn.conv` module.
+    """
+
     def convolute(self,
         x: Tensor,
         edge_index: Adj,

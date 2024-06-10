@@ -69,6 +69,7 @@ class TrnMinibatch(TrnBase):
         return super().clear()
 
     def _fetch_data(self) -> Tuple[Data, dict]:
+        r"""Process the single graph data."""
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
         if not pyg_utils.is_sparse(self.data.adj_t):
             raise NotImplementedError
@@ -79,12 +80,14 @@ class TrnMinibatch(TrnBase):
         return self.data, mask
 
     def _fetch_preprocess(self, data: Data) -> tuple:
+        r"""Call model preprocess for precomputation."""
         input, label = (data.x, data.adj_t), data.y
         if hasattr(self.model, 'preprocess'):
             self.model.preprocess(*input)
         return input, label
 
     def _fetch_input(self, split: str) -> Generator:
+        r"""Process each sample of model input and label for training."""
         # for input, label in self.embed[split]:
         #     yield input.to(self.device), label.to(self.device)
         # =====
@@ -98,6 +101,7 @@ class TrnMinibatch(TrnBase):
 
     # ===== Epoch run
     def _learn_split(self, split: list = ['train']) -> ResLogger:
+        r"""Actual train iteration on the given splits."""
         assert len(split) == 1
         self.model.train()
         loss_epoch = Accumulator()
@@ -119,6 +123,7 @@ class TrnMinibatch(TrnBase):
 
     @torch.no_grad()
     def _eval_split(self, split: list = ['test']) -> ResLogger:
+        r"""Actual test on the given splits."""
         self.model.eval()
         stopwatch = Stopwatch()
         res = ResLogger()
@@ -140,6 +145,7 @@ class TrnMinibatch(TrnBase):
     # ===== Run block
     @TrnBase._log_memory(split='pre')
     def preprocess(self) -> ResLogger:
+        r"""Pipeline for precomputation on CPU."""
         self.logger.debug('-'*20 + f" Start propagation: pre " + '-'*20)
 
         data, mask = self._fetch_data()
@@ -193,6 +199,9 @@ class TrnMinibatch(TrnBase):
 
 
 class TrnMinibatch_Trial(TrnMinibatch, TrnBase_Trial):
+    r"""Trainer supporting optuna.pruners in training.
+    Lazy calling precomputation.
+    """
     def run(self) -> ResLogger:
         res_run = ResLogger()
 
