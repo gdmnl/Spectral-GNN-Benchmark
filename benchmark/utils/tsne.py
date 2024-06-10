@@ -1,4 +1,3 @@
-# from openTSNE import TSNE
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
@@ -6,20 +5,17 @@ import matplotlib.pyplot as plt
 def plt_tsne(embeddings, labels, save_path=None, title='Title'):
     print('Drawing t-SNE plot ...')
     print("Embedding size:", embeddings.shape)
-    # tsne = TSNE(n_components=2, perplexity=30, metric="euclidean", n_jobs=40, random_state=42, verbose=False)
     tsne = TSNE(n_components = 2, perplexity = 30.0, early_exaggeration = 12,
                n_iter = 1000, learning_rate = 368)
 
-    # emb = tsne.fit(embeddings)  # Training
     emb = tsne.fit_transform(embeddings.cpu().numpy())
     plt.figure(figsize=(10, 8))
-    plt.scatter(emb[:, 0], emb[:, 1], c=labels.cpu().numpy(), marker='o')
-    plt.colorbar()
-    plt.grid(True)
+    plt.scatter(emb[:, 0], emb[:, 1], c=labels.cpu().numpy(), marker='o', colormap='Set2')
     # plt.title(title)
+    plt.xticks([])
+    plt.yticks([])
     if save_path is not None:
-        plt.savefig(save_path)
-    # plt.show()
+        plt.savefig(save_path, bbox_inches='tight')
 
 
 def test_tsne(trn):

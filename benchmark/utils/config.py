@@ -59,11 +59,9 @@ def setup_argparse():
     parser.add_argument('--normf', type=int, nargs='?', default=0, const=None, help='Embedding norm dimension. 0: feat-wise, 1: node-wise, None: disable')
     # Model configuration
     parser.add_argument('-m', '--model', type=str, default='DecoupledVar', help='Model class name')
-    # parser.add_argument('-m', '--model', type=str, default='PrecomputedVar', help='Model class name')
     parser.add_argument('-c', '--conv', type=str, default='AdjConv', help='Conv class name')
     parser.add_argument('-k', '--num_hops', type=int, default=10, help='Number of conv hops')
     parser.add_argument('-l1', '--in_layers',  type=int, default=1, help='Number of MLP layers before conv')
-    # parser.add_argument('-l1', '--in_layers',  type=int, default=0, help='Number of MLP layers before conv')
     parser.add_argument('-l2', '--out_layers', type=int, default=1, help='Number of MLP layers after conv')
     parser.add_argument('-w', '--hidden', type=int, default=128, help='Number of hidden width')
     parser.add_argument('--dp_lin', type=float, default=0.5, help='Dropout rate for linear')
