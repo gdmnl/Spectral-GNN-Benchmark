@@ -14,37 +14,14 @@ using namespace std;
 
 namespace propagation {
 
-// Load graph related data
-void PropComp::load(string dataset, uint mm, uint nn, uint seedd) {
-    m = mm;
+// Process graph related data
+void PropComp::preprocess(Eigen::Map<Eigen::VectorXi> &ell, Eigen::Map<Eigen::VectorXi> &pll, uint nn, uint seedd) {
     n = nn;
     seed = seedd;
 
     // Load graph adjacency
-    el = vector<uint>(m);   // edge list sorted by source node degree
-    pl = vector<uint>(n + 1);
-    string dataset_el = dataset + "/adj_el.bin";
-    const char *p1 = dataset_el.c_str();
-    if (FILE *f1 = fopen(p1, "rb")) {
-        size_t rtn = fread(el.data(), sizeof el[0], el.size(), f1);
-        if (rtn != m)
-            cout << "Error! " << dataset_el << " Incorrect read!" << endl;
-        fclose(f1);
-    } else {
-        cout << dataset_el << " Not Exists." << endl;
-        exit(1);
-    }
-    string dataset_pl = dataset + "/adj_pl.bin";
-    const char *p2 = dataset_pl.c_str();
-    if (FILE *f2 = fopen(p2, "rb")) {
-        size_t rtn = fread(pl.data(), sizeof pl[0], pl.size(), f2);
-        if (rtn != n + 1)
-            cout << "Error! " << dataset_pl << " Incorrect read!" << endl;
-        fclose(f2);
-    } else {
-        cout << dataset_pl << " Not Exists." << endl;
-        exit(1);
-    }
+    el = vector<uint>(ell.data(), ell.data() + ell.size());
+    pl = vector<uint>(pll.data(), pll.data() + pll.size());
 
     deg = Eigen::ArrayXf::Zero(n);
     for (uint i = 0; i < n; i++) {
@@ -75,7 +52,7 @@ float PropComp::compute(uint nchnn, Channel* chnss, Eigen::Map<Eigen::MatrixXf> 
     int it = 0;
     map_feat = Eigen::ArrayXf::LinSpaced(fsum, 0, fsum - 1);
     // random_shuffle(map_feat.data(), map_feat.data() + map_feat.size());
-    cout << "feat dim: " << feat.cols() << ", nodes: " << feat.rows() << ", edges: " << m <<  ". ";
+    cout << "feat dim: " << feat.cols() << ", nodes: " << feat.rows() <<  ". ";
 
     // Feature-specific array
     dlt_p = Eigen::ArrayXf::Zero(fsum);
@@ -131,10 +108,10 @@ float PropComp::compute(uint nchnn, Channel* chnss, Eigen::Map<Eigen::MatrixXf> 
     tclk = get_curr_time() - tclk;
     gettimeofday(&ttod_end, NULL);
     ttod = ttod_end.tv_sec - ttod_start.tv_sec + (ttod_end.tv_usec - ttod_start.tv_usec) / 1000000.0;
-    cout << "[Pre] Prop  time: " << ttod << " s, ";
+    cout << "[prop] Prop  time: " << ttod << " s, ";
     cout << "Clock time: " << tclk << " s, ";
     cout << "Max   PRAM: " << get_proc_memory() << " GB, ";
-    cout << "End    RAM: " << get_stat_memory() << " GB, ";
+    cout << "End    RAM: " << get_stat_memory() << " GB" << endl;
     return ttod;
 }
 

@@ -10,8 +10,8 @@ cdef class PyPropComp:
 	def __cinit__(self):
 		self.c_propcomp = PropComp()
 
-	def load(self, str dataset, unsigned int m, unsigned int n, unsigned int seed):
-		self.c_propcomp.load(dataset.encode(), m, n, seed)
+	def preprocess(self, np.ndarray ell, np.ndarray pll, unsigned int n, unsigned int seed):
+		self.c_propcomp.preprocess(Map[VectorXi](ell), Map[VectorXi](pll), n, seed)
 
 	def compute(self, unsigned int nchn, chns, np.ndarray feat):
 		cdef:

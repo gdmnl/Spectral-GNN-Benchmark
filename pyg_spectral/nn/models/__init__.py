@@ -3,3 +3,5 @@ from .decoupled import DecoupledFixed, DecoupledVar, DecoupledFixedCompose, Deco
 from .precomputed import PrecomputedFixed, PrecomputedVar, PrecomputedFixedCompose, PrecomputedVarCompose
 from .ada_gnn import AdaGNN
 from .acm_gnn import ACMGNN, ACMGNNDec
+
+from .cpp_comp import CppCompFixed

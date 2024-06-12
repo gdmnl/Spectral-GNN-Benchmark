@@ -23,6 +23,5 @@ cdef extern from "prop.h" namespace "propagation":
 
     cdef cppclass PropComp:
         PropComp() except+
-        #         dataset,   m,    n, seed
-        void load(string, uint, uint, uint)
+        void preprocess(Map[VectorXi] &, Map[VectorXi] &, uint, uint)
         float compute(uint, Channel*, Map[MatrixXf] &)

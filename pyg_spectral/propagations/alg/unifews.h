@@ -100,9 +100,7 @@ void PropComp::alg_unifews(Eigen::Ref<Eigen::MatrixXf> feats, int st, int ed) {
                         }
                     }
                     plshort[u+1]  = (iv + iv2) / 2;
-                    if (m < 1e8){
-                        plshort2[u+1] = (iv + pl[u+1]) / 2;
-                    }
+                    plshort2[u+1] = (iv + pl[u+1]) / 2;
 
                 } else {
                     if (chn.is_acc)

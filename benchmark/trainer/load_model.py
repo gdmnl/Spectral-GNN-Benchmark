@@ -106,7 +106,7 @@ class ModelLoader(object):
                     theta_param=args.theta_param,
                     combine=args.combine,))
                 trn = TrnFullbatch
-            elif self.model in ['PrecomputedFixed', 'PrecomputedVar']:
+            elif self.model in ['PrecomputedFixed', 'PrecomputedVar', 'CppCompFixed']:
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,))

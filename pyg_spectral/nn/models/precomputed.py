@@ -38,8 +38,6 @@ class PrecomputedFixed(DecoupledFixed):
     def convolute(self,
         x: Tensor,
         edge_index: Adj,
-        batch: OptTensor = None,
-        batch_size: Optional[int] = None,
     ) -> Tensor:
         r"""Decoupled propagation step for calling the convolutional module.
             Requires no variable transformation in conv.forward().
@@ -107,8 +105,6 @@ class PrecomputedVar(DecoupledVar):
     def convolute(self,
         x: Tensor,
         edge_index: Adj,
-        batch: OptTensor = None,
-        batch_size: Optional[int] = None,
     ) -> list:
         r"""Decoupled propagation step for calling the convolutional module.
             `self._forward()` should not contain derivable computations.
@@ -191,8 +187,6 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
     def convolute(self,
         x: Tensor,
         edge_index: Adj,
-        batch: OptTensor = None,
-        batch_size: Optional[int] = None,
     ) -> Tensor:
         r"""Decoupled propagation step for calling the convolutional module.
             Requires no variable transformation in conv.forward().
@@ -276,8 +270,6 @@ class PrecomputedVarCompose(DecoupledVarCompose):
     def convolute(self,
         x: Tensor,
         edge_index: Adj,
-        batch: OptTensor = None,
-        batch_size: Optional[int] = None,
     ) -> Tensor:
         r"""Decoupled propagation step for calling the convolutional module.
             Requires no variable transformation in conv.forward().

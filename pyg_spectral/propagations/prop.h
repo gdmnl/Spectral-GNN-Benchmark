@@ -43,7 +43,7 @@ namespace propagation {
 
     class PropComp{
     public:
-    	uint m,n,seed;                  // edges, nodes, seed
+    	uint n, seed;                   // nodes, seed
         std::vector<uint> el;
         std::vector<uint> pl;
         Eigen::ArrayXf map_feat;        // permuted index -> index in feats
@@ -56,7 +56,7 @@ namespace propagation {
         Eigen::ArrayXf dlt_p, dlt_n;    // absolute error (positive, negative)
         Eigen::ArrayXf maxf_p, maxf_n;  // max feature coefficient
 
-        void load(std::string dataset, uint mm, uint nn, uint seedd);
+        void preprocess(Eigen::Map<Eigen::VectorXi> &ell, Eigen::Map<Eigen::VectorXi> &pll, uint nn, uint seedd);
         float compute(uint nchnn, Channel* chnss, Eigen::Map<Eigen::MatrixXf> &feat);
 
         void alg_unifews(Eigen::Ref<Eigen::MatrixXf>feats,int st,int ed);
