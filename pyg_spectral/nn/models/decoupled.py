@@ -8,7 +8,7 @@ from torch import Tensor
 from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.inits import reset
 
-from pyg_spectral.nn.models.base_nn import BaseNN
+from pyg_spectral.nn.models.base_nn import BaseNN, BaseNNCompose
 from pyg_spectral.utils import load_import
 
 
@@ -214,3 +214,152 @@ class DecoupledVar(BaseNN):
         for k, conv in enumerate(self.convs):
             reset(conv)
             conv.theta.data = self.theta_init[k].clone()
+
+
+# ==========
+class DecoupledFixedCompose(BaseNNCompose):
+    r"""Decoupled structure without matrix transformation during propagation.
+        Fixed scalar propagation parameters.
+
+    Args:
+        theta_scheme (List[str]): Method to generate decoupled parameters.
+        theta_param (List[float], optional): Hyperparameter for the scheme.
+        combine (str): How to combine different channels of convs. (one of
+            "sum", "sum_weighted", "cat").
+        --- BaseNN Args ---
+        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
+        num_hops (int): Total number of conv hops.
+        in_channels (int): Size of each input sample.
+        hidden_channels (int): Size of each hidden sample.
+        out_channels (int): Size of each output sample.
+        in_layers (int): Number of MLP layers before conv.
+        out_layers (int): Number of MLP layers after conv.
+        dropout_lin (float, optional): Dropout probability for both MLPs.
+        dropout_conv (float, optional): Dropout probability before conv.
+        act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
+            args for :class:`pyg.nn.models.MLP`.
+        lib_conv (str, optional): Parent module library other than
+            :class:`pyg_spectral.nn.conv`.
+        **kwargs (optional): Additional arguments of the
+            :class:`pyg_spectral.nn.conv` module.
+    """
+
+    def init_conv(self,
+        conv: str,
+        num_hops: int,
+        lib: str,
+        **kwargs
+    ) -> MessagePassing:
+        conv = conv.split(',')
+        convs = nn.ModuleList()
+
+        theta_schemes = kwargs.pop('theta_scheme', 'appr')
+        theta_schemes = theta_schemes.split(',')
+        theta_params = kwargs.pop('theta_param', [0.5])
+        if not isinstance(theta_params, list):
+            theta_params = [theta_params] * len(conv)
+
+        for i, channel in enumerate(conv):
+            theta = gen_theta(num_hops, theta_schemes[i], theta_params[i])
+            conv_cls = load_import(channel, lib)
+            kwargs_c = {}
+            for k, v in kwargs.items():
+                # Find required arguments for current conv class
+                if k in conv_cls.__init__.__code__.co_varnames:
+                    if isinstance(v, list) and len(v) == len(conv):
+                        kwargs_c[k] = v[i]
+                    else:
+                        kwargs_c[k] = v
+
+            # NOTE: k=0 layer explicitly handles x without propagation. So there
+            # are (num_hops+1) conv layers in total.
+            convs.append(nn.ModuleList([
+                conv_cls(num_hops=num_hops, hop=k, **kwargs_c) for k in range(num_hops+1)]))
+            for k, convk in enumerate(convs[-1]):
+                convk.register_buffer('theta', theta[k].clone())
+                if hasattr(convk, '_init_with_theta'):
+                    convk._init_with_theta()
+        return convs
+
+
+class DecoupledVarCompose(BaseNNCompose):
+    r"""Decoupled structure without matrix transformation during propagation.
+        Learnable scalar propagation parameters.
+
+    Args:
+        theta_scheme (List[str]): Method to generate decoupled parameters.
+        theta_param (List[float], optional): Hyperparameter for the scheme.
+        combine (str): How to combine different channels of convs. (one of
+            "sum", "sum_weighted", "cat").
+        --- BaseNN Args ---
+        conv (List[str]): Name of :class:`pyg_spectral.nn.conv` module.
+        num_hops (int): Total number of conv hops.
+        in_channels (int): Size of each input sample.
+        hidden_channels (int): Size of each hidden sample.
+        out_channels (int): Size of each output sample.
+        in_layers (int): Number of MLP layers before conv.
+        out_layers (int): Number of MLP layers after conv.
+        dropout_lin (float, optional): Dropout probability for both MLPs.
+        dropout_conv (float, optional): Dropout probability before conv.
+        act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
+            args for :class:`pyg.nn.models.MLP`.
+        lib_conv (str, optional): Parent module library other than
+            :class:`pyg_spectral.nn.conv`.
+        **kwargs (optional): Additional arguments of the
+            :class:`pyg_spectral.nn.conv` module.
+    """
+
+    def init_conv(self,
+        conv: str,
+        num_hops: int,
+        lib: str,
+        **kwargs
+    ) -> MessagePassing:
+        conv = conv.split(',')
+        convs = nn.ModuleList()
+        self.theta_init = []
+
+        theta_schemes = kwargs.pop('theta_scheme', ['ones'])
+        theta_schemes = theta_schemes.split(',')
+        if len(theta_schemes) == 1:
+            theta_schemes = theta_schemes * len(conv)
+        theta_params = kwargs.pop('theta_param', [1.0])
+        if not isinstance(theta_params, list):
+            theta_params = [theta_params]
+        if len(theta_params) == 1:
+            theta_params = theta_params * len(conv)
+
+
+        for i, channel in enumerate(conv):
+            self.theta_init.append(gen_theta(num_hops, theta_schemes[i], theta_params[i]))
+            conv_cls = load_import(channel, lib)
+            kwargs_c = {}
+            for k, v in kwargs.items():
+                # Find required arguments for current conv class
+                if k in conv_cls.__init__.__code__.co_varnames:
+                    if isinstance(v, list) and len(v) == len(conv):
+                        kwargs_c[k] = v[i]
+                    else:
+                        kwargs_c[k] = v
+
+            # NOTE: k=0 layer explicitly handles x without propagation. So there
+            # are (num_hops+1) conv layers in total.
+            convs.append(nn.ModuleList([
+                conv_cls(num_hops=num_hops, hop=k, **kwargs_c) for k in range(num_hops+1)]))
+            for k, convk in enumerate(convs[-1]):
+                convk.register_parameter('theta', nn.Parameter(self.theta_init[-1][k].clone()))
+                if hasattr(convk, '_init_with_theta'):
+                    convk._init_with_theta()
+        return convs
+
+    def reset_parameters(self):
+        if self.in_layers > 0:
+            self.in_mlp.reset_parameters()
+        if self.out_layers > 0:
+            self.out_mlp.reset_parameters()
+        for i, channel in enumerate(self.convs):
+            for k, conv in enumerate(channel):
+                reset(conv)
+                conv.theta.data = self.theta_init[i][k].clone()
+        if hasattr(self, 'gamma'):
+            nn.init.ones_(self.gamma)

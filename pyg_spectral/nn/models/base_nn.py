@@ -93,8 +93,9 @@ class BaseNN(nn.Module):
             num_hops=num_hops,
             lib=lib,
             **kwargs)
-        self._set_conv_func('get_forward_mat')
-        self._set_conv_func('get_propagate_mat')
+        self._set_conv_attr('get_forward_mat')
+        self._set_conv_attr('get_propagate_mat')
+        self._set_conv_attr('propagate_be')
 
         if self.out_layers > 0:
             self.out_mlp = myMLP(
@@ -131,14 +132,14 @@ class BaseNN(nn.Module):
     def init_conv(self, conv: str, num_hops: int, lib: str, **kwargs) -> MessagePassing:
         raise NotImplementedError
 
-    def _set_conv_func(self, func: str) -> Callable:
-        # if hasattr(self.conv_cls, func) and callable(getattr(self.conv_cls, func)):
-        #     setattr(self, func, getattr(self.conv_cls, func))
-        if hasattr(self.convs[0], func) and callable(getattr(self.convs[0], func)):
-            setattr(self, func, getattr(self.convs[0], func)) # use the first one.
-            return getattr(self, func)
+    def _set_conv_attr(self, key: str) -> Callable:
+        # if hasattr(self.conv_cls, key):
+        #     setattr(self, key, getattr(self.conv_cls, key))
+        if hasattr(self.convs[0], key):
+            setattr(self, key, getattr(self.convs[0], key)) # use the first layer
+            return getattr(self, key)
         else:
-            raise NotImplementedError(f"Method '{func}' not found in {self.convs[0].__class__}!")
+            raise NotImplementedError(f"Attribute '{key}' not found in {self.convs[0].__class__}!")
             # setattr(self, func, lambda x: x)
 
     def reset_cache(self):
@@ -275,15 +276,14 @@ class BaseNNCompose(BaseNN):
             self.gamma = nn.Parameter(torch.ones(n_conv, channel_list[self.in_layers + self.conv_layers]))
         return channel_list
 
-    def _set_conv_func(self, func: str) -> List[Callable]:
+    def _set_conv_attr(self, key: str) -> List[Callable]:
         # NOTE: return a list, not callable
-        if hasattr(self.convs[0][0], func) and callable(getattr(self.convs[0][0], func)):
-            lst = [getattr(channel[0], func) for channel in self.convs]
-            setattr(self, func, lambda: lst)
-            return getattr(self, func)
+        if hasattr(self.convs[0][0], key):
+            lst = [getattr(channel[0], key) for channel in self.convs]
+            setattr(self, key, lambda: lst)
+            return getattr(self, key)
         else:
-            raise NotImplementedError(f"Method '{func}' not found in {self.convs[0][0].__name__}!")
-            # setattr(self, func, lambda x: x)
+            raise NotImplementedError(f"Attribute '{key}' not found in {self.convs[0][0].__name__}!")
 
     def reset_cache(self):
         for channel in self.convs:

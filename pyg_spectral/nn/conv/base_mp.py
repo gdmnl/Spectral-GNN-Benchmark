@@ -33,8 +33,8 @@ class BaseMP(MessagePassing):
         **kwargs
     ):
         kwargs.setdefault('aggr', 'add')
+        self.propagate_be = kwargs.pop('propagate_be', 'torch.sparse')
         self.propagate_mat = kwargs.pop('propagate_mat', 'A')
-        self.propagate_mat = self.propagate_mat.split(',')
         super(BaseMP, self).__init__(**kwargs)
 
         self.num_hops = num_hops
@@ -61,9 +61,9 @@ class BaseMP(MessagePassing):
             x (Tensor), edge_index (Adj): from pyg.data.Data
         Properties:
             self.propagate_mat (str): propagation schemes, separated by ','.
-                Each scheme starts with 'A' or 'L' for adjacency or Laplacian.
-                Can follow '+[p]*I' or '-[p]*I' for adjusting diagonal, where
-                `p` can be float or attribute name.
+                Each scheme starts with 'A' or 'L' for adjacency or Laplacian,
+                optionally following '+[p]*I' or '-[p]*I' for scaling the
+                diagonal, where `p` can be float or attribute name.
         Returns:
             prop (SparseTensor): propagation matrix
         """
@@ -85,15 +85,18 @@ class BaseMP(MessagePassing):
         """
         def _get_adj(mat: Adj, diag: float):
             if diag != 0:
-                if isinstance(mat, SparseTensor):
+                if self.propagate_be == 'torch_sparse':
+                    assert isinstance(mat, SparseTensor)
                     dg = mat.get_diag()
                     return mat.set_diag(dg + diag)
-                else:
+                elif self.propagate_be == 'torch.sparse':
                     diag = torch.ones(mat.size(0)) * diag
                     dg = torch.sparse.spdiags(diag, torch.tensor(0), mat.size(),
                                               layout=torch.sparse_csr)
                     dg = dg.to(mat.device, mat.dtype)
                     return mat + dg
+                else:
+                    raise NotImplementedError(f'Backend {self.propagate_be} not implemented.')
             return mat
 
         def _get_lap(mat: Adj, diag: float):
@@ -105,7 +108,7 @@ class BaseMP(MessagePassing):
 
         pattern = re.compile(r'([AL])([\+\-]([\d\w\._]*)\*?I)?')
         mats = {}
-        for i, scheme in enumerate(self.propagate_mat):
+        for i, scheme in enumerate(self.propagate_mat.split(',')):
             match = pattern.match(scheme.strip())
             mati, diag_part, diag_value = match.groups()
 
@@ -220,8 +223,12 @@ class BaseMP(MessagePassing):
 
     # ==========
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
-        # return spmm(adj_t, x, reduce=self.aggr)   # torch_sparse.SparseTensor
-        return torch.spmm(adj_t, x)                 # torch.sparse.Tensor
+        if self.propagate_be == 'torch_sparse':
+            return spmm(adj_t, x, reduce=self.aggr)     # torch_sparse.SparseTensor
+        elif self.propagate_be == 'torch.sparse':
+            return torch.spmm(adj_t, x)                 # torch.sparse.Tensor
+        else:
+            raise NotImplementedError(f'Backend {self.propagate_be} not implemented.')
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(theta={self.theta})'
