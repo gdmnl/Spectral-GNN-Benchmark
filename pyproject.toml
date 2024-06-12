@@ -1,31 +1,51 @@
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-py-modules = []
+requires=[
+    "setuptools",
+    "wheel",
+    "cython",
+    "eigency"
+]
+build-backend="setuptools.build_meta"
 
 [project]
 name="pyg_spectral"
-version="0.1.0"
+version="1.0.0"
 authors=[
     {name="Ningyi Liao", email="liao0090@e.ntu.edu.sg"},
 ]
 description="Spectral GNN benchmark based on PyG"
 readme="README.md"
-requires-python=">=3.8"
+classifiers=[
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "License :: OSI Approved :: MIT License",
+  "Environment :: GPU :: NVIDIA CUDA :: 12",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
 keywords=[
     "pytorch",
     "graph-neural-networks",
     "spectral-gnn",
 ]
+requires-python=">=3.8"
 dependencies=[
-    "torch>=2.0",
-    "torch_geometric>=2.5.3",
     "pandas>=2.0",
     "torchmetrics>=1.0",
     "ogb>=1.3.6",
     "scikit-learn>=1.3.0",
     "matplotlib>=3.0",
     "optuna>=3.4",
+]
+
+[project.optional-dependencies]
+cpp=[
+    "cython>=0.2.15",
+    "eigency>=1.77",
 ]

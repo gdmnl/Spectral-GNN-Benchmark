@@ -1,8 +1,8 @@
 from libc.stdlib cimport malloc, free
 import numpy as np
 
-from prop_cppext cimport PropComp, Channel
 from eigency.core cimport *
+from .prop_cppext cimport PropComp, Channel
 
 cdef class PyPropComp:
 	cdef PropComp c_propcomp

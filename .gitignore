@@ -6,6 +6,7 @@ log
 log/
 data
 data/
+figs/
 
 # User specific
 try*
