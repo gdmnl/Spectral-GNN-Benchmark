@@ -1,6 +1,6 @@
 # Benchmarking Spectral Graph Neural Networks
 
-[![Docs](https://github.com/gdmnl/Spectral-GNN-Benchmark/actions/workflows/docs.yml/badge.svg?event=push)](https://pages.github.com/gdmnl/Spectral-GNN-Benchmark/)
+[![Docs](https://github.com/gdmnl/Spectral-GNN-Benchmark/workflows/Docs/badge.svg)](https://pages.github.com/gdmnl/Spectral-GNN-Benchmark/)
 
 `pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations.
 

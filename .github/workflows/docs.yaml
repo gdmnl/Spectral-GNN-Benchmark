@@ -1,4 +1,4 @@
-name: Sphinx docs to gh-pages
+name: Docs
 
 on:
   push:
@@ -10,11 +10,22 @@ on:
 jobs:
   sphinx_docs_to_gh-pages:
     runs-on: ubuntu-22.04
-    name: Sphinx docs to gh-pages
+    name: Docs
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: ${{ github.ref }}
+      cancel-in-progress: true
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       # Skip workflow if only certain files have been changed.
       - name: Get changed files
         id: changed-files-specific
@@ -26,8 +37,6 @@ jobs:
             README.md
             CHANGELOG.md
             requirements.txt
-            setup.py
-            pyproject.toml
 
       - name: Setup packages
         if: steps.changed-files-specific.outputs.only_changed != 'true'
@@ -40,12 +49,42 @@ jobs:
         run: |
           pip install -e .[docs]
 
-      - name: Running the Sphinx to gh-pages Action
+      - name: Enable github problem matcher
+        uses: sphinx-doc/github-problem-matcher@master
+
+      - id: build
+        name: Build documentation
         if: steps.changed-files-specific.outputs.only_changed != 'true'
-        uses: uibcdf/action-sphinx-docs-to-gh-pages@v2.1.0
+        run: ./.github/actions/docs.sh
+        shell: bash
+        env:
+          # See https://github.com/actions/runner/issues/665
+          INPUT_DOCUMENTATION_PATH: './docs/source'
+          INPUT_SPHINX_BUILD_OPTIONS: ''
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        if: steps.changed-files-specific.outputs.only_changed != 'true'
+
+      - name: Fix file permissions
+        shell: sh
+        if: runner.os == 'Linux'
+        # https://github.com/actions/deploy-pages/issues/188
+        run: |
+          chmod -c -R +rX "$INPUT_PATH" |
+          while read line; do
+            echo "::warning title=Invalid file permissions automatically fixed::$line"
+          done
+        env:
+          INPUT_PATH: ${{ steps.build.outputs.artifact }}
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        if: steps.changed-files-specific.outputs.only_changed != 'true'
         with:
-          branch: main
-          dir_docs: docs
-          sphinx-apidoc-opts: '--separate -o ./source/_include ../pyg_spectral'
-          sphinx-apidoc-exclude: '../*setup* ../*.ipynb'
-          sphinx-opts: ''
+          path: ${{ steps.build.outputs.artifact }}
+
+      - id: deployment
+        name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        if: steps.changed-files-specific.outputs.only_changed != 'true'
