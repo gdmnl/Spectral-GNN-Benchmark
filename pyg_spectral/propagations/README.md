@@ -4,8 +4,12 @@ The C++ backend for efficient propagation algorithms.
 
 ## Installation
 
-When installing `pyg_spectral`, set the environment variable `PSFLAG_CPP=1`:
+1. Ensure C++ 11 is installed.
+    ```bash
+    gcc --version
+    ```
 
-```bash
-export PSFLAG_CPP=1; pip install -e .[cpp]
-```
+2. Rerun the following installation command at package root path:
+    ```bash
+    export PSFLAG_CPP=1; pip install -e .[cpp]
+    ```

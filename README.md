@@ -27,7 +27,7 @@
 
 ## Installation
 
-This package can be easily installed by [pip](https://pip.pypa.io/en/stable/). Execute the following two commands in the root path of this repository:
+This package can be easily installed by running [pip](https://pip.pypa.io/en/stable/) at package root path:
 ```bash
 pip install -r requirements.txt
 pip install -e .
@@ -35,12 +35,11 @@ pip install -e .
 
 The installation script already covers the following core dependencies:
 - [PyTorch](https://github.com/pytorch/pytorch) (`>=2.0`[^1])
-- [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) (`>=2.5.3`[^2])
+- [PyTorch Geometric](https://github.com/pyg-team/pytorch_geometric) (`>=2.5.3`)
 - [TorchMetrics](https://github.com/Lightning-AI/torchmetrics) (`>=1.0`): only required for `benchmark/` experiments.
 - [Optuna](https://github.com/optuna/optuna) (`>=3.4`): only required for hyperparameter search in `benchmark/` experiments.
 
 [^1]: Please refer to the [official guide](https://pytorch.org/get-started/locally/) if a specific CUDA version is required for PyTorch.
-[^2]: Please refer to the [official guide](https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html) if a specific CUDA version is required for PyG.
 
 For additional installation of the C++ backend, please refer to [propagations/README.md](pyg_spectral/propagations/README.md#installation).
 
