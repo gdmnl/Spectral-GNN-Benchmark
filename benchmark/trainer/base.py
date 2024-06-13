@@ -12,7 +12,6 @@ import torch.nn as nn
 from torch_geometric.data import Data
 from pyg_spectral import profile
 
-from .load_metric import metric_loader
 from utils import CkptLogger, ResLogger
 
 
@@ -66,15 +65,12 @@ class TrnBase(object):
         # Get entities
         self.model = model
         self.data = data
-        self.criterion = nn.CrossEntropyLoss()
 
         # Evaluation metrics
         self.splits = ['train', 'val', 'test']
         self.multi = args.multi
         self.num_features = args.num_features
         self.num_classes = args.num_classes
-        metric = metric_loader(args).to(self.device)
-        self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
 
         # Loggers
         self.logger = logging.getLogger('log')

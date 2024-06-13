@@ -48,10 +48,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = setup_argparse()
-    parser.add_argument('--task', type=str, choices=['classification','filtering'], default='classification')
     parser.add_argument('--filter_type', type=str, choices=['low','high','band','rejection','comb','low_band'], default='band')
     parser.add_argument('--img_idx', type=int, default=0, help='filtering image index')
-    parser.add_argument('--multi', type=bool, default=False, help='if multi classifications')
     args = setup_args(parser)
 
     seed_lst = args.seed.copy()

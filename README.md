@@ -74,7 +74,10 @@ bash scripts/eval_hop.sh
 
 Figures can be plotted by: [`benchmark/notebook/fig_hop.ipynb`](benchmark/notebook/fig_hop.ipynb).
 
-#### Frequency response ():
+#### Frequency response (*Table 12*):
+```bash
+bash scripts/exp_filter.sh
+```
 
 ## Customization
 ### Configure Experiment Parameters

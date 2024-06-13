@@ -15,6 +15,7 @@ import torch_geometric.utils as pyg_utils
 from pyg_spectral.profile import Stopwatch
 
 from .base import TrnBase
+from .load_metric import metric_loader
 from utils import ResLogger
 
 
@@ -51,6 +52,10 @@ class TrnFullbatch(TrnBase):
                  args: Namespace,
                  **kwargs):
         super(TrnFullbatch, self).__init__(model, data, args, **kwargs)
+        metric = metric_loader(args).to(self.device)
+        self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
+        self.criterion = nn.CrossEntropyLoss()
+
         self.mask: dict = None
         self.flag_test_deg = args.test_deg if hasattr(args, 'test_deg') else False
 

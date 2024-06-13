@@ -11,13 +11,13 @@ from torch_geometric.data import Data, Dataset
 import torch_geometric.transforms as T
 from pyg_spectral.utils import load_import
 
-from .fullbatch import TrnFullBatch
+from .fullbatch import TrnFullbatch
 from .load_metric import ResCollection
 from .load_data import DATAPATH, split_random
 from utils import ResLogger
 
 
-class TrnFilter(TrnFullBatch):
+class TrnFilter(TrnFullbatch):
     name: str = 'filter'
 
     def __init__(self,
@@ -25,16 +25,17 @@ class TrnFilter(TrnFullBatch):
                  data: Dataset,
                  args: Namespace,
                  **kwargs):
-        super(TrnFilter, self).__init__(model, data, args, **kwargs)
-        self.mask: dict = None
-        self.img_idx = args.img_idx
-
+        super(TrnFullbatch, self).__init__(model, data, args, **kwargs)
         metric = ResCollection({
             's_r2': R2Score(),
             's_mae': MeanAbsoluteError(),
-        })
+        }).to(self.device)
         self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
         self.criterion = nn.MSELoss()
+
+        self.mask: dict = None
+        self.img_idx = args.img_idx
+        self.flag_test_deg = args.test_deg if hasattr(args, 'test_deg') else False
 
     def _fetch_input(self) -> tuple:
         input, label = (self.data.x[:, self.img_idx:self.img_idx+1], self.data.adj_t), self.data.y[:, self.img_idx:self.img_idx+1]
@@ -54,8 +55,8 @@ class FilterLoader(object):
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
         self.metric = None
-        self.num_features = 1 # default 1 for regression
-        self.num_classes = 1 # default 1 for regression
+        self.num_features = 1
+        self.num_classes = 1
         self.transform = T.Compose([
             T.ToSparseTensor(remove_edge_index=True, layout=torch.sparse_csr),  # torch.sparse.Tensor
         ])

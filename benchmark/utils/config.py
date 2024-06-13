@@ -57,6 +57,7 @@ def setup_argparse():
     parser.add_argument('--data_split', type=str, default='60/20/20', help='Index or percentage of dataset split')
     parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
     parser.add_argument('--normf', type=int, nargs='?', default=0, const=None, help='Embedding norm dimension. 0: feat-wise, 1: node-wise, None: disable')
+    parser.add_argument('--multi', action='store_true', help='True for multi-label classification')
     # Model configuration
     parser.add_argument('-m', '--model', type=str, default='DecoupledVar', help='Model class name')
     parser.add_argument('-c', '--conv', type=str, default='AdjConv', help='Conv class name')

@@ -61,6 +61,10 @@ class TrnMinibatch(TrnBase):
             assert isinstance(args.normf, int)
             self.norm_prop = TensorStandardScaler(dim=args.normf)
 
+        metric = metric_loader(args).to(self.device)
+        self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
+        self.criterion = nn.CrossEntropyLoss()
+
         self.shuffle = {'train': True, 'val': False, 'test': False}
         self.embed = None
 
