@@ -13,6 +13,10 @@ try*
 .vscode/
 .DS_Store
 
+# Docs
+make.bat
+docs/source/generated
+
 # CMake
 CMakeLists.txt.user
 CMakeCache.txt
