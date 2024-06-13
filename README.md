@@ -1,5 +1,7 @@
 # Benchmarking Spectral Graph Neural Networks
 
+[![Docs](https://github.com/gdmnl/Spectral-GNN-Benchmark/actions/workflows/docs.yml/badge.svg?event=push)](https://pages.github.com/gdmnl/Spectral-GNN-Benchmark/)
+
 `pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations.
 
 > [!IMPORTANT]
@@ -30,7 +32,7 @@
 This package can be easily installed by running [pip](https://pip.pypa.io/en/stable/) at package root path:
 ```bash
 pip install -r requirements.txt
-pip install -e .
+pip install -e .[benchmark]
 ```
 
 The installation script already covers the following core dependencies:
@@ -213,7 +215,7 @@ out = model(x, edge_index)
   - `nn.models`: common neural network architectures, similar to [`torch_geometric.nn.models`](https://pytorch-geometric.readthedocs.io/en/latest/modules/nn.html#models).
   - `nn.propagations`: C++ backend for efficient propagation algorithms.
 - `log/`: experiment log files and parameter search results.
-- `data/`: raw and processed datasets arranged following different protocals.
+- `data/`: raw and processed datasets arranged following different protocols.
 
 ![Code structure of this framework and relation to PyG.](docs/code_struct.png)
 
