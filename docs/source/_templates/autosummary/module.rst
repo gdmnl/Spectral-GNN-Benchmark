@@ -1,29 +1,36 @@
-{{ fullname | escape | underline }}
-
-.. rubric:: Description
+{{ fullname | escape | underline}}
 
 .. automodule:: {{ fullname }}
 
-.. currentmodule:: {{ fullname }}
+   {% block functions %}
+   {% if functions %}
+   .. rubric:: Functions
 
-{% if classes %}
-.. rubric:: Classes
+   .. autosummary::
+   {% for item in functions %}
+      {{ item }}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}
 
-.. autosummary::
-    :toctree: .
-    {% for class in classes %}
-    {{ class }}
-    {% endfor %}
+   {% block classes %}
+   {% if classes %}
+   .. rubric:: Classes
 
-{% endif %}
+   .. autosummary::
+   {% for item in classes %}
+      {{ item }}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}
 
-{% if functions %}
-.. rubric:: Functions
+   {% block exceptions %}
+   {% if exceptions %}
+   .. rubric:: Exceptions
 
-.. autosummary::
-    :toctree: .
-    {% for function in functions %}
-    {{ function }}
-    {% endfor %}
-
-{% endif %}
+   .. autosummary::
+   {% for item in exceptions %}
+      {{ item }}
+   {%- endfor %}
+   {% endif %}
+   {% endblock %}

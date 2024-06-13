@@ -22,7 +22,7 @@ class LINKX(InMemoryDataset):
     paper: Large Scale Learning on Non-Homophilous Graphs: New Benchmarks and Strong Simple Methods
     ref: https://github.com/CUAI/Non-Homophily-Large-Scale/
     """
-    dataset_drive_url = {
+    _dataset_drive_url = {
         'snap-patents.mat' : '1ldh23TSY1PwXia6dU0MYcpyEgX-w3Hia',
         'pokec.mat' : '1dNs5E7BrWJbgcHeQ_zuy5Ozp2tRCWG0y',
         'yelp-chi.mat': '1fAXtTVQS4CfEk4asqrFw9EPmlUPGbGtJ',
@@ -32,7 +32,7 @@ class LINKX(InMemoryDataset):
         'wiki_edges.pt': '14X7FlkjrlUgmnsYtPwdh-gGuFla4yb5u', # Wiki 1.9M
         'wiki_features.pt': '1ySNspxbK-snNoAZM7oxiWGvOnTRdSyEK' # Wiki 1.9M
     }
-    splits_drive_url = {
+    _splits_drive_url = {
         'snap-patents_splits.npy' : '12xbBRqd8mtG_XkNLH8dRRNZJvVM4Pw-N',
         'pokec_splits.npy' : '1ZhpAiyTNc0cE_hhgyiqxnkKREHK7MK-_',
     }
@@ -76,12 +76,12 @@ class LINKX(InMemoryDataset):
             download_url(f'{url}/{self.name}.mat', self.raw_dir)
             return
 
-        for fname in self.dataset_drive_url:
+        for fname in self._dataset_drive_url:
             if fname.startswith(self.name):
-                download_google_url(self.dataset_drive_url[fname], self.raw_dir, filename=fname)
-        for fname in self.splits_drive_url:
+                download_google_url(self._dataset_drive_url[fname], self.raw_dir, filename=fname)
+        for fname in self._splits_drive_url:
             if fname.startswith(self.name):
-                download_google_url(self.splits_drive_url[fname], self.raw_dir, filename=fname)
+                download_google_url(self._splits_drive_url[fname], self.raw_dir, filename=fname)
 
     def process(self) -> None:
         if self.name in ['twitch-gamer']:
@@ -118,7 +118,7 @@ class LINKX(InMemoryDataset):
             edge_index = coalesce(edge_index, num_nodes=n)
         kwargs = {'x': x, 'edge_index': edge_index, 'y': y}
 
-        splits_keys = [k.split('_')[0] for k in self.splits_drive_url]
+        splits_keys = [k.split('_')[0] for k in self._splits_drive_url]
         if self.name in splits_keys:
             # 50/25/25 train/valid/test split
             splits_lst = np.load(osp.join(self.raw_dir, f'{self.name}_splits.npy'), allow_pickle=True)

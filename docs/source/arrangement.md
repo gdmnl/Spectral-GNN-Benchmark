@@ -2,6 +2,8 @@
 
 ## Covered Models
 
+Refer to {py:class}`benchmark.trainer.ModelLoader`.
+
 | **Category** | **Model** |
 |:------------:|:----------|
 | Fixed Filter | [GCN](https://arxiv.org/abs/1609.02907), [SGC](https://arxiv.org/pdf/1902.07153), [gfNN](https://arxiv.org/pdf/1905.09550), [GZoom](https://arxiv.org/pdf/1910.02370), [S$^2$GC](https://openreview.net/pdf?id=CYO5T-YjWZV),[GLP](https://arxiv.org/pdf/1901.09993), [APPNP](https://arxiv.org/pdf/1810.05997), [GCNII](https://arxiv.org/pdf/2007.02133), [GDC](https://proceedings.neurips.cc/paper_files/paper/2019/file/23c894276a2c5a16470e6a31f4618d73-Paper.pdf), [DGC](https://arxiv.org/pdf/2102.10739), [AGP](https://arxiv.org/pdf/2106.03058), [GRAND+](https://arxiv.org/pdf/2203.06389)|
@@ -10,6 +12,8 @@
 
 
 ## Covered Datasets
+
+Refer to {py:class}`benchmark.trainer.SingleGraphLoader`.
 
 | **Source** | **Graph** |
 |:------------:|:----------|

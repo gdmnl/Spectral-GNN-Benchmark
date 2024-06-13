@@ -5,27 +5,25 @@
 .. autoclass:: {{ objname }}
 
    {% block methods %}
-   {% block attributes %}
-   {% if attributes %}
-   .. HACK -- the point here is that we don't want this to appear in the output, but the autosummary should still generate the pages.
-      .. autosummary::
-         :toctree:
-      {% for item in all_attributes %}
-         {%- if not item.startswith('_') %}
-         {{ name }}.{{ item }}
-         {%- endif -%}
-      {%- endfor %}
+   .. automethod:: __init__
+
+   {% if methods %}
+   .. rubric:: Methods
+
+   .. autosummary::
+   {% for item in methods %}
+      ~{{ name }}.{{ item }}
+   {%- endfor %}
    {% endif %}
    {% endblock %}
 
-   {% if methods %}
-   .. HACK -- the point here is that we don't want this to appear in the output, but the autosummary should still generate the pages.
-      .. autosummary::
-         :toctree:
-      {% for item in all_methods %}
-         {%- if not item.startswith('_') or item in ['__call__'] %}
-         {{ name }}.{{ item }}
-         {%- endif -%}
-      {%- endfor %}
+   {% block attributes %}
+   {% if attributes %}
+   .. rubric:: Attributes
+
+   .. autosummary::
+   {% for item in attributes %}
+      ~{{ name }}.{{ item }}
+   {%- endfor %}
    {% endif %}
    {% endblock %}

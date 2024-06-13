@@ -1,6 +1,9 @@
 # Benchmarking Spectral Graph Neural Networks
 
-[![Docs](https://github.com/gdmnl/Spectral-GNN-Benchmark/workflows/Docs/badge.svg)](https://pages.github.com/gdmnl/Spectral-GNN-Benchmark/)
+[![Docs](https://github.com/gdmnl/Spectral-GNN-Benchmark/actions/workflows/docs.yaml/badge.svg)](https://gdmnl.github.io/Spectral-GNN-Benchmark/)
+[![LICENSE](https://img.shields.io/github/license/gdmnl/Spectral-GNN-Benchmark)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/gdmnl/Spectral-GNN-Benchmark?include_prereleases)](https://github.com/gdmnl/Spectral-GNN-Benchmark/releases)
+[![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fgdmnl%2FSpectral-GNN-Benchmark%2Fmain%2Fpyproject.toml)]()
 
 `pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations.
 
@@ -12,6 +15,8 @@
 > - **High scalability**: As spectral GNNs are inherently suitable for large-scale learning, our framework is feasible to common scalable learning schemes and acceleration techniques. Several spectral-oriented approximation algorithms are also supported.
 
 ---
+
+[**Documentation**](https://gdmnl.github.io/Spectral-GNN-Benchmark/) | [**GitHub**](https://github.com/gdmnl/Spectral-GNN-Benchmark/)
 
 - [Installation](#installation)
 - [Reproduce Experiments](#reproduce-experiments)

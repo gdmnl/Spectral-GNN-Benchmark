@@ -8,7 +8,7 @@ New spectral filters to :mod:`pyg_spectral.nn.conv` can be easily implemented by
 
 Step 1: Define propagation matrix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The base class :class:`pyg_spectral.nn.conv.base_mp.BaseMP` provides essential methods for building spectral filters. We can define a new filter class :class:`pyg_spectral.nn.conv.SkipConv` by inheriting from it:
+The base class :class:`pyg_spectral.nn.conv.BaseMP` provides essential methods for building spectral filters. We can define a new filter class :class:`pyg_spectral.nn.conv.SkipConv` by inheriting from it:
 
 .. code-block:: python
 
@@ -124,4 +124,4 @@ Refer to the help text by:
 Add New Experiment Dataset
 --------------------------
 
-In ``benchmark/trainer/load_data.py``, append the :meth:`SingleGraphLoader._resolve_import` method to include new datasets under respective protocols.
+Append the :meth:`benchmark.trainer.SingleGraphLoader._resolve_import` method to include new datasets under respective protocols.

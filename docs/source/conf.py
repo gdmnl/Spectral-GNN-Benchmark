@@ -14,7 +14,8 @@ copyright = '2024, NTU'
 author = 'Ningyi Liao'
 release = '1.0.0'
 
-sys.path.insert(0, osp.abspath('../pyg_spectral'))
+sys.path.insert(0, osp.abspath('../../'))
+sys.path.insert(1, osp.abspath('../../benchmark'))
 # sys.path.append(osp.join(osp.dirname(pyg_sphinx_theme.__file__), 'extension'))
 
 # -- General configuration ---------------------------------------------------
@@ -57,13 +58,14 @@ html_context = {
     "github_user": "gdmnl",
     "github_repo": "Spectral-GNN-Benchmark",
     "github_version": "main",
-    "conf_py_path": "/source/",
+    "conf_py_path": "/docs/source/",
 }
 
 autodoc_default_options = {
     'members': True,
     'private-members': True,
     'undoc-members': True,
+    'show_headings': False,
 }
 
 intersphinx_mapping = {
