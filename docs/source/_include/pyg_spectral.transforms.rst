@@ -1,10 +1,7 @@
 pyg\_spectral.transforms
 ================================
 
-pyg\_spectral.transforms.gen\_norm
------------------------------------------
-
-.. automodule:: pyg_spectral.transforms.gen_norm
+.. automodule:: pyg_spectral.transforms
    :members:
    :undoc-members:
    :show-inheritance:

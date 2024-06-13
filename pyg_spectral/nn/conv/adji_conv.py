@@ -57,7 +57,8 @@ class AdjiConv(BaseMP):
         out: Tensor,
         prop: Adj,
     ) -> dict:
-        r"""
+        r"""Overwrite forward method.
+
         Returns:
             out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
                 accumulating propagation results

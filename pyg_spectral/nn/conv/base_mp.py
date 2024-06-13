@@ -54,16 +54,15 @@ class BaseMP(MessagePassing):
         x: Tensor,
         edge_index: Adj
     ) -> Adj:
-        r"""Get matrices for self.propagate(). Called before each forward() with
-            same input.
+        r"""Get matrices for self.propagate(). Called before each forward() with same input.
 
         Args:
             x (Tensor), edge_index (Adj): from pyg.data.Data
-        Properties:
-            self.propagate_mat (str): propagation schemes, separated by ','.
-                Each scheme starts with 'A' or 'L' for adjacency or Laplacian,
-                optionally following '+[p]*I' or '-[p]*I' for scaling the
-                diagonal, where `p` can be float or attribute name.
+        Requires:
+            :obj:`self.propagate_mat` (str): propagation schemes, separated by ','.
+            Each scheme starts with 'A' or 'L' for adjacency or Laplacian,
+            optionally following '+[p]*I' or '-[p]*I' for scaling the
+            diagonal, where `p` can be float or attribute name.
         Returns:
             prop (SparseTensor): propagation matrix
         """
@@ -80,7 +79,9 @@ class BaseMP(MessagePassing):
         x: Tensor,
         edge_index: Adj
     ) -> Adj:
-        """ Shadow function for self.get_propagate_mat().
+        """ Shadow function for :meth:`get_propagate_mat()`.
+
+        Args:
             edge_index (SparseTensor or torch.sparse_csr_tensor)
         """
         def _get_adj(mat: Adj, diag: float):
@@ -133,9 +134,9 @@ class BaseMP(MessagePassing):
         return mats
 
     def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
-        r"""
-        Returns should match the arg list of `self.forward()` when
-            self.comp_scheme == 'forward'.
+        r"""Returns should match the arg list of :meth:`forward()` when
+        ``self.comp_scheme == 'forward'``.
+
         Returns:
             out (:math:`(|\mathcal{V}|, F)` Tensor: initial output tensor
         """
@@ -143,7 +144,7 @@ class BaseMP(MessagePassing):
 
     def _get_convolute_mat(self, x: Tensor, edge_index: Adj) -> dict:
         r"""
-        Returns should match the arg list of `self._forward()`.
+        Returns should match the arg list of :meth:`forward()`.
         """
         return {'x': x,}
 
@@ -152,7 +153,7 @@ class BaseMP(MessagePassing):
         edge_index: Adj,
         comp_scheme: Optional[str] = None
     ) -> dict:
-        r"""Get matrices for self.forward(). Called during forward().
+        r"""Get matrices for :meth:`forward()`. Called during :meth:`forward()`.
 
         Args:
             x (Tensor), edge_index (Adj): from pyg.data.Data
@@ -174,7 +175,8 @@ class BaseMP(MessagePassing):
     # ==========
     def _forward_theta(self, **kwargs):
         r"""
-        theta (nn.Parameter or nn.Module): transformation of propagation result
+        Requires:
+            :obj:`self.theta` (nn.Parameter or nn.Module): transformation of propagation result
             before applying to the output.
         """
         x = kwargs['x'] if 'x' in kwargs else kwargs['out']
@@ -186,8 +188,9 @@ class BaseMP(MessagePassing):
     def _forward_out(self, **kwargs) -> Tensor:
         r"""
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
+            out (Tensor): output tensor for accumulating propagation results
+        Shape:
+            out: :math:`(|\mathcal{V}|, F)`
         """
         if self.out_scale == 1:
             res = self._forward_theta(**kwargs)
@@ -197,7 +200,7 @@ class BaseMP(MessagePassing):
 
     def forward(self, **kwargs) -> dict:
         r""" Wrapper for distinguishing precomputed outputs.
-        Args & Returns (dct): same with output of get_forward_mat()
+        Args & Returns (dct): same with output of :meth:`get_forward_mat()`
         """
         if self.comp_scheme is None or self.comp_scheme == 'convolute':
             fwd_kwargs, keys = {}, list(kwargs.keys())
@@ -212,10 +215,11 @@ class BaseMP(MessagePassing):
         x: Tensor,
         prop: Adj,
     ) -> dict:
-        r""" Shadow function for self.forward() to be implemented in subclasses
-            without calculating output.
-            if `self.supports_batch == True`, then should not contain derivable computations.
+        r"""Shadow function for :meth:`forward()` to be implemented in subclasses
+        without calculating output.
+        if ``self.supports_batch == True``, then should not contain derivable computations.
         Dicts of Args & Returns should be matched.
+
         Returns:
             x (Tensor): tensor for calculating `out`
         """

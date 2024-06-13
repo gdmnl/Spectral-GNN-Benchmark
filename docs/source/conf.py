@@ -4,6 +4,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 import os.path as osp
 import sys
+# import pyg_sphinx_theme
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -14,6 +15,7 @@ author = 'Ningyi Liao'
 release = '1.0.0'
 
 sys.path.insert(0, osp.abspath('../pyg_spectral'))
+# sys.path.append(osp.join(osp.dirname(pyg_sphinx_theme.__file__), 'extension'))
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -27,6 +29,8 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.viewcode',
     'nbsphinx',
+    'myst_parser',
+    # 'pyg',
 ]
 
 autosummary_generate = True
@@ -54,6 +58,12 @@ html_context = {
     "github_repo": "Spectral-GNN-Benchmark",
     "github_version": "main",
     "conf_py_path": "/source/",
+}
+
+autodoc_default_options = {
+    'members': True,
+    'private-members': True,
+    'undoc-members': True,
 }
 
 intersphinx_mapping = {

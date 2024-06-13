@@ -60,7 +60,7 @@ bash scripts/runmb.sh
 ```
 
 ### Additional Experiments
-#### Effect of graph normalization vs degree-speficic accuracy (*Figure 3, 9*):
+#### Effect of graph normalization vs degree-specific accuracy (*Figure 3, 9*):
 ```bash
 bash scripts/eval_degree.sh
 ```

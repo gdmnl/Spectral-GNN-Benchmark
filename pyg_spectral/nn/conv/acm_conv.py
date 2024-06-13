@@ -12,8 +12,11 @@ from pyg_spectral.nn.conv.base_mp import BaseMP
 
 class ACMConv(BaseMP):
     r"""Convolutional layer of FBGNN & ACMGNN(I & II).
+
     paper: Revisiting Heterophily For Graph Neural Networks
+
     paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
+
     ref: https://github.com/SitaoLuan/ACM-GNN/blob/main/ACM-Geometric/layers.py
 
     Args:

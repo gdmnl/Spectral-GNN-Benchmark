@@ -5,3 +5,8 @@ from .efficiency import (
     MemoryCUDA,
     ParamNumel,
     ParamMemory)
+
+__all__ = [
+    'Stopwatch', 'Accumulator',
+    'MemoryRAM', 'MemoryCUDA', 'ParamNumel', 'ParamMemory'
+]

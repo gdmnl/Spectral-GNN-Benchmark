@@ -1,10 +1,7 @@
 pyg\_spectral.profile
 =============================
 
-pyg\_spectral.profile.efficiency
----------------------------------------
-
-.. automodule:: pyg_spectral.profile.efficiency
+.. automodule:: pyg_spectral.profile
    :members:
    :undoc-members:
    :show-inheritance:

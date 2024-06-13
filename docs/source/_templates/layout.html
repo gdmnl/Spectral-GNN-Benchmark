@@ -8,6 +8,10 @@ Docs. This is for local testing purposes only.
 
 #}
 
+{%- block sidebartoc %}
+    {{ toctree(maxdepth=1) }}
+{%- endblock %}
+
 {%- block footer %}
   {%- if not READTHEDOCS %}
     <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="{{ _('Versions') }}">
