@@ -14,8 +14,9 @@ copyright = '2024, NTU'
 author = 'Ningyi Liao'
 release = '1.0.0'
 
-sys.path.insert(0, osp.abspath('../../'))
-sys.path.insert(1, osp.abspath('../../benchmark'))
+proot = osp.abspath(osp.dirname(osp.dirname(osp.dirname((osp.realpath(__file__))))))
+sys.path.insert(0, proot)
+sys.path.insert(1, osp.join(proot, 'benchmark'))
 # sys.path.append(osp.join(osp.dirname(pyg_sphinx_theme.__file__), 'extension'))
 
 # -- General configuration ---------------------------------------------------

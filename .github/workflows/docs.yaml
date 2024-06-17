@@ -47,7 +47,7 @@ jobs:
       - name: Install main package
         if: steps.changed-files-specific.outputs.only_changed != 'true'
         run: |
-          pip install -e .[docs]
+          pip install -e .[docs,benchmark]
 
       - name: Enable github problem matcher
         uses: sphinx-doc/github-problem-matcher@master

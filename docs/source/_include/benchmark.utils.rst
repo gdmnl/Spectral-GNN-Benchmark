@@ -1,5 +1,5 @@
 benchmark.utils
-=============
+=======================
 
 .. automodule:: benchmark.utils
    :members:
@@ -9,7 +9,7 @@ benchmark.utils
 
 
 benchmark.utils.config
--------------------
+------------------------------
 
 .. autosummary::
    :recursive:

@@ -16,21 +16,21 @@ pyg_spectral
 
    * **High scalability**: As spectral GNNs are inherently suitable for large-scale learning, our framework is feasible to common scalable learning schemes and acceleration techniques. Several spectral-oriented approximation algorithms are also supported.
 
-.. include:: installation.rst
+.. include:: _tutorial/installation.rst
    :end-before: Advanced Options
 
 For advanced options, please refer to `Installation Options <installation.html#advanced-options>`_.
 
-.. include:: reproduce.rst
+.. include:: _tutorial/reproduce.rst
 
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started
 
-   installation
-   reproduce
-   customization
-   arrangement
+   _tutorial/installation
+   _tutorial/reproduce
+   _tutorial/customization
+   _tutorial/arrangement
 
 .. toctree::
    :hidden:

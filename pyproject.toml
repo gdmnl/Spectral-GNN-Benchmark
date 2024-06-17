@@ -21,8 +21,6 @@ classifiers=[
   "License :: OSI Approved :: MIT License",
   "Environment :: GPU :: NVIDIA CUDA :: 12",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -32,7 +30,7 @@ keywords=[
     "graph-neural-networks",
     "spectral-gnn",
 ]
-requires-python=">=3.8"
+requires-python=">=3.10"
 dependencies=[
     "torch_geometric>=2.5.3",
     "pandas>=2.0",

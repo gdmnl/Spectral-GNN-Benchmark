@@ -1,5 +1,5 @@
 benchmark.trainer
-===============
+=========================
 
 .. automodule:: benchmark.trainer
    :members:
@@ -8,16 +8,17 @@ benchmark.trainer
    :private-members:
 
 benchmark.trainer.base
--------------------
+------------------------------
 
 .. automodule:: benchmark.trainer.base
    :members:
    :undoc-members:
    :show-inheritance:
    :private-members:
+   :no-index:
 
 benchmark.trainer.filter
----------------------
+--------------------------------
 
 .. automodule:: benchmark.trainer.filter
    :members:
@@ -26,7 +27,7 @@ benchmark.trainer.filter
    :private-members:
 
 benchmark.trainer.load\_data
--------------------------
+------------------------------------
 
 .. automodule:: benchmark.trainer.load_data
    :members:
@@ -35,7 +36,7 @@ benchmark.trainer.load\_data
    :private-members:
 
 benchmark.trainer.load\_metric
----------------------------
+--------------------------------------
 
 .. automodule:: benchmark.trainer.load_metric
    :members:
@@ -44,7 +45,7 @@ benchmark.trainer.load\_metric
    :private-members:
 
 benchmark.trainer.load\_model
---------------------------
+-------------------------------------
 
 .. automodule:: benchmark.trainer.load_model
    :members:

@@ -1,0 +1,43 @@
+cff-version: 1.2.0
+message: "If you use this framework, please cite our paper as below."
+authors:
+  - family-names: Liao
+    given-names: Ningyi
+    orcid: https://orcid.org/0000-0003-3176-4401
+  - family-names: Liu
+    given-names: Haoyu
+  - family-names: Zhu
+    given-names: Zulun
+  - family-names: Luo
+    given-names: Siqiang
+    orcid: https://orcid.org/0000-0001-8197-0903
+  - family-names: Lakshmanan
+    given-names: Laks
+    orcid: https://orcid.org/0000-0002-9775-4241
+title: "pyg_spectral"
+version: 1.0.0
+date-released: 2024-05-28
+preferred-citation:
+  type: report
+  authors:
+  - family-names: Liao
+    given-names: Ningyi
+    orcid: https://orcid.org/0000-0003-3176-4401
+  - family-names: Liu
+    given-names: Haoyu
+  - family-names: Zhu
+    given-names: Zulun
+  - family-names: Luo
+    given-names: Siqiang
+    orcid: https://orcid.org/0000-0001-8197-0903
+  - family-names: Lakshmanan
+    given-names: Laks
+    orcid: https://orcid.org/0000-0002-9775-4241
+  journal: "arXiv e-prints"
+  month: 6
+  start: 1
+  end: 37
+  title: "Benchmarking Spectral Graph Neural Networks: A Comprehensive Study on Effectiveness and Efficiency"
+  issue: arXiv:2406.09675
+  year: 2024
+  eprint: 2406.09675
