@@ -1,11 +1,25 @@
 # Benchmarking Spectral Graph Neural Networks
 
-[![Docs](https://github.com/gdmnl/Spectral-GNN-Benchmark/actions/workflows/docs.yaml/badge.svg)](https://gdmnl.github.io/Spectral-GNN-Benchmark/)
-[![LICENSE](https://img.shields.io/github/license/gdmnl/Spectral-GNN-Benchmark)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/gdmnl/Spectral-GNN-Benchmark?include_prereleases)](https://github.com/gdmnl/Spectral-GNN-Benchmark/releases/latest)
-[![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fgdmnl%2FSpectral-GNN-Benchmark%2Fmain%2Fpyproject.toml)](https://gdmnl.github.io/Spectral-GNN-Benchmark/installation.html#)
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css">
+<div align="center">
+  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/">
+    <img src="https://github.com/gdmnl/Spectral-GNN-Benchmark/actions/workflows/docs.yaml/badge.svg" alt="Docs">
+  </a>
+  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark?tab=MIT-1-ov-file">
+    <img src="https://img.shields.io/github/license/gdmnl/Spectral-GNN-Benchmark" alt="License">
+  </a>
+  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark/releases/latest">
+    <img src="https://img.shields.io/github/v/release/gdmnl/Spectral-GNN-Benchmark?include_prereleases" alt="Contrib">
+  </a>
+  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html">
+    <img src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fgdmnl%2FSpectral-GNN-Benchmark%2Fmain%2Fpyproject.toml&logo=python&label=Python" alt="Python">
+  </a>
+  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html">
+    <img src="https://img.shields.io/badge/PyTorch->=2.0-FF6F00?logo=pytorch" alt="PyTorch">
+  </a>
+</div>
 
-`pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations.
+`pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations. Our paper is available on [arXiv](https://arxiv.org/abs/2406.09675).
 
 > [!IMPORTANT]
 > ***Why this project?***  
@@ -16,7 +30,12 @@
 
 ---
 
-[:mag: **Documentation**](https://gdmnl.github.io/Spectral-GNN-Benchmark/) | [:octocat: **GitHub**](https://github.com/gdmnl/Spectral-GNN-Benchmark/) | [:page_facing_up: **Paper**](https://arxiv.org/abs/2406.09675) | [:paperclip: **Cite**](CITATION.cff)
+<div align="center">
+  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/">🔍 <b>Documentation</b></a> |
+  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark/">👾 <b>GitHub</b></a> |
+  <a href="https://arxiv.org/abs/2406.09675">📄 <b>Paper</b></a> |
+  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark#misc">📎 <b>Cite</b></a>
+</div>
 
 - [Installation](#installation)
 - [Reproduce Experiments](#reproduce-experiments)
@@ -67,14 +86,14 @@ bash scripts/runmb.sh
 ```
 
 ### Additional Experiments
-#### Effect of graph normalization vs degree-specific accuracy (*Figure 3, 9*):
+#### Effect of graph normalization (*Figure 3, 9*):
 ```bash
 bash scripts/eval_degree.sh
 ```
 
 Figures can be plotted by: [`benchmark/notebook/fig_degng.ipynb`](benchmark/notebook/fig_degng.ipynb).
 
-#### Effect of the number of propagation hops vs accuracy (*Figure 7, 8*):
+#### Effect of propagation hops (*Figure 7, 8*):
 ```bash
 bash scripts/eval_hop.sh
 ```
@@ -162,8 +181,8 @@ The propagation matrix is specified by the `propagate_mat` argument as a string.
 #### Step 2: Prepare representation matrix
 Similar to PyG modules, our spectral filter class takes the graph attribute `x` and edge index `edge_index` as input. The `_get_convolute_mat()` method prepares the representation matrices used in recurrent computation as a dictionary:
 ```python
-def _get_convolute_mat(self, x, edge_index):
-    return {'x': x, 'x_1': x}
+    def _get_convolute_mat(self, x, edge_index):
+        return {'x': x, 'x_1': x}
 ```
 
 The above example overwrites the method for `SkipConv`, returning the input feature `x` and a placeholder `x_1` for the representation in the previous hop.
@@ -171,14 +190,14 @@ The above example overwrites the method for `SkipConv`, returning the input feat
 #### Step 3: Derive recurrent forward
 The `_forward()` method implements recurrent computation of the filter. Its input/output is a dictionary combining the propagation matrices defined by `propagate_mat` and the representation matrices prepared by `_get_convolute_mat()`. 
 ```python
-def _forward(self, x, x_1, prop):
-    if self.hop == 0:
-        # No propagation for k=0
-        return {'x': x, 'x_1': x, 'prop': prop}
+    def _forward(self, x, x_1, prop):
+        if self.hop == 0:
+            # No propagation for k=0
+            return {'x': x, 'x_1': x, 'prop': prop}
 
-    h = self.propagate(prop, x=x)
-    h = h + x_1
-    return {'x': h, 'x_1': x, 'prop': prop}
+        h = self.propagate(prop, x=x)
+        h = h + x_1
+        return {'x': h, 'x_1': x, 'prop': prop}
 ```
 
 Similar to PyG modules, the `propagate()` method conducts graph propagation by the given matrices. The above example corresponds to the graph propagation with a skip connection to the previous representation: $H^{(k)} = (A-I)H^{(k-1)} + H^{(k-2)}$.
@@ -198,7 +217,7 @@ out = model(x, edge_index)
 
 | **Category** | **Model** |
 |:------------:|:----------|
-| Fixed Filter | [GCN](https://arxiv.org/abs/1609.02907), [SGC](https://arxiv.org/pdf/1902.07153), [gfNN](https://arxiv.org/pdf/1905.09550), [GZoom](https://arxiv.org/pdf/1910.02370), [S²GC](https://openreview.net/pdf?id=CYO5T-YjWZV),[GLP](https://arxiv.org/pdf/1901.09993), [APPNP](https://arxiv.org/pdf/1810.05997), [GCNII](https://arxiv.org/pdf/2007.02133), [GDC](https://proceedings.neurips.cc/paper_files/paper/2019/file/23c894276a2c5a16470e6a31f4618d73-Paper.pdf), [DGC](https://arxiv.org/pdf/2102.10739), [AGP](https://arxiv.org/pdf/2106.03058), [GRAND+](https://arxiv.org/pdf/2203.06389)|
+| Fixed Filter | [GCN](https://arxiv.org/abs/1609.02907), [SGC](https://arxiv.org/pdf/1902.07153), [gfNN](https://arxiv.org/pdf/1905.09550), [GZoom](https://arxiv.org/pdf/1910.02370), [S²GC](https://openreview.net/pdf?id=CYO5T-YjWZV), [GLP](https://arxiv.org/pdf/1901.09993), [APPNP](https://arxiv.org/pdf/1810.05997), [GCNII](https://arxiv.org/pdf/2007.02133), [GDC](https://proceedings.neurips.cc/paper_files/paper/2019/file/23c894276a2c5a16470e6a31f4618d73-Paper.pdf), [DGC](https://arxiv.org/pdf/2102.10739), [AGP](https://arxiv.org/pdf/2106.03058), [GRAND+](https://arxiv.org/pdf/2203.06389)|
 |Variable Filter|[GIN](https://arxiv.org/pdf/1810.00826), [AKGNN](https://arxiv.org/pdf/2112.04575), [DAGNN](https://dl.acm.org/doi/pdf/10.1145/3394486.3403076), [GPRGNN](https://arxiv.org/pdf/2006.07988), [ARMAGNN](https://arxiv.org/pdf/1901.01343), [ChebNet](https://papers.nips.cc/paper_files/paper/2016/file/04df4d434d481c5bb723be1b6df1ee65-Paper.pdf), [ChebNetII](https://arxiv.org/pdf/2202.03580), [HornerGCN / ClenshawGCN](https://arxiv.org/pdf/2210.16508), [BernNet](https://arxiv.org/pdf/2106.10994), [LegendreNet](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10160025), [JacobiConv](https://arxiv.org/pdf/2205.11172), [FavardGNN / OptBasisGNN](https://arxiv.org/pdf/2302.12432)|
 |Filter Bank|[AdaGNN](https://arxiv.org/pdf/2104.12840), [FBGNN](https://arxiv.org/pdf/2008.08844), [ACMGNN](https://arxiv.org/pdf/2210.07606), [FAGCN](https://arxiv.org/pdf/2101.00797), [G²CN](https://proceedings.mlr.press/v162/li22h/li22h.pdf), [GNN-LF/HF](https://arxiv.org/pdf/2101.11859), [FiGURe](https://arxiv.org/pdf/2310.01892)|
 

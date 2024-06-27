@@ -1,4 +1,4 @@
-pyg\_spectral.nn.conv
+﻿pyg\_spectral.nn.conv
 =============================
 
 .. automodule:: pyg_spectral.nn.conv

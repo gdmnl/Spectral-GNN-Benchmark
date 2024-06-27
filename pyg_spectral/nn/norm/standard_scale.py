@@ -5,6 +5,12 @@ import torch.nn as nn
 
 
 class TensorStandardScaler(nn.Module):
+    """
+    Applies standard Gaussian normalization to :math:`\mathcal{N}(0, 1)`.
+
+    Args:
+        dim (int): Dimension to calculate mean and std. Default is 0.
+    """
     def __init__(self, dim: int = 0):
         super(TensorStandardScaler, self).__init__()
         self.dim = dim

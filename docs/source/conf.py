@@ -36,6 +36,7 @@ extensions = [
 ]
 
 autosummary_generate = True
+autosummary_imported_members = True
 templates_path = ['_templates']
 exclude_patterns = []
 
@@ -48,6 +49,7 @@ html_theme = 'sphinx_rtd_theme'
 html_theme_options = {
     "logo_only": False,
     "display_version": True,
+    "navigation_depth": 2,
 }
 html_static_path = ['_static']
 

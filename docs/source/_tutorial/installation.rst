@@ -19,7 +19,7 @@ The installation script already covers the following core dependencies:
 Advanced Options
 ++++++++++++++++++++++++
 
-Installations can be specified by pip options. The following options can also be combined.
+Installations can be specified by pip options. The following options can also be combined on demand.
 
 Only ``pyg_spectral`` Package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,7 +28,6 @@ Install without any options:
 
 .. code-block:: bash
 
-   pip install -r requirements.txt
    pip install -e .
 
 Benchmark Experiments
@@ -38,7 +37,6 @@ Install with ``[benchmark]`` option:
 
 .. code-block:: bash
 
-   pip install -r requirements.txt
    pip install -e .[benchmark]
 
 Docs Development
@@ -63,7 +61,6 @@ C++ Backend
 
 .. code-block:: bash
 
-   pip install -r requirements.txt
    export PSFLAG_CPP=1; pip install -e .[cpp]
 
 .. [1] Please refer to the `official guide <https://pytorch.org/get-started/locally/>`_ if a specific CUDA version is required for PyTorch.

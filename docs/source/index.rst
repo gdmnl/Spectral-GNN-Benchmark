@@ -5,21 +5,27 @@
 
 pyg_spectral
 ========================================
+.. sidebar:: Useful links
+
+   | 🔍 `Documentation <https://gdmnl.github.io/Spectral-GNN-Benchmark/>`_
+   | 👾 `GitHub <https://github.com/gdmnl/Spectral-GNN-Benchmark/>`_ |gh-bn|
+   | 📄 `Paper <https://arxiv.org/abs/2106.06100>`_
+   | 📎 `Citation <https://github.com/gdmnl/Spectral-GNN-Benchmark#misc>`_
+
 ``pyg_spectral`` is a `PyG <https://pyg.org>`_-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations.
 
-*Why this project?*
+.. admonition:: *Why this project?*
+
    We list the following highlights of our framework compared to PyG and similar works:
 
    * **Unified Framework**: We offer a plug-and-play collection for spectral models and filters in unified and efficient implementations, rather than a model-specific design. Our rich collection greatly extends the PyG model zoo.
-
    * **Spectral-oriented Design**: We decouple non-spectral designs and feature the pivotal spectral kernel being consistent throughout different settings. Most filters are thus easily adaptable to a wide range of model-level options, including those provided by PyG and PyG-based frameworks.
-
    * **High scalability**: As spectral GNNs are inherently suitable for large-scale learning, our framework is feasible to common scalable learning schemes and acceleration techniques. Several spectral-oriented approximation algorithms are also supported.
 
 .. include:: _tutorial/installation.rst
    :end-before: Advanced Options
 
-For advanced options, please refer to `Installation Options <installation.html#advanced-options>`_.
+For advanced options, please refer to `Installation Options <_tutorial/installation.html#advanced-options>`_.
 
 .. include:: _tutorial/reproduce.rst
 
@@ -29,7 +35,8 @@ For advanced options, please refer to `Installation Options <installation.html#a
 
    _tutorial/installation
    _tutorial/reproduce
-   _tutorial/customization
+   _tutorial/customize
+   _tutorial/configure
    _tutorial/arrangement
 
 .. toctree::
@@ -54,3 +61,8 @@ For advanced options, please refer to `Installation Options <installation.html#a
    _include/pyg_spectral.utils
 
 .. [1] Please refer to the `official guide <https://pytorch.org/get-started/locally/>`_ if a specific CUDA version is required for PyTorch.
+
+.. |gh-bn| raw:: html
+
+   <script async defer src="https://buttons.github.io/buttons.js"></script>
+   <a class="github-button" href="https://github.com/gdmnl/Spectral-GNN-Benchmark" vertical-align="middle" data-show-count="true" aria-label="Star gdmnl/Spectral-GNN-Benchmark on GitHub">Star</a>

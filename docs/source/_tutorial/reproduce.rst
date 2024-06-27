@@ -22,7 +22,7 @@ Datasets will be automatically downloaded and processed by the code.
 Additional Experiments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**Effect of graph normalization vs degree-specific accuracy** (*Figure 3, 9*):
+**Effect of graph normalization** (*Figure 3, 9*):
 
 .. code-block:: bash
 
@@ -30,7 +30,7 @@ Additional Experiments
 
 Figures can be plotted by: `benchmark/notebook/fig_degng.ipynb <https://github.com/gdmnl/Spectral-GNN-Benchmark/blob/main/benchmark/notebook/fig_degng.ipynb>`_.
 
-**Effect of the number of propagation hops vs accuracy** (*Figure 7, 8*):
+**Effect of propagation hops** (*Figure 7, 8*):
 
 .. code-block:: bash
 
