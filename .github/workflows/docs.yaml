@@ -38,13 +38,13 @@ jobs:
             CHANGELOG.md
             requirements.txt
 
-      - name: Setup packages
+      - name: Install requirement packages
         if: steps.changed-files-specific.outputs.only_changed != 'true'
         uses: ./.github/actions/setup
         with:
           full_install: false
 
-      - name: Install main package
+      - name: Install project packages
         if: steps.changed-files-specific.outputs.only_changed != 'true'
         run: |
           pip install -e .[docs,benchmark]

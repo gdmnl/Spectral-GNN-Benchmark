@@ -1,7 +1,7 @@
 Installation
 ----------------------------------------
 
-This package can be easily installed by running `pip <https://pip.pypa.io/en/stable/>`_ at package root path:
+This package can be easily installed by running `pip <https://pip.pypa.io/en/stable/>`__ at package root path:
 
 .. code-block:: bash
 
@@ -10,16 +10,16 @@ This package can be easily installed by running `pip <https://pip.pypa.io/en/sta
 
 The installation script already covers the following core dependencies:
 
-- `PyTorch <https://github.com/pytorch/pytorch>`_ (``>=2.0`` [1]_)
-- `PyTorch Geometric <https://github.com/pyg-team/pytorch_geometric>`_ (``>=2.5.3``)
-- `TorchMetrics <https://github.com/Lightning-AI/torchmetrics>`_ (``>=1.0``): only required for ``benchmark/`` experiments.
-- `Optuna <https://github.com/optuna/optuna>`_ (``>=3.4``): only required for hyperparameter search in ``benchmark/`` experiments.
+- `PyTorch <https://github.com/pytorch/pytorch>`__ (``>=2.0`` [1]_)
+- `PyTorch Geometric <https://github.com/pyg-team/pytorch_geometric>`__ (``>=2.5.3``)
+- `TorchMetrics <https://github.com/Lightning-AI/torchmetrics>`__ (``>=1.0``): only required for ``benchmark/`` experiments.
+- `Optuna <https://github.com/optuna/optuna>`__ (``>=3.4``): only required for hyperparameter search in ``benchmark/`` experiments.
 
 
 Advanced Options
 ++++++++++++++++++++++++
 
-Installations can be specified by pip options. The following options can also be combined on demand.
+Installation can be specified by pip options. The following options can also be combined on demand.
 
 Only ``pyg_spectral`` Package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,4 +63,4 @@ C++ Backend
 
    export PSFLAG_CPP=1; pip install -e .[cpp]
 
-.. [1] Please refer to the `official guide <https://pytorch.org/get-started/locally/>`_ if a specific CUDA version is required for PyTorch.
+.. [1] Please refer to the `official guide <https://pytorch.org/get-started/locally/>`__ if a specific CUDA version is required for PyTorch.

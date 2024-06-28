@@ -18,12 +18,28 @@ class TensorStandardScaler(nn.Module):
 
     @torch.no_grad()
     def fit(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute the mean and std to be used for later scaling.
+
+        Args:
+            x (torch.Tensor): Data used to compute the mean and standard deviation
+
+        Returns:
+            var_mean (Tuple[torch.Tensor, torch.Tensor]): Tuple of mean and std.
+        """
         var_mean = torch.var_mean(x, dim=self.dim, correction=0)
         self.std, self.mean = var_mean
         self.std = self.std.sqrt()
         return var_mean
 
     def forward(self, x: torch.Tensor, with_mean: bool = False) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Args:
+            x (torch.Tensor): The source tensor.
+            with_mean (bool, optional): Whether to center the data before scaling. Defaults to False.
+        """
         if with_mean:
             x -= self.mean
         x /= (self.std + 1e-7)

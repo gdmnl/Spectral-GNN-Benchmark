@@ -90,7 +90,7 @@ em.sig-param span.n:nth-child(4),
 em.sig-param span.n:nth-child(4) a,
 .sig-return {
   font-weight: normal;
-  font-style: normal;
+  font-style: italic;
 }
 em.sig-param span.default_value {
   font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",Courier,monospace;
@@ -98,7 +98,7 @@ em.sig-param span.default_value {
 }
 
 /* Function Details */
-html.writer-html5 .rst-content dl.simple {
+/* html.writer-html5 .rst-content dl.simple {
   display: inherit;
 }
 html.writer-html5 .rst-content dl.simple dt,
@@ -112,10 +112,11 @@ html.writer-html5 .rst-content dl.simple dt {
   border: inherit !important;
   background: none !important;
   color: inherit !important;
-}
+} */
 /* Fix property layout */
 dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) .property {
   display: inline !important;
+  padding-right: 0 !important;
 }
 
 /* Tables */
@@ -165,9 +166,20 @@ div.highlight,
   border: none;
   background: rgba(27,31,35,.05);
   border-radius: 6px;
-}
-.rst-content code.xref {
   overflow-wrap: break-word;
+  padding: .2em .4em;
+}
+.rst-content em code.xref,
+.rst-content .sphinx_autodoc_typehints-type code.xref {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: normal;
+  font-style: italic;
+  border: inherit;
+  background: inherit;
+  border-radius: inherit;
+  padding: inherit;
+  color: inherit;
 }
 div.highlight {
   background: linear-gradient(to bottom right, rgb(242,242,242), rgb(236,236,236));
@@ -208,9 +220,6 @@ div.highlight div.mac-header span.copy:hover {
 }
 div.highlight div.mac-header span.copy:active {
   color: rgb(30,124,221);
-}
-.rst-content code.xref {
-  padding: .2em .4em;
 }
 .rst-content pre.literal-block,
 .rst-content div[class^="highlight"] {
@@ -338,7 +347,8 @@ span.inline-logo.empty {
   margin-right: -4px;
 }
 span.inline-logo.empty:before {
-  content: "\200b"; // unicode zero width space character
+  content: "\200b";
+  /* unicode zero width space character */
 }
 @-moz-document url-prefix() {
 span.inline-logo {
@@ -481,4 +491,18 @@ h1 span.pyg-mono {
 
 .nbsphinx-gallery > a:hover div:last-child {
   background: rgb(212,212,212);
+}
+
+button.copybtn {
+  opacity: 1;
+  background-color: inherit;
+  border: none;
+}
+
+.highlight button.copybtn:hover {
+  background-color: rgba(200,200,200,0.5);
+}
+
+.o-tooltip--left:hover:after {
+  opacity: 0;
 }

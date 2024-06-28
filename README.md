@@ -2,21 +2,11 @@
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css">
 <div align="center">
-  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/">
-    <img src="https://github.com/gdmnl/Spectral-GNN-Benchmark/actions/workflows/docs.yaml/badge.svg" alt="Docs">
-  </a>
-  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark?tab=MIT-1-ov-file">
-    <img src="https://img.shields.io/github/license/gdmnl/Spectral-GNN-Benchmark" alt="License">
-  </a>
-  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark/releases/latest">
-    <img src="https://img.shields.io/github/v/release/gdmnl/Spectral-GNN-Benchmark?include_prereleases" alt="Contrib">
-  </a>
-  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html">
-    <img src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fgdmnl%2FSpectral-GNN-Benchmark%2Fmain%2Fpyproject.toml&logo=python&label=Python" alt="Python">
-  </a>
-  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html">
-    <img src="https://img.shields.io/badge/PyTorch->=2.0-FF6F00?logo=pytorch" alt="PyTorch">
-  </a>
+  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/"><img src="https://github.com/gdmnl/Spectral-GNN-Benchmark/actions/workflows/docs.yaml/badge.svg" alt="Docs"></a>
+  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark?tab=MIT-1-ov-file"><img src="https://img.shields.io/github/license/gdmnl/Spectral-GNN-Benchmark" alt="License"></a>
+  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark/releases/latest"><img src="https://img.shields.io/github/v/release/gdmnl/Spectral-GNN-Benchmark?include_prereleases" alt="Contrib"></a>
+  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html"><img src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fgdmnl%2FSpectral-GNN-Benchmark%2Fmain%2Fpyproject.toml&logo=python&label=Python" alt="Python"></a>
+  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html"><img src="https://img.shields.io/badge/PyTorch->=2.0-FF6F00?logo=pytorch" alt="PyTorch"></a>
 </div>
 
 `pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations. Our paper is available on [arXiv](https://arxiv.org/abs/2406.09675).

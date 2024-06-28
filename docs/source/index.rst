@@ -5,12 +5,12 @@
 
 pyg_spectral
 ========================================
-.. sidebar:: Useful links
+.. sidebar:: Project links
 
-   | 🔍 `Documentation <https://gdmnl.github.io/Spectral-GNN-Benchmark/>`_
-   | 👾 `GitHub <https://github.com/gdmnl/Spectral-GNN-Benchmark/>`_ |gh-bn|
-   | 📄 `Paper <https://arxiv.org/abs/2106.06100>`_
-   | 📎 `Citation <https://github.com/gdmnl/Spectral-GNN-Benchmark#misc>`_
+   | 🔍 `Documentation <https://gdmnl.github.io/Spectral-GNN-Benchmark/>`__
+   | 👾 `GitHub <https://github.com/gdmnl/Spectral-GNN-Benchmark/>`__ |gh-bn|
+   | 📄 `Paper <https://arxiv.org/abs/2106.06100>`__
+   | 📎 `Citation <https://github.com/gdmnl/Spectral-GNN-Benchmark#misc>`__
 
 ``pyg_spectral`` is a `PyG <https://pyg.org>`_-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations.
 
@@ -42,15 +42,6 @@ For advanced options, please refer to `Installation Options <_tutorial/installat
 .. toctree::
    :hidden:
    :maxdepth: 1
-   :caption: Experiments
-
-   _include/benchmark.trainer
-   _include/benchmark.utils
-   _include/benchmark.dataset_process
-
-.. toctree::
-   :hidden:
-   :maxdepth: 1
    :caption: Package Reference
 
    _include/pyg_spectral.nn
@@ -60,7 +51,16 @@ For advanced options, please refer to `Installation Options <_tutorial/installat
    _include/pyg_spectral.transforms
    _include/pyg_spectral.utils
 
-.. [1] Please refer to the `official guide <https://pytorch.org/get-started/locally/>`_ if a specific CUDA version is required for PyTorch.
+.. toctree::
+   :hidden:
+   :maxdepth: 1
+   :caption: Experiments
+
+   _include/benchmark.trainer
+   _include/benchmark.utils
+   _include/benchmark.dataset_process
+
+.. [1] Please refer to the `official guide <https://pytorch.org/get-started/locally/>`__ if a specific CUDA version is required for PyTorch.
 
 .. |gh-bn| raw:: html
 

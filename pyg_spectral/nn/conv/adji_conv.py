@@ -169,6 +169,19 @@ class AdjSkipConv(BaseMP):
 
 
 class AdjSkip2Conv(AdjSkipConv):
+    r"""Iterative linear filter with 2-hop propagation and skip connection.
+
+    Args:
+        alpha (float): decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
+            Can be :math:`\alpha < 0`.
+        beta (float): scaling for skip connection,  i.e., self-loop in adjacency
+            matrix, i.e. `improved` in PyG GCNConv and `eps` in GINConv.
+            Can be :math:`\beta < 0`.
+            beta = 'var' for learnable beta as parameter.
+        --- BaseMP Args ---
+        num_hops (int), hop (int): total and current number of propagation hops.
+        cached: whether cache the propagation matrix.
+    """
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         # return spmm(adj_t, spmm(adj_t, x, reduce=self.aggr), reduce=self.aggr)
         return torch.spmm(adj_t, torch.spmm(adj_t, x))
