@@ -10,28 +10,19 @@ class Iterative(BaseNN):
     r"""Iterative structure with matrix transformation each hop of propagation.
 
     Args:
-        bias (bool, optional): whether learn an additive bias in conv.
-        weight_initializer (str, optional): The initializer for the weight
-            matrix (:obj:`"glorot"`, :obj:`"uniform"`, :obj:`"kaiming_uniform"`
+        bias (Optional[bool]): whether learn an additive bias in conv.
+        weight_initializer (Optional[str]): The initializer for the weight
+            matrix (:obj:`"glorot"`, :obj:`"uniform"`, :obj:`"kaiming_uniform"`,
             or :obj:`None`).
-        bias_initializer (str, optional): The initializer for the bias vector
+        bias_initializer (Optional[str]): The initializer for the bias vector
             (:obj:`"zeros"` or :obj:`None`).
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def init_conv(self,
@@ -67,30 +58,21 @@ class IterativeCompose(BaseNNCompose):
     r"""Iterative structure with matrix transformation each hop of propagation.
 
     Args:
-        bias (bool, optional): whether learn an additive bias in conv.
-        weight_initializer (str, optional): The initializer for the weight
-            matrix (:obj:`"glorot"`, :obj:`"uniform"`, :obj:`"kaiming_uniform"`
+        bias (Optional[bool]): whether learn an additive bias in conv.
+        weight_initializer (Optional[str]): The initializer for the weight
+            matrix (:obj:`"glorot"`, :obj:`"uniform"`, :obj:`"kaiming_uniform"`,
             or :obj:`None`).
-        bias_initializer (str, optional): The initializer for the bias vector
+        bias_initializer (Optional[str]): The initializer for the bias vector
             (:obj:`"zeros"` or :obj:`None`).
-        combine (str): How to combine different channels of convs. (one of
-            "sum", "sum_weighted", "cat").
-        --- BaseNN Args ---
-        conv (List[str]): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        combine: How to combine different channels of convs. (:obj:`sum`,
+            :obj:`sum_weighted`, or :obj:`cat`).
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def init_conv(self,

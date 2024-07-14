@@ -7,6 +7,10 @@ from pyg_spectral.propagations import PyPropComp
 
 
 class CppCompFixed(PrecomputedFixed):
+    r"""Decoupled structure with C++ propagation precomputation.
+    Fixed scalar propagation parameters and accumulating precompute results.
+    """
+
     def preprocess(self,
         x: Tensor,
         edge_index: Adj

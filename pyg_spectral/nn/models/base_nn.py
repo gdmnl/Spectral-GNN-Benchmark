@@ -21,19 +21,18 @@ class BaseNN(nn.Module):
     r"""Base NN structure with MLP before and after convolution layers.
 
     Args:
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        conv: Name of :class:`pyg_spectral.nn.conv` module.
+        num_hops: Total number of conv hops.
+        in_channels: Size of each input sample.
+        hidden_channels: Size of each hidden sample.
+        out_channels: Size of each output sample.
+        in_layers: Number of MLP layers before conv.
+        out_layers: Number of MLP layers after conv.
+        dropout_lin: Dropout probability for both MLPs.
+        dropout_conv: Dropout probability before conv.
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        lib_conv: Parent module library other than :class:`pyg_spectral.nn.conv`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
     supports_edge_weight: Final[bool] = False
@@ -168,7 +167,7 @@ class BaseNN(nn.Module):
         x: Tensor,
         edge_index: Adj
     ) -> Any:
-        r"""Preprocessing step that not counted in forward() overhead.
+        r"""Preprocessing step that not counted in :meth:`forward()` overhead.
         Here mainly transforming graph adjacency to actual propagation matrix.
         """
         return self.get_propagate_mat(x, edge_index)
@@ -199,18 +198,16 @@ class BaseNN(nn.Module):
     ) -> Tensor:
         r"""
         Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-            batch (Tensor, optional): The batch vector
+            x, edge_index: from :class:`torch_geometric.data.Data`
+            batch: The batch vector
                 :math:`\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N`, which assigns
                 each element to a specific example.
                 Only needs to be passed in case the underlying normalization
                 layers require the :obj:`batch` information.
-                (default: :obj:`None`)
-            batch_size (int, optional): The number of examples :math:`B`.
+            batch_size: The number of examples :math:`B`.
                 Automatically calculated if not given.
                 Only needs to be passed in case the underlying normalization
                 layers require the :obj:`batch` information.
-                (default: :obj:`None`)
         """
         if self.in_layers > 0:
             x = self.in_mlp(x, batch=batch, batch_size=batch_size)
@@ -224,29 +221,27 @@ class BaseNNCompose(BaseNN):
     r"""Base NN structure with multiple conv channels.
 
     Args:
-        combine (str): How to combine different channels of convs. (one of
-            "sum", "sum_weighted", "cat").
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        combine (str): How to combine different channels of convs. (:obj:`sum`,
+            :obj:`sum_weighted`, or :obj:`cat`).
+        conv: Name of :class:`pyg_spectral.nn.conv` module.
+        num_hops: Total number of conv hops.
+        in_channels: Size of each input sample.
+        hidden_channels: Size of each hidden sample.
+        out_channels: Size of each output sample.
+        in_layers: Number of MLP layers before conv.
+        out_layers: Number of MLP layers after conv.
+        dropout_lin: Dropout probability for both MLPs.
+        dropout_conv: Dropout probability before conv.
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        lib_conv: Parent module library other than :class:`pyg_spectral.nn.conv`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def init_channel_list(self, conv: str, in_channels: int, hidden_channels: int, out_channels: int, **kwargs) -> List[int]:
         """
-            self.channel_list: width for each conv channel
+        Attributes:
+            channel_list: width for each conv channel
         """
         self.combine = kwargs.pop('combine', 'sum')
         n_conv = len(conv.split(','))
@@ -317,7 +312,7 @@ class BaseNNCompose(BaseNN):
         x: Tensor,
         edge_index: Adj
     ) -> Any:
-        r"""Preprocessing step that not counted in forward() overhead.
+        r"""Preprocessing step that not counted in :meth:`forward()` overhead.
         Here mainly transforming graph adjacency to actual propagation matrix.
         """
         return [f(x, edge_index) for f in self.get_propagate_mat()]

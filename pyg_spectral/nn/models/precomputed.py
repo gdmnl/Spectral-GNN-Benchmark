@@ -8,27 +8,22 @@ from pyg_spectral.nn.models.decoupled import DecoupledFixed, DecoupledVar, Decou
 
 class PrecomputedFixed(DecoupledFixed):
     r"""Decoupled structure with precomputation separating propagation from transformation.
-        Fixed scalar propagation parameters and accumulating precompute results.
-    NOTE: Only apply propagation in `convolute()`. Not to be mixed with :class:`Decoupled` models.
+    Fixed scalar propagation parameters and accumulating precompute results.
+
+    .. Note ::
+        Only apply propagation in :meth:`convolute()`.
+        Not to be mixed with :class:`Decoupled` models.
 
     Args:
         theta_scheme (str): Method to generate decoupled parameters.
-        theta_param (float, optional): Hyperparameter for the scheme.
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        theta_param (Optional[float]): Hyperparameter for the scheme.
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def __init__(self, in_layers: Optional[int] = None, **kwargs):
@@ -40,7 +35,8 @@ class PrecomputedFixed(DecoupledFixed):
         edge_index: Adj,
     ) -> Tensor:
         r"""Decoupled propagation step for calling the convolutional module.
-            Requires no variable transformation in conv.forward().
+        Requires no variable transformation in :meth:`conv.forward()`.
+
         Returns:
             embed (Tensor): Precomputed node embeddings.
         """
@@ -56,18 +52,8 @@ class PrecomputedFixed(DecoupledFixed):
     ) -> Tensor:
         r"""
         Args:
-            x (Tensor): the output `embed` from `convolute()`.
-            batch (Tensor, optional): The batch vector
-                :math:`\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N`, which assigns
-                each element to a specific example.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-                (default: :obj:`None`)
-            batch_size (int, optional): The number of examples :math:`B`.
-                Automatically calculated if not given.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-                (default: :obj:`None`)
+            x: the output :obj:`embed` from :meth:`convolute()`.
+            batch, batch_size: Args for :class:`BaseNN`
         """
         if self.out_layers > 0:
             x = self.out_mlp(x, batch=batch, batch_size=batch_size)
@@ -76,27 +62,22 @@ class PrecomputedFixed(DecoupledFixed):
 
 class PrecomputedVar(DecoupledVar):
     r"""Decoupled structure with precomputation separating propagation from transformation.
-        Learnable scalar propagation parameters and storing all intermediate precompute results.
-    NOTE: Only apply propagation in `convolute()`. Not to be mixed with :class:`Decoupled` models.
+    Learnable scalar propagation parameters and storing all intermediate precompute results.
+
+    .. Note ::
+        Only apply propagation in :meth:`convolute()`.
+        Not to be mixed with :class:`Decoupled` models.
 
     Args:
         theta_scheme (str): Method to generate decoupled parameters.
-        theta_param (float, optional): Hyperparameter for the scheme.
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        theta_param (Optional[float]): Hyperparameter for the scheme.
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
     def __init__(self, in_layers: Optional[int] = None, **kwargs):
         assert in_layers is None or in_layers == 0, "PrecomputedVar does not support in_layers."
@@ -107,10 +88,11 @@ class PrecomputedVar(DecoupledVar):
         edge_index: Adj,
     ) -> list:
         r"""Decoupled propagation step for calling the convolutional module.
-            `self._forward()` should not contain derivable computations.
+        :meth:`_forward()` should not contain derivable computations.
+
         Returns:
-            embed (Tensor): List of precomputed node embeddings of each hop.
-                Each shape is :math:`(|\mathcal{V}|, F, len(convs)+1)`.
+            embed: List of precomputed node embeddings of each hop.
+                Each shape is :math:`(|\mathcal{V}|, F, |convs|+1)`.
         """
         conv_mat = self.get_forward_mat(x, edge_index, comp_scheme='convolute')
 
@@ -131,18 +113,8 @@ class PrecomputedVar(DecoupledVar):
     ) -> Tensor:
         r"""
         Args:
-            x (Tensor): the output `embed` from `convolute()`.
-            batch (Tensor, optional): The batch vector
-                :math:`\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N`, which assigns
-                each element to a specific example.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-                (default: :obj:`None`)
-            batch_size (int, optional): The number of examples :math:`B`.
-                Automatically calculated if not given.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-                (default: :obj:`None`)
+            x: the output :obj:`embed` from :meth:`convolute()`.
+            batch, batch_size: Args for :class:`BaseNN`
         """
         conv_mat = self.get_forward_mat(xs[..., 0], None, comp_scheme='forward')
         for k, conv in enumerate(self.convs):
@@ -159,29 +131,20 @@ class PrecomputedVar(DecoupledVar):
 # ==========
 class PrecomputedFixedCompose(DecoupledFixedCompose):
     r"""Decoupled structure with precomputation separating propagation from transformation.
-        Fixed scalar propagation parameters and accumulating precompute results.
+    Fixed scalar propagation parameters and accumulating precompute results.
 
     Args:
         theta_scheme (List[str]): Method to generate decoupled parameters.
         theta_param (List[float], optional): Hyperparameter for the scheme.
-        combine (str): How to combine different channels of convs. (one of
-            "sum", "sum_weighted", "cat").
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        combine: How to combine different channels of convs. (:obj:`sum`,
+            :obj:`sum_weighted`, or :obj:`cat`).
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def convolute(self,
@@ -189,10 +152,10 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
         edge_index: Adj,
     ) -> Tensor:
         r"""Decoupled propagation step for calling the convolutional module.
-            Requires no variable transformation in conv.forward().
+        Requires no variable transformation in :meth:`conv.forward()`.
+
         Returns:
-            embed (Tensor): Precomputed node embeddings.
-                Shape: :math:`(|\mathcal{V}|, F, Q)`.
+            embed (Tensor): Precomputed node embeddings. (shape: :math:`(|\mathcal{V}|, F, Q)`)
         """
         out = []
         conv_mats = self.get_forward_mat()
@@ -210,18 +173,8 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
     ) -> Tensor:
         r"""
         Args:
-            x (Tensor): the output `embed` from `convolute()`.
-            batch (Tensor, optional): The batch vector
-                :math:`\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N`, which assigns
-                each element to a specific example.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-                (default: :obj:`None`)
-            batch_size (int, optional): The number of examples :math:`B`.
-                Automatically calculated if not given.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-                (default: :obj:`None`)
+            x: the output :obj:`embed` from :meth:`convolute()`.
+            batch, batch_size: Args for :class:`BaseNN`
         """
         out = None
         for i, channel in enumerate(self.convs):
@@ -242,29 +195,20 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
 
 class PrecomputedVarCompose(DecoupledVarCompose):
     r"""Decoupled structure with precomputation separating propagation from transformation.
-        Learnable scalar propagation parameters and storing all intermediate precompute results.
+    Learnable scalar propagation parameters and storing all intermediate precompute results.
 
     Args:
         theta_scheme (List[str]): Method to generate decoupled parameters.
         theta_param (List[float], optional): Hyperparameter for the scheme.
-        combine (str): How to combine different channels of convs. (one of
-            "sum", "sum_weighted", "cat").
-        --- BaseNN Args ---
-        conv (List[str]): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        combine: How to combine different channels of convs. (:obj:`sum`,
+            :obj:`sum_weighted`, or :obj:`cat`).
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def convolute(self,
@@ -272,10 +216,11 @@ class PrecomputedVarCompose(DecoupledVarCompose):
         edge_index: Adj,
     ) -> Tensor:
         r"""Decoupled propagation step for calling the convolutional module.
-            Requires no variable transformation in conv.forward().
+        Requires no variable transformation in :meth:`conv.forward()`.
+
         Returns:
             embed (Tensor): List of precomputed node embeddings of each hop.
-                Shape: :math:`(|\mathcal{V}|, F, Q, len(convs)+1)`.
+                Shape: :math:`(|\mathcal{V}|, F, Q, |convs|+1)`.
         """
         out = []
         conv_mats = self.get_forward_mat()
@@ -300,18 +245,8 @@ class PrecomputedVarCompose(DecoupledVarCompose):
     ) -> Tensor:
         r"""
         Args:
-            x (Tensor): the output `embed` from `convolute()`.
-            batch (Tensor, optional): The batch vector
-                :math:`\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N`, which assigns
-                each element to a specific example.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-                (default: :obj:`None`)
-            batch_size (int, optional): The number of examples :math:`B`.
-                Automatically calculated if not given.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-                (default: :obj:`None`)
+            x: the output :obj:`embed` from :meth:`convolute()`.
+            batch, batch_size: Args for :class:`BaseNN`
         """
         out = None
         conv_mats = self.get_forward_mat()

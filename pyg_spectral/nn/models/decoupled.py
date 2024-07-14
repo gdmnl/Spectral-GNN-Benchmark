@@ -113,28 +113,22 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
 
 class DecoupledFixed(BaseNN):
     r"""Decoupled structure without matrix transformation during propagation.
-        Fixed scalar propagation parameters.
-    NOTE: Apply conv every forward() call. Not to be mixed with :class:`Precomputed` models.
+    Fixed scalar propagation parameters.
+
+    .. Note ::
+        Apply conv every :meth:`forward()` call.
+        Not to be mixed with :class:`Precomputed` models.
 
     Args:
         theta_scheme (str): Method to generate decoupled parameters.
         theta_param (float, optional): Hyperparameter for the scheme.
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def init_conv(self,
@@ -161,28 +155,22 @@ class DecoupledFixed(BaseNN):
 
 class DecoupledVar(BaseNN):
     r"""Decoupled structure without matrix transformation during propagation.
-        Learnable scalar propagation parameters.
-    NOTE: Apply conv every forward() call. Not to be mixed with :class:`Precomputed` models.
+    Learnable scalar propagation parameters.
+
+    .. Note ::
+        Apply conv every :meth:`forward()` call.
+        Not to be mixed with :class:`Precomputed` models.
 
     Args:
         theta_scheme (str): Method to generate decoupled parameters.
         theta_param (float, optional): Hyperparameter for the scheme.
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def init_conv(self,
@@ -219,29 +207,20 @@ class DecoupledVar(BaseNN):
 # ==========
 class DecoupledFixedCompose(BaseNNCompose):
     r"""Decoupled structure without matrix transformation during propagation.
-        Fixed scalar propagation parameters.
+    Fixed scalar propagation parameters.
 
     Args:
         theta_scheme (List[str]): Method to generate decoupled parameters.
         theta_param (List[float], optional): Hyperparameter for the scheme.
-        combine (str): How to combine different channels of convs. (one of
-            "sum", "sum_weighted", "cat").
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        combine: How to combine different channels of convs. (:obj:`sum`,
+            :obj:`sum_weighted`, or :obj:`cat`).
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def init_conv(self,
@@ -284,29 +263,20 @@ class DecoupledFixedCompose(BaseNNCompose):
 
 class DecoupledVarCompose(BaseNNCompose):
     r"""Decoupled structure without matrix transformation during propagation.
-        Learnable scalar propagation parameters.
+    Learnable scalar propagation parameters.
 
     Args:
         theta_scheme (List[str]): Method to generate decoupled parameters.
         theta_param (List[float], optional): Hyperparameter for the scheme.
-        combine (str): How to combine different channels of convs. (one of
-            "sum", "sum_weighted", "cat").
-        --- BaseNN Args ---
-        conv (List[str]): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        combine: How to combine different channels of convs. (:obj:`sum`,
+            :obj:`sum_weighted`, or :obj:`cat`).
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def init_conv(self,

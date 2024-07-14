@@ -56,8 +56,7 @@ class BaseMP(MessagePassing):
         :meth:`forward()` with same input.
 
         Args:
-            x: from :class:`torch_geometric.data.Data`
-            edge_index: from :class:`torch_geometric.data.Data`
+            x, edge_index: from :class:`torch_geometric.data.Data`
         Attributes:
             propagate_mat (str): propagation schemes, separated by ``,``.
                 Each scheme starts with ``A`` or ``L`` for adjacency or Laplacian,
@@ -153,8 +152,7 @@ class BaseMP(MessagePassing):
         r"""Get matrices for :meth:`forward()`. Called during :meth:`forward()`.
 
         Args:
-            x: from :class:`torch_geometric.data.Data`
-            edge_index: from :class:`torch_geometric.data.Data`
+            x, edge_index: from :class:`torch_geometric.data.Data`
         Returns:
             out (Tensor): output tensor (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix

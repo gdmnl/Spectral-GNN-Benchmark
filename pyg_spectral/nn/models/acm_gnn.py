@@ -11,30 +11,22 @@ from pyg_spectral.utils import load_import
 
 class ACMGNN(BaseNN):
     r"""Iterative structure for ACM conv.
-    paper: Revisiting Heterophily For Graph Neural Networks
-    paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
-    ref: https://github.com/SitaoLuan/ACM-GNN
+
+    :paper: Revisiting Heterophily For Graph Neural Networks
+    :paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
+    :ref: https://github.com/SitaoLuan/ACM-GNN
 
     Args:
         theta_scheme (str): Channel list. "FBGNN"="low-high", "ACMGNN"="low-high-id",
             ("ACMGNN+"="low-high-id-struct", not implemented).
         weight_initializer (str, optional): The initializer for the weight.
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def init_conv(self,
@@ -68,30 +60,22 @@ class ACMGNN(BaseNN):
 
 class ACMGNNDec(BaseNN):
     r"""Decoupled structure for ACM conv.
-    paper: Revisiting Heterophily For Graph Neural Networks
-    paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
-    ref: https://github.com/SitaoLuan/ACM-GNN
+
+    :paper: Revisiting Heterophily For Graph Neural Networks
+    :paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
+    :ref: https://github.com/SitaoLuan/ACM-GNN
 
     Args:
         theta_scheme (str): Channel list. "FBGNN"="low-high", "ACMGNN"="low-high-id",
             ("ACMGNN+"="low-high-id-struct", not implemented).
         weight_initializer (str, optional): The initializer for the weight.
-        --- BaseNN Args ---
-        conv (str): Name of :class:`pyg_spectral.nn.conv` module.
-        num_hops (int): Total number of conv hops.
-        in_channels (int): Size of each input sample.
-        hidden_channels (int): Size of each hidden sample.
-        out_channels (int): Size of each output sample.
-        in_layers (int): Number of MLP layers before conv.
-        out_layers (int): Number of MLP layers after conv.
-        dropout_lin (float, optional): Dropout probability for both MLPs.
-        dropout_conv (float, optional): Dropout probability before conv.
+        conv, num_hops, in_channels, hidden_channels, out_channels:
+            args for :class:`BaseNN`
+        in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
+            args for :class:`BaseNN`
         act, act_first, act_kwargs, norm, norm_kwargs, plain_last, bias:
-            args for :class:`pyg.nn.models.MLP`.
-        lib_conv (str, optional): Parent module library other than
-            :class:`pyg_spectral.nn.conv`.
-        **kwargs (optional): Additional arguments of the
-            :class:`pyg_spectral.nn.conv` module.
+            args for :class:`torch_geometric.nn.models.MLP`.
+        **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
 
     def init_conv(self,

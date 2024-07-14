@@ -126,7 +126,7 @@ class MemoryCUDA(NumFmt):
 
 
 class ParamNumel(NumFmt):
-    r"""Number of learnable parameters in an nn.Module.
+    r"""Number of learnable parameters in an :class:`torch.nn.Module`.
     """
     def __init__(self, module: Module = None):
         super(ParamNumel, self).__init__(base=10, suffix='')
@@ -141,7 +141,7 @@ class ParamNumel(NumFmt):
 
 
 class ParamMemory(NumFmt):
-    r"""Memory usage of parameters in an nn.Module.
+    r"""Memory usage of parameters in an :class:`torch.nn.Module`.
     """
     def __init__(self, module: Module = None):
         super(ParamMemory, self).__init__(base=2, suffix='B')
