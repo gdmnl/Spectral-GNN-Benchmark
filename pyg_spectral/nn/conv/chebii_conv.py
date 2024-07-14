@@ -24,14 +24,12 @@ def cheby(i, x):
 
 class ChebIIConv(BaseMP):
     r"""Convolutional layer with Chebyshev-II Polynomials.
-    paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
-    ref: https://github.com/ivam-he/ChebNetII/blob/main/main/ChebnetII_pro.py
+
+    :paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
+    :ref: https://github.com/ivam-he/ChebNetII/blob/main/main/ChebnetII_pro.py
 
     Args:
-        alpha (float): decay factor for each hop :math:`1/hop^\alpha`.
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     coeffs_data = None
 
@@ -63,6 +61,7 @@ class ChebIIConv(BaseMP):
 
     def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
         r"""
+        Attributes:
             thetas (Tensor): learnable/fixed (wrt decoupled/iterative model)
                 scalar parameters representing cheb(x)
         """
@@ -92,8 +91,8 @@ class ChebIIConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
-            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
+            x (Tensor): propagation result of :math:`k-1` (shape: :math:`(|\mathcal{V}|, F)`)
+            x_1 (Tensor): propagation result of :math:`k-2` (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         if self.hop == 0:

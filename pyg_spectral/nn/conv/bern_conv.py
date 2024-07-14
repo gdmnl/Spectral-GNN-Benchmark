@@ -8,14 +8,14 @@ from pyg_spectral.nn.conv.base_mp import BaseMP
 
 class BernConv(BaseMP):
     r"""Convolutional layer with Bernstein Polynomials.
-    We propose a new implementation reducing memory from O(KFn) to O(3Fn).
-    paper: BernNet: Learning Arbitrary Graph Spectral Filters via Bernstein Approximation
-    ref: https://github.com/ivam-he/BernNet/blob/main/NodeClassification/Bernpro.py
+    We propose a new implementation reducing memory overhead from
+    :math:`O(KFn)` to :math:`O(3Fn)`.
+
+    :paper: BernNet: Learning Arbitrary Graph Spectral Filters via Bernstein Approximation
+    :ref: https://github.com/ivam-he/BernNet/blob/main/NodeClassification/Bernpro.py
 
     Args:
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
@@ -39,9 +39,9 @@ class BernConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result through (2I-L)
-            prop_0 (SparseTensor): L
-            prop_1 (SparseTensor): 2I - L
+            x (Tensor): propagation result through :math:`2I-L`  (shape: :math:`(|\mathcal{V}|, F)`)
+            prop_0 (SparseTensor): :math:`L`
+            prop_1 (SparseTensor): :math:`2I-L`
         """
         if self.hop > 0:
             # propagate_type: (x: Tensor)

@@ -19,8 +19,8 @@ NCLASS_Q = 5
 
 class LINKX(InMemoryDataset):
     r"""
-    paper: Large Scale Learning on Non-Homophilous Graphs: New Benchmarks and Strong Simple Methods
-    ref: https://github.com/CUAI/Non-Homophily-Large-Scale/
+    :paper: Large Scale Learning on Non-Homophilous Graphs: New Benchmarks and Strong Simple Methods
+    :ref: https://github.com/CUAI/Non-Homophily-Large-Scale/
     """
     _dataset_drive_url = {
         'snap-patents.mat' : '1ldh23TSY1PwXia6dU0MYcpyEgX-w3Hia',

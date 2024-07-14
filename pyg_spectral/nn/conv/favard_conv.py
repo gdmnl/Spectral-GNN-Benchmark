@@ -12,13 +12,12 @@ from pyg_spectral.nn.conv.base_mp import BaseMP
 
 class FavardConv(BaseMP):
     r"""Convolutional layer with basis in Favard's Theorem.
-    paper: Graph Neural Networks with Learnable and Optimal Polynomial Bases
-    ref: https://github.com/yuziGuo/FarOptBasis/blob/master/layers/FavardNormalConv.py
+
+    :paper: Graph Neural Networks with Learnable and Optimal Polynomial Bases
+    :ref: https://github.com/yuziGuo/FarOptBasis/blob/master/layers/FavardNormalConv.py
 
     Args:
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     supports_batch: bool = False
 
@@ -55,7 +54,9 @@ class FavardConv(BaseMP):
 
     def _get_forward_mat(self, x: Tensor, edge_index: Adj) -> dict:
         r"""
-            alpha_1: parameter for k-1
+        Returns:
+            out (Tensor): initial output tensor (shape: :math:`(|\mathcal{V}|, F)`)
+            alpha_1: parameter for :math:`k-1`
         """
         return {'out': torch.zeros_like(x), 'alpha_1': None}
 
@@ -85,10 +86,10 @@ class FavardConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
-            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
+            x (Tensor): propagation result of :math:`k-1` (shape: :math:`(|\mathcal{V}|, F)`)
+            x_1 (Tensor): propagation result of :math:`k-2` (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
-            alpha_1: parameter for k-1
+            alpha_1: parameter for :math:`k-1`
         """
         if self.hop == 0:
             h = self._div_coeff(x, self.alpha, pos=True)

@@ -6,14 +6,13 @@ from pyg_spectral.nn.conv.base_mp import BaseMP
 
 class JacobiConv(BaseMP):
     r"""Convolutional layer with Jacobi Polynomials.
-    paper: How Powerful are Spectral Graph Neural Networks
-    ref: https://github.com/GraphPKU/JacobiConv
+
+    :paper: How Powerful are Spectral Graph Neural Networks
+    :ref: https://github.com/GraphPKU/JacobiConv
 
     Args:
-        alpha, beta (float): hyperparameters in Jacobi polynomials.
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        alpha, beta: hyperparameters in Jacobi polynomials.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
@@ -41,8 +40,8 @@ class JacobiConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
-            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
+            x (Tensor): propagation result of :math:`k-1` (shape: :math:`(|\mathcal{V}|, F)`)
+            x_1 (Tensor): propagation result of :math:`k-2` (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         a, b, l, r, k = self.alpha, self.beta, self.l, self.r, self.hop

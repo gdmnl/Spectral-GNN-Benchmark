@@ -13,17 +13,13 @@ from pyg_spectral.nn.conv.base_mp import BaseMP
 class ACMConv(BaseMP):
     r"""Convolutional layer of FBGNN & ACMGNN(I & II).
 
-    paper: Revisiting Heterophily For Graph Neural Networks
-
-    paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
-
-    ref: https://github.com/SitaoLuan/ACM-GNN/blob/main/ACM-Geometric/layers.py
+    :paper: Revisiting Heterophily For Graph Neural Networks
+    :paper: Complete the Missing Half: Augmenting Aggregation Filtering with Diversification for Graph Convolutional Networks
+    :ref: https://github.com/SitaoLuan/ACM-GNN/blob/main/ACM-Geometric/layers.py
 
     Args:
-        num_hops (int), hop (int): total and current number of propagation hops.
-            hop=0 explicitly handles x without propagation.
-        alpha (int): variant I (propagate first) or II (act first)
-        cached: whether cache the propagation matrix.
+        alpha: variant I (propagate first) or II (act first)
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     supports_batch: bool = False
 
@@ -41,7 +37,9 @@ class ACMConv(BaseMP):
         self.out_channels = out_channels
 
     def _init_with_theta(self):
-        """theta (nn.ModuleDict): Linear transformation for each scheme.
+        r"""
+        Attributes:
+            theta (torch.nn.ModuleDict): Linear transformation for each scheme.
         """
         self.schemes = self.theta.keys()
         self.n_scheme = len(self.schemes)
@@ -72,6 +70,10 @@ class ACMConv(BaseMP):
         return {'out': x}
 
     def _forward_theta(self, x, scheme):
+        r"""
+        Attributes:
+            theta (torch.nn.ModuleDict): Linear transformation for each scheme.
+        """
         if callable(self.theta[scheme]):
             return self.theta[scheme](x)
         return self.theta[scheme] * x
@@ -83,7 +85,7 @@ class ACMConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
+            out (Tensor): current propagation result (shape: :math:`(|\mathcal{V}|, F)`)
             prop_0, prop_1 (SparseTensor): propagation matrices
         """
         h, a = {}, {}

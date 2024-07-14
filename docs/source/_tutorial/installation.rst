@@ -3,10 +3,10 @@ Installation
 
 This package can be easily installed by running `pip <https://pip.pypa.io/en/stable/>`__ at package root path:
 
-.. code-block:: bash
+.. code-block:: console
 
-   pip install -r requirements.txt
-   pip install -e .[benchmark]
+   $ pip install -r requirements.txt
+   $ pip install -e .[benchmark]
 
 The installation script already covers the following core dependencies:
 
@@ -26,41 +26,41 @@ Only ``pyg_spectral`` Package
 
 Install without any options:
 
-.. code-block:: bash
+.. code-block:: console
 
-   pip install -e .
+   $ pip install -e .
 
 Benchmark Experiments
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Install with ``[benchmark]`` option:
 
-.. code-block:: bash
+.. code-block:: console
 
-   pip install -e .[benchmark]
+   $ pip install -e .[benchmark]
 
 Docs Development
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Install with ``[docs]`` option:
 
-.. code-block:: bash
+.. code-block:: console
 
-   pip install -e .[docs]
+   $ pip install -e .[docs]
 
 C++ Backend
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Ensure C++ 11 is installed.
 
-.. code-block:: bash
+.. code-block:: console
 
-   gcc --version
+   $ gcc --version
 
 2. Install with ``[cpp]`` option and environment variable ``PSFLAG_CPP=1``:
 
-.. code-block:: bash
+.. code-block:: console
 
-   export PSFLAG_CPP=1; pip install -e .[cpp]
+   $ export PSFLAG_CPP=1; pip install -e .[cpp]
 
 .. [1] Please refer to the `official guide <https://pytorch.org/get-started/locally/>`__ if a specific CUDA version is required for PyTorch.

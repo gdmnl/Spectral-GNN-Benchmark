@@ -6,14 +6,13 @@ from pyg_spectral.nn.conv.base_mp import BaseMP
 
 class ChebConv(BaseMP):
     r"""Convolutional layer with Chebyshev Polynomials.
-    paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
-    ref: https://github.com/ivam-he/ChebNetII/blob/main/main/Chebbase_pro.py
+
+    :paper: Convolutional Neural Networks on Graphs with Chebyshev Approximation, Revisited
+    :ref: https://github.com/ivam-he/ChebNetII/blob/main/main/Chebbase_pro.py
 
     Args:
-        alpha (float): decay factor for each hop :math:`1/hop^\alpha`.
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        alpha: decay factor for each hop :math:`1/k^\alpha`.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
@@ -36,8 +35,8 @@ class ChebConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
-            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
+            x (Tensor): propagation result of :math:`k-1` (shape: :math:`(|\mathcal{V}|, F)`)
+            x_1 (Tensor): propagation result of :math:`k-2` (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         if self.hop == 0:

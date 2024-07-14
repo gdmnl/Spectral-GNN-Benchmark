@@ -6,9 +6,9 @@ Experiment Parameters
 
 Refer to the help text by:
 
-.. code-block:: bash
+.. code-block:: console
 
-    python benchmark/run_single.py --help
+    $ python benchmark/run_single.py --help
 
 --help                      show this help message and exit
 

@@ -15,12 +15,10 @@ class BaseMP(MessagePassing):
     r"""Base filter layer structure.
 
     Args:
-        num_hops (int): total number of propagation hops.
-        hop (int): current number of propagation hops of this layer.
-        alpha (float): additional scaling for self-loop in adjacency matrix
-            :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. `improved` in PyG GCNConv.
+        num_hops: total number of propagation hops.
+        hop: current number of propagation hops of this layer.
         cached: whether cache the propagation matrix.
-        **kwargs: Additional arguments of :class:`pyg.nn.conv.MessagePassing`.
+        **kwargs: Additional arguments of :class:`torch_geometric.nn.conv.MessagePassing`.
     """
     supports_batch: bool = True
     supports_norm_batch: bool = True
@@ -54,15 +52,17 @@ class BaseMP(MessagePassing):
         x: Tensor,
         edge_index: Adj
     ) -> Adj:
-        r"""Get matrices for self.propagate(). Called before each forward() with same input.
+        r"""Get matrices for :meth:`propagate()`. Called before each
+        :meth:`forward()` with same input.
 
         Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
-        Requires:
-            :obj:`self.propagate_mat` (str): propagation schemes, separated by ','.
-            Each scheme starts with 'A' or 'L' for adjacency or Laplacian,
-            optionally following '+[p]*I' or '-[p]*I' for scaling the
-            diagonal, where `p` can be float or attribute name.
+            x: from :class:`torch_geometric.data.Data`
+            edge_index: from :class:`torch_geometric.data.Data`
+        Attributes:
+            propagate_mat (str): propagation schemes, separated by ``,``.
+                Each scheme starts with ``A`` or ``L`` for adjacency or Laplacian,
+                optionally following ``+[p*]I`` or ``-[p*]I`` for scaling the
+                diagonal, where ``p`` can be float or attribute name.
         Returns:
             prop (SparseTensor): propagation matrix
         """
@@ -80,9 +80,6 @@ class BaseMP(MessagePassing):
         edge_index: Adj
     ) -> Adj:
         """ Shadow function for :meth:`get_propagate_mat()`.
-
-        Args:
-            edge_index (SparseTensor or torch.sparse_csr_tensor)
         """
         def _get_adj(mat: Adj, diag: float):
             if diag != 0:
@@ -138,7 +135,7 @@ class BaseMP(MessagePassing):
         ``self.comp_scheme == 'forward'``.
 
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor: initial output tensor
+            out (Tensor): initial output tensor (shape: :math:`(|\mathcal{V}|, F)`)
         """
         return {'out': torch.zeros_like(x),}
 
@@ -156,9 +153,10 @@ class BaseMP(MessagePassing):
         r"""Get matrices for :meth:`forward()`. Called during :meth:`forward()`.
 
         Args:
-            x (Tensor), edge_index (Adj): from pyg.data.Data
+            x: from :class:`torch_geometric.data.Data`
+            edge_index: from :class:`torch_geometric.data.Data`
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor
+            out (Tensor): output tensor (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         comp_scheme = comp_scheme or self.comp_scheme
@@ -175,9 +173,9 @@ class BaseMP(MessagePassing):
     # ==========
     def _forward_theta(self, **kwargs):
         r"""
-        Requires:
-            :obj:`self.theta` (nn.Parameter or nn.Module): transformation of propagation result
-            before applying to the output.
+        Attributes:
+            theta (nn.Parameter | nn.Module): transformation of propagation
+                result before applying to the output.
         """
         x = kwargs['x'] if 'x' in kwargs else kwargs['out']
         if callable(self.theta):
@@ -186,11 +184,11 @@ class BaseMP(MessagePassing):
             return self.theta * x
 
     def _forward_out(self, **kwargs) -> Tensor:
-        r"""
+        r""" Shadow function for calling :meth:`_forward_theta()` and accumulating results.
+
         Returns:
             out (Tensor): output tensor for accumulating propagation results
-        Shape:
-            out: :math:`(|\mathcal{V}|, F)`
+                (shape: :math:`(|\mathcal{V}|, F)`)
         """
         if self.out_scale == 1:
             res = self._forward_theta(**kwargs)
@@ -200,7 +198,7 @@ class BaseMP(MessagePassing):
 
     def forward(self, **kwargs) -> dict:
         r""" Wrapper for distinguishing precomputed outputs.
-        Args & Returns (dct): same with output of :meth:`get_forward_mat()`
+        Args & Returns should match the output of :meth:`get_forward_mat()`
         """
         if self.comp_scheme is None or self.comp_scheme == 'convolute':
             fwd_kwargs, keys = {}, list(kwargs.keys())
@@ -221,7 +219,7 @@ class BaseMP(MessagePassing):
         Dicts of Args & Returns should be matched.
 
         Returns:
-            x (Tensor): tensor for calculating `out`
+            x (Tensor): tensor for calculating :obj:`out`
         """
         raise NotImplementedError
 

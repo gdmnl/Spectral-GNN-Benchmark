@@ -9,14 +9,13 @@ from pyg_spectral.nn.conv.base_mp import BaseMP
 
 class HornerConv(BaseMP):
     r"""Convolutional layer with adjacency propagation and explicit residual.
-    paper: Clenshaw Graph Neural Networks
-    ref: https://github.com/yuziGuo/ClenshawGNN/blob/master/layers/HornerConv.py
+
+    :paper: Clenshaw Graph Neural Networks
+    :ref: https://github.com/yuziGuo/ClenshawGNN/blob/master/layers/HornerConv.py
 
     Args:
-        alpha (float): transformation strength.
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        alpha: transformation strength.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
@@ -50,8 +49,8 @@ class HornerConv(BaseMP):
     def _forward_out(self, **kwargs) -> Tensor:
         r"""
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
+            out (Tensor): output tensor for accumulating propagation results
+                (shape: :math:`(|\mathcal{V}|, F)`)
         """
         out, x_0 = kwargs['out'], kwargs['x_0']
         out = out + self.beta * x_0
@@ -67,9 +66,9 @@ class HornerConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
-            x_0 (:math:`(|\mathcal{V}|, F)` Tensor): initial input
+            out (Tensor): output tensor for accumulating propagation results
+                (shape: :math:`(|\mathcal{V}|, F)`)
+            x_0 (Tensor): initial input (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         if self.hop > 0:

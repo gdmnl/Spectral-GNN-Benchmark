@@ -8,11 +8,10 @@ class AdjConv(BaseMP):
     r"""Linear filter using the normalized adjacency matrix for propagation.
 
     Args:
-        alpha (float): additional scaling for self-loop in adjacency matrix
-            :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. `improved` in PyG GCNConv.
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        alpha: additional scaling for self-loop in adjacency matrix
+            :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. :obj:`improved` in
+            :class:`torch_geometric.nn.conv.GCNConv`.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
@@ -31,7 +30,7 @@ class AdjConv(BaseMP):
     ) -> tuple:
         r"""
         Returns:
-            x (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
+            x (Tensor): current propagation result (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         if self.hop == 0 and not callable(self.theta):
@@ -47,16 +46,15 @@ class AdjConv(BaseMP):
 
 class AdjDiffConv(AdjConv):
     r"""Linear filter using the normalized adjacency matrix for propagation.
-        Preprocess the feature by distinguish matrix :math:`\beta\mathbf{L} + \mathbf{I}`.
+    Preprocess the feature by distinguish matrix :math:`\beta\mathbf{L} + \mathbf{I}`.
 
     Args:
-        alpha (float): additional scaling for self-loop in adjacency matrix
-            :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. `improved` in PyG GCNConv.
-        beta (float): scaling for self-loop in distinguish matrix
+        alpha: additional scaling for self-loop in adjacency matrix
+            :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. :obj:`improved` in
+            :class:`torch_geometric.nn.conv.GCNConv`.
+        beta: scaling for self-loop in distinguish matrix
             :math:`\beta\mathbf{L} + \mathbf{I}`
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
@@ -75,7 +73,7 @@ class AdjDiffConv(AdjConv):
     ) -> dict:
         r"""
         Returns:
-            x (:math:`(|\mathcal{V}|, F)` Tensor): current propagation result
+            x (Tensor): current propagation result (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         if self.hop == 0:

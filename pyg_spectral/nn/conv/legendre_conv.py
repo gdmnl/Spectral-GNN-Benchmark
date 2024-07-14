@@ -6,15 +6,14 @@ from pyg_spectral.nn.conv.base_mp import BaseMP
 
 class LegendreConv(BaseMP):
     r"""Convolutional layer with Legendre Polynomials.
-    paper: How Powerful are Spectral Graph Neural Networks
-    ref: https://github.com/GraphPKU/JacobiConv
-    Alternative paper: Improved Modeling and Generalization Capabilities of Graph Neural Networks With Legendre Polynomials
-    code: https://github.com/12chen20/LegendreNet
+
+    :paper: How Powerful are Spectral Graph Neural Networks
+    :ref: https://github.com/GraphPKU/JacobiConv
+    :paper: Improved Modeling and Generalization Capabilities of Graph Neural Networks With Legendre Polynomials
+    :ref: https://github.com/12chen20/LegendreNet
 
     Args:
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
@@ -35,8 +34,8 @@ class LegendreConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            x (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-1
-            x_1 (:math:`(|\mathcal{V}|, F)` Tensor): propagation result of k-2
+            x (Tensor): propagation result of :math:`k-1` (shape: :math:`(|\mathcal{V}|, F)`)
+            x_1 (Tensor): propagation result of :math:`k-2` (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         if self.hop == 0:

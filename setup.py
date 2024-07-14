@@ -32,4 +32,4 @@ setup(
     packages=find_packages(),
     ext_modules=ext_modules,
 )
-# FEATURE: [optional benckmark](https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#optional-dependencies)
+#FEATURE: [optional benckmark](https://setuptools.pypa.io/en/latest/userguide/dependency_management.html#optional-dependencies)

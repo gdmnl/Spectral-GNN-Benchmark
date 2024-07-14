@@ -11,15 +11,14 @@ class AdjiConv(BaseMP):
     r"""Iterative linear filter using the normalized adjacency matrix for augmented propagation.
 
     Args:
-        alpha (float): decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
+        alpha: decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
             Can be :math:`\alpha < 0`.
-        beta (float): scaling for skip connection,  i.e., self-loop in adjacency
-            matrix, i.e. `improved` in PyG GCNConv and `eps` in GINConv.
+        beta: scaling for skip connection, i.e., self-loop in adjacency
+            matrix, i.e. :obj:`improved` in :class:`torch_geometric.nn.conv.GCNConv`
+            and :obj:`eps` in :class:`torch_geometric.nn.conv.GINConv`.
             Can be :math:`\beta < 0`.
-            beta = 'var' for learnable beta as parameter.
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+            ``beta = 'var'`` for learnable beta as parameter.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     # For similar convs supporting batching, use AdjConv or AdjSkipConv
     supports_batch: bool = False
@@ -60,8 +59,8 @@ class AdjiConv(BaseMP):
         r"""Overwrite forward method.
 
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
+            out (Tensor): output tensor for accumulating propagation results
+                (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         # propagate_type: (x: Tensor)
@@ -76,21 +75,23 @@ class AdjiConv(BaseMP):
 
 class Adji2Conv(AdjiConv):
     r"""Iterative linear filter using the 2-hop normalized adjacency matrix for
-        augmented propagation.
+    augmented propagation.
 
     Args:
-        num_hops (int): total number of propagation hops. NOTE that there are
+        num_hops: total number of propagation hops. NOTE that there are
             only :math:`\text{num_hops} / 2` conv layers.
-        alpha (float): decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
+        alpha: decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
             Can be :math:`\alpha < 0`.
-        beta (float): scaling for self-loop in adjacency matrix, i.e.
-            `improved` in PyG GCNConv and `eps` in GINConv. Can be :math:`\beta < 0`.
-            beta = 'var' for learnable beta as parameter.
-        --- BaseMP Args ---
-        hop (int): current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        beta: scaling for skip connection, i.e., self-loop in adjacency
+            matrix, i.e. :obj:`improved` in :class:`torch_geometric.nn.conv.GCNConv`
+            and :obj:`eps` in :class:`torch_geometric.nn.conv.GINConv`.
+            Can be :math:`\beta < 0`.
+            ``beta = 'var'`` for learnable beta as parameter.
+        hop, cached: args for :class:`BaseMP`
     """
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
+        r""" Perform 2-hop propagation.
+        """
         # return spmm(adj_t, spmm(adj_t, x, reduce=self.aggr), reduce=self.aggr)
         return torch.spmm(adj_t, torch.spmm(adj_t, x))
 
@@ -99,15 +100,14 @@ class AdjSkipConv(BaseMP):
     r"""Iterative linear filter with skip connection.
 
     Args:
-        alpha (float): decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
+        alpha: decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
             Can be :math:`\alpha < 0`.
-        beta (float): scaling for skip connection,  i.e., self-loop in adjacency
-            matrix, i.e. `improved` in PyG GCNConv and `eps` in GINConv.
+        beta: scaling for skip connection, i.e., self-loop in adjacency
+            matrix, i.e. :obj:`improved` in :class:`torch_geometric.nn.conv.GCNConv`
+            and :obj:`eps` in :class:`torch_geometric.nn.conv.GINConv`.
             Can be :math:`\beta < 0`.
-            beta = 'var' for learnable beta as parameter.
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+            ``beta = 'var'`` for learnable beta as parameter.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
@@ -141,8 +141,8 @@ class AdjSkipConv(BaseMP):
     def _forward_out(self, **kwargs) -> Tensor:
         r"""
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
+            out (Tensor): output tensor for accumulating propagation results
+                (shape: :math:`(|\mathcal{V}|, F)`)
         """
         out, h = kwargs['out'], kwargs['h']
         out = h + self.beta * out
@@ -156,8 +156,8 @@ class AdjSkipConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
+            out (Tensor): output tensor for accumulating propagation results
+                (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         # propagate_type: (x: Tensor)
@@ -172,17 +172,18 @@ class AdjSkip2Conv(AdjSkipConv):
     r"""Iterative linear filter with 2-hop propagation and skip connection.
 
     Args:
-        alpha (float): decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
+        alpha: decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
             Can be :math:`\alpha < 0`.
-        beta (float): scaling for skip connection,  i.e., self-loop in adjacency
-            matrix, i.e. `improved` in PyG GCNConv and `eps` in GINConv.
+        beta: scaling for skip connection, i.e., self-loop in adjacency
+            matrix, i.e. :obj:`improved` in :class:`torch_geometric.nn.conv.GCNConv`
+            and :obj:`eps` in :class:`torch_geometric.nn.conv.GINConv`.
             Can be :math:`\beta < 0`.
-            beta = 'var' for learnable beta as parameter.
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+            ``beta = 'var'`` for learnable beta as parameter.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
+        r""" Perform 2-hop propagation.
+        """
         # return spmm(adj_t, spmm(adj_t, x, reduce=self.aggr), reduce=self.aggr)
         return torch.spmm(adj_t, torch.spmm(adj_t, x))
 
@@ -191,15 +192,14 @@ class AdjResConv(BaseMP):
     r"""Iterative linear filter with residual connection.
 
     Args:
-        alpha (float): decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
+        alpha: decay factor :math:`\alpha(\mathbf{A} + \beta\mathbf{I})`.
             Can be :math:`\alpha < 0`.
-        beta (float): scaling for skip connection,  i.e., self-loop in adjacency
-            matrix, i.e. `improved` in PyG GCNConv and `eps` in GINConv.
+        beta: scaling for skip connection, i.e., self-loop in adjacency
+            matrix, i.e. :obj:`improved` in :class:`torch_geometric.nn.conv.GCNConv`
+            and :obj:`eps` in :class:`torch_geometric.nn.conv.GINConv`.
             Can be :math:`\beta < 0`.
-            beta = 'var' for learnable beta as parameter.
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+            ``beta = 'var'`` for learnable beta as parameter.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
@@ -233,8 +233,8 @@ class AdjResConv(BaseMP):
     def _forward_out(self, **kwargs) -> Tensor:
         r"""
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
+            out (Tensor): output tensor for accumulating propagation results
+                (shape: :math:`(|\mathcal{V}|, F)`)
         """
         out, x_0 = kwargs['out'], kwargs['x_0']
         out = x_0 + self.beta * self._forward_theta(x=out)
@@ -248,9 +248,9 @@ class AdjResConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
-            x_0 (:math:`(|\mathcal{V}|, F)` Tensor): initial input
+            out (Tensor): output tensor for accumulating propagation results
+                (shape: :math:`(|\mathcal{V}|, F)`)
+            x_0 (Tensor): initial input (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         if self.hop > 0:

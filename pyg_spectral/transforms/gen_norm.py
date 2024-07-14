@@ -17,18 +17,17 @@ def pow_with_pinv(x: Tensor, p: float) -> Tensor:
 
 @functional_transform('gen_norm')
 class GenNorm(BaseTransform):
-    r"""Generalized graph normalization from GBP/AGP.
+    r"""Generalized graph normalization.
 
     .. math::
         \mathbf{\hat{A}} = \mathbf{\hat{D}}^{-a} (\mathbf{A} + \mathbf{I})
         \mathbf{\hat{D}}^{-b}
 
-    where :math:`\hat{D}_{ii} = \sum_{j=0} \hat{A}_{ij} + 1` and
-        :math:`a,b \in [0,1]`.
+    where :math:`\hat{D}_{ii} = \sum_{j=0} \hat{A}_{ij} + 1` and :math:`a,b \in [0,1]`.
 
     Args:
-        left (float): left (row) normalization :math:`a`.
-        right (float): right (col) normalization :math:`b`. Default to :math:`1-a`.
+        left: left (row) normalization :math:`a`.
+        right: right (col) normalization :math:`b`. Default to :math:`1-a`.
     """
     def __init__(self, left: float, right: float = None,
                  dtype: torch.dtype = torch.float32):

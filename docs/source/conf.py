@@ -65,7 +65,7 @@ napoleon_use_param = True
 napoleon_preprocess_types = True
 autodoc_type_aliases = {
     "Tensor": ":external:class:`Tensor <torch.Tensor>`",
-    # "SparseTensor": ":class:`torch_sparse.SparseTensor`",
+    "SparseTensor": ":external:func:`SparseTensor <torch.sparse_csr_tensor>`",
     "pyg": "torch_geometric",
 }
 napoleon_type_aliases = autodoc_type_aliases

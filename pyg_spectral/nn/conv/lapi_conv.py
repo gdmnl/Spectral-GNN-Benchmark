@@ -7,13 +7,12 @@ from pyg_spectral.nn.conv.base_mp import BaseMP
 class LapiConv(BaseMP):
     r"""Iterative linear filter using the normalized adjacency matrix.
     Used in AdaGNN.
-    paper: AdaGNN: Graph Neural Networks with Adaptive Frequency Response Filter
-    ref: https://github.com/yushundong/AdaGNN/blob/main/layers.py
+
+    :paper: AdaGNN: Graph Neural Networks with Adaptive Frequency Response Filter
+    :ref: https://github.com/yushundong/AdaGNN/blob/main/layers.py
 
     Args:
-        --- BaseMP Args ---
-        num_hops (int), hop (int): total and current number of propagation hops.
-        cached: whether cache the propagation matrix.
+        num_hops, hop, cached: args for :class:`BaseMP`
     """
     # For similar convs supporting batching, use LapSkipConv
     supports_batch: bool = False
@@ -39,8 +38,8 @@ class LapiConv(BaseMP):
     ) -> dict:
         r"""
         Returns:
-            out (:math:`(|\mathcal{V}|, F)` Tensor): output tensor for
-                accumulating propagation results
+            out (Tensor): output tensor for
+                accumulating propagation results (shape: :math:`(|\mathcal{V}|, F)`)
             prop (Adj): propagation matrix
         """
         # propagate_type: (x: Tensor)

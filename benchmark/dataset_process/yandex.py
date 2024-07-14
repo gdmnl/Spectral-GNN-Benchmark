@@ -10,8 +10,8 @@ from torch_geometric.utils import coalesce
 
 class Yandex(InMemoryDataset):
     r"""
-    paper: A critical look at the evaluation of GNNs under heterophily: are we really making progress?
-    ref: https://github.com/yandex-research/heterophilous-graphs
+    :paper: A critical look at the evaluation of GNNs under heterophily: are we really making progress?
+    :ref: https://github.com/yandex-research/heterophilous-graphs
     """
     def __init__(
         self,
