@@ -219,6 +219,7 @@ class ResLogger(object):
             logger.data.index = rows
         if suffix:
             logger.data.columns = [f'{coli}_{suffix}' for coli in logger.data.columns]
+            logger.fmt.index = [f'{coli}_{suffix}' for coli in logger.fmt.index]
 
         self._set(logger.data, logger.fmt)
         return self
@@ -336,3 +337,6 @@ class ResLogger(object):
     def __str__(self) -> str:
         r"""String for print on screen."""
         return self.get_str(maxlen=80)
+
+    def __repr__(self) -> str:
+        return self.get_str()

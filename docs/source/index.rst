@@ -9,7 +9,7 @@ pyg_spectral
 
    | 🔍 `Documentation <https://gdmnl.github.io/Spectral-GNN-Benchmark/>`__
    | 👾 `GitHub <https://github.com/gdmnl/Spectral-GNN-Benchmark/>`__ |gh-bn|
-   | 📄 `Paper <https://arxiv.org/abs/2106.06100>`__
+   | 📄 `Paper <https://arxiv.org/abs/2406.09675>`__
    | 📎 `Citation <https://github.com/gdmnl/Spectral-GNN-Benchmark#misc>`__
 
 ``pyg_spectral`` is a `PyG <https://pyg.org>`_-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations.

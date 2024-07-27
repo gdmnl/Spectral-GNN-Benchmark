@@ -10,10 +10,11 @@ def plt_tsne(embeddings, labels, save_path=None, title='Title'):
 
     emb = tsne.fit_transform(embeddings.cpu().numpy())
     plt.figure(figsize=(10, 8))
-    plt.scatter(emb[:, 0], emb[:, 1], c=labels.cpu().numpy(), marker='o', colormap='Set2')
+    plt.scatter(emb[:, 0], emb[:, 1], c=labels.cpu().numpy(), marker='o', cmap='Set2')
     # plt.title(title)
     plt.xticks([])
     plt.yticks([])
+    plt.box(False)
     if save_path is not None:
         plt.savefig(save_path, bbox_inches='tight')
 

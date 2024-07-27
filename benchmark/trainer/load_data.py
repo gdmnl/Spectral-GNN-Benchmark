@@ -53,6 +53,7 @@ class SingleGraphLoader(object):
         self.transform = T.Compose([
             T.RemoveIsolatedNodes(),
             T.RemoveDuplicatedEdges(reduce='mean'),
+            # T.LargestConnectedComponents(),
             T.AddRemainingSelfLoops(fill_value=1.0),
             T.NormalizeFeatures(),
             # T.ToSparseTensor(remove_edge_index=True),                         # torch_sparse.SparseTensor
@@ -63,6 +64,7 @@ class SingleGraphLoader(object):
 
     # ===== Data processing
     def _resolve_split(self, dataset: Dataset, data: Data) -> None:
+        # TODO: support more split schemes
         if self.data in ['genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki']:
             if hasattr(data, 'train_mask') and hasattr(self, 'data_split'):
                 del self.data_split
@@ -75,6 +77,7 @@ class SingleGraphLoader(object):
             data.train_mask = torch.as_tensor(train_mask)
             data.val_mask = torch.as_tensor(val_mask)
             data.test_mask = torch.as_tensor(test_mask)
+            self.data_split = f"Random {self.data_split}"
         else:
             if self.data.startswith('ogbn-'):
                 idx = dataset.get_idx_split()
@@ -86,12 +89,16 @@ class SingleGraphLoader(object):
                     for k in idx:
                         idx[k] = idx[k]['paper']
                 data.train_mask, data.val_mask, data.test_mask = idx2mask(idx, data.y.size(0))
+            assert hasattr(data, 'train_mask') and hasattr(data, 'val_mask') and hasattr(data, 'test_mask')
+            self.data_split = "Original"
             if data.train_mask.dim() > 1:
+                assert hasattr(self, 'split_idx')
                 if self.split_idx > data.train_mask.size(1):
                     self.split_idx = self.split_idx % data.train_mask.size(1)
                 data.train_mask = data.train_mask[:, self.split_idx]
                 data.val_mask = data.val_mask[:, self.split_idx]
                 data.test_mask = data.test_mask[:, self.split_idx]
+                self.data_split += f" {self.split_idx}"
         return data
 
     def _get_properties(self, dataset: Dataset, data: Data = None) -> None:
@@ -174,7 +181,7 @@ class SingleGraphLoader(object):
             else:
                 self.metric = 's_f1i'
             if self.data not in ['snap-patents']:
-                self._T_insert(T.ToUndirected(), index=0)
+                kwargs['transform'] = self._T_insert(T.ToUndirected(), index=0)
         elif self.data in ['penn94', 'amherst41', 'cornell5', 'johns_hopkins55', 'reed98']:
             module_name = 'dataset_process'
             class_name = 'FB100'
@@ -202,7 +209,7 @@ class SingleGraphLoader(object):
             kwargs = dict(
                 root=DATAPATH.joinpath('PyG'),
                 name=self.data,
-                transform=self.transform,)
+                transform=self._T_insert(T.ToUndirected(), index=0),)
             pyg_mapping = {
                 'cora':         'Planetoid',
                 'citeseer':     'Planetoid',
@@ -226,6 +233,7 @@ class SingleGraphLoader(object):
                 class_name = pyg_mapping[self.data]
             elif self.data in ["flickr", "reddit", "actor"]:
                 class_name = self.data.capitalize()
+                kwargs['root'] = kwargs['root'].joinpath(class_name)
                 kwargs.pop('name')
             else:
                 raise ValueError(f"Dataset '{self}' not found.")
@@ -262,12 +270,15 @@ class SingleGraphLoader(object):
         # Remaining resolvers
         if not args.multi and data.y.dim() > 1 and data.y.size(1) == 1:
             data.y = data.y.flatten()
+        # if not args.multi and self.num_classes == 2:
+        #     args.num_classes = self.num_classes = 1
+        #     data.y = data.y.unsqueeze(1).float()
 
         self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
         self.logger.info(f"[data]: {data}")
         self.logger.info(f"[metric]: {metric}")
         split_dict = {k[:-5]: v.sum().item() for k, v in data.items() if k.endswith('_mask')}
-        self.logger.info(f"[split]: {split_dict}")
+        self.logger.info(f"[split]: {self.data_split} {split_dict}")
         self.res_logger.concat([('data', self.data, str), ('metric', metric, str)])
         del dataset
         return data, metric
