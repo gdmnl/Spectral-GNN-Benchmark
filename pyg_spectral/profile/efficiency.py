@@ -34,6 +34,9 @@ class Stopwatch(object):
     def data(self) -> float:
         return self.elapsed_sec
 
+    def __repr__(self) -> str:
+        return f'{self.data:.2f} s'
+
     def __enter__(self):
         self.start()
         return self
@@ -153,3 +156,22 @@ class ParamMemory(NumFmt):
         mem_params = sum([p.nelement()*p.element_size() for p in module.parameters()])
         mem_bufs = sum([b.nelement()*b.element_size() for b in module.buffers()])
         self.set(mem_params + mem_bufs)
+
+
+def log_memory(suffix: str = None, row: int = 0):
+    def decorator(func):
+        def wrapper(self, *args, **kwargs):
+            with self.device:
+                torch.cuda.empty_cache()
+
+            res = func(self, *args, **kwargs)
+            res.concat(
+                [('mem_ram', MemoryRAM()(unit='G')),
+                 ('mem_cuda', MemoryCUDA()(unit='G')),],
+                row=row, suffix=suffix)
+
+            with self.device:
+                torch.cuda.empty_cache()
+            return res
+        return wrapper
+    return decorator

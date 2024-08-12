@@ -7,10 +7,10 @@ from typing import Tuple, List, Callable, Any
 from argparse import Namespace
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
-    MulticlassAccuracy, MultilabelAccuracy,
-    MulticlassF1Score, MultilabelF1Score,
-    MulticlassAUROC, MultilabelAUROC,
-    MulticlassAveragePrecision, MultilabelAveragePrecision,
+    MulticlassAccuracy, MultilabelAccuracy, BinaryAccuracy,
+    MulticlassF1Score, MultilabelF1Score, BinaryF1Score,
+    MulticlassAUROC, MultilabelAUROC, BinaryAUROC,
+    MulticlassAveragePrecision, MultilabelAveragePrecision, BinaryAveragePrecision,
 )
 
 
@@ -36,6 +36,13 @@ def metric_loader(args: Namespace) -> MetricCollection:
             # 's_f1a': MultilabelF1Score(num_labels=args.num_classes, average='macro'),
             's_auroc': MultilabelAUROC(num_classes=args.num_classes),
             's_ap': MultilabelAveragePrecision(num_classes=args.num_classes),
+        })
+    elif args.num_classes == 1:
+        metric = ResCollection({
+            's_acc': BinaryAccuracy(),
+            's_f1i': BinaryF1Score(),
+            's_auroc': BinaryAUROC(),
+            's_ap': BinaryAveragePrecision(),
         })
     else:
         metric = ResCollection({

@@ -54,7 +54,7 @@ class TrnFullbatch(TrnBase):
         super(TrnFullbatch, self).__init__(model, data, args, **kwargs)
         metric = metric_loader(args).to(self.device)
         self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.BCELoss() if self.num_classes == 1 else nn.NLLLoss()
 
         self.mask: dict = None
         self.flag_test_deg = args.test_deg if hasattr(args, 'test_deg') else False

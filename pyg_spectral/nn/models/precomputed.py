@@ -57,7 +57,10 @@ class PrecomputedFixed(DecoupledFixed):
         """
         if self.out_layers > 0:
             x = self.out_mlp(x, batch=batch, batch_size=batch_size)
-        return x
+        if self.out_channels == 1:
+            return torch.sigmoid(x)
+        else:
+            return torch.log_softmax(x)
 
 
 class PrecomputedVar(DecoupledVar):
@@ -125,7 +128,10 @@ class PrecomputedVar(DecoupledVar):
         out = conv_mat['out']
         if self.out_layers > 0:
             out = self.out_mlp(out, batch=batch, batch_size=batch_size)
-        return out
+        if self.out_channels == 1:
+            return torch.sigmoid(out)
+        else:
+            return torch.log_softmax(out)
 
 
 # ==========
@@ -190,7 +196,10 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
 
         if self.out_layers > 0:
             out = self.out_mlp(out, batch=batch, batch_size=batch_size)
-        return out
+        if self.out_channels == 1:
+            return torch.sigmoid(out)
+        else:
+            return torch.log_softmax(out)
 
 
 class PrecomputedVarCompose(DecoupledVarCompose):
@@ -271,4 +280,7 @@ class PrecomputedVarCompose(DecoupledVarCompose):
 
         if self.out_layers > 0:
             out = self.out_mlp(out, batch=batch, batch_size=batch_size)
-        return out
+        if self.out_channels == 1:
+            return torch.sigmoid(out)
+        else:
+            return torch.log_softmax(out)

@@ -63,7 +63,7 @@ class TrnMinibatch(TrnBase):
 
         metric = metric_loader(args).to(self.device)
         self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
-        self.criterion = nn.CrossEntropyLoss()
+        self.criterion = nn.BCELoss() if self.num_classes == 1 else nn.NLLLoss()
 
         self.shuffle = {'train': True, 'val': False, 'test': False}
         self.embed = None

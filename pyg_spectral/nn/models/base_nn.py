@@ -214,7 +214,10 @@ class BaseNN(nn.Module):
         x = self.convolute(x, edge_index, batch=batch, batch_size=batch_size)
         if self.out_layers > 0:
             x = self.out_mlp(x, batch=batch, batch_size=batch_size)
-        return x
+        if self.out_channels == 1:
+            return torch.sigmoid(x)
+        else:
+            return torch.log_softmax(x)
 
 
 class BaseNNCompose(BaseNN):
