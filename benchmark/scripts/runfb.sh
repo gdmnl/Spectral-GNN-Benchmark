@@ -56,7 +56,7 @@ PARLIST="theta_param,$PARLIST"
     for scheme in ${SCHEMES[@]}; do
         python run_param.py --data $data --model $model --conv $conv --param $PARLIST "${ARGS_P[@]}" \
             --theta_scheme $scheme
-        python run_best.py  --data $data --model $model --conv $conv "${ARGS_C[@]}" \
+        python run_best.py  --data $data --model $model --conv $conv "${ARGS_S[@]}" \
             --theta_scheme $scheme
     done
 

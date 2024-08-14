@@ -50,6 +50,7 @@ class SingleGraphLoader(object):
 
         # Prevent using `edge_index` for more [Memory-Efficient Computation](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html)
         # assert torch_geometric.typing.WITH_TORCH_SPARSE
+        # FIXME: check NormalizeFeatures
         self.transform = T.Compose([
             T.RemoveIsolatedNodes(),
             T.RemoveDuplicatedEdges(reduce='mean'),

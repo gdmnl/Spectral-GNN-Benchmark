@@ -60,7 +60,7 @@ class PrecomputedFixed(DecoupledFixed):
         if self.out_channels == 1:
             return torch.sigmoid(x)
         else:
-            return torch.log_softmax(x)
+            return torch.log_softmax(x, dim=-1)
 
 
 class PrecomputedVar(DecoupledVar):
@@ -131,7 +131,7 @@ class PrecomputedVar(DecoupledVar):
         if self.out_channels == 1:
             return torch.sigmoid(out)
         else:
-            return torch.log_softmax(out)
+            return torch.log_softmax(out, dim=-1)
 
 
 # ==========
@@ -199,7 +199,7 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
         if self.out_channels == 1:
             return torch.sigmoid(out)
         else:
-            return torch.log_softmax(out)
+            return torch.log_softmax(out, dim=-1)
 
 
 class PrecomputedVarCompose(DecoupledVarCompose):
@@ -283,4 +283,4 @@ class PrecomputedVarCompose(DecoupledVarCompose):
         if self.out_channels == 1:
             return torch.sigmoid(out)
         else:
-            return torch.log_softmax(out)
+            return torch.log_softmax(out, dim=-1)

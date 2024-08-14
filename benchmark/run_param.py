@@ -116,6 +116,7 @@ class TrnWrapper(object):
             self.data, self.metric = self.data_loader(args)
             self.args.metric = self.metric
             self.model, trn_cls = self.model_loader(args)
+            self.args.criterion = args.criterion
             if trn_cls == TrnFullbatch:
                 self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
             else:

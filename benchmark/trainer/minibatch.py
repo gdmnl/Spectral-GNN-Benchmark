@@ -63,7 +63,6 @@ class TrnMinibatch(TrnBase):
 
         metric = metric_loader(args).to(self.device)
         self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
-        self.criterion = nn.BCELoss() if self.num_classes == 1 else nn.NLLLoss()
 
         self.shuffle = {'train': True, 'val': False, 'test': False}
         self.embed = None
@@ -75,8 +74,8 @@ class TrnMinibatch(TrnBase):
     def _fetch_data(self) -> Tuple[Data, dict]:
         r"""Process the single graph data."""
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
-        if not pyg_utils.is_sparse(self.data.adj_t):
-            raise NotImplementedError
+        # if not pyg_utils.is_sparse(self.data.adj_t):
+        #     raise NotImplementedError
         # if pyg_utils.contains_isolated_nodes(self.data.edge_index):
         #     self.logger.warning(f"Graph {self.data} contains isolated nodes.")
 
@@ -85,7 +84,10 @@ class TrnMinibatch(TrnBase):
 
     def _fetch_preprocess(self, data: Data) -> tuple:
         r"""Call model preprocess for precomputation."""
-        input, label = (data.x, data.adj_t), data.y
+        if hasattr(data, 'adj_t'):
+            input, label = (data.x, data.adj_t), data.y
+        else:
+            input, label = (data.x, data.edge_index), data.y
         if hasattr(self.model, 'preprocess'):
             self.model.preprocess(*input)
         return input, label

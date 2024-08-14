@@ -34,10 +34,15 @@ class ModelLoader(object):
 
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict, TrnBase]:
         # >>>>>>>>>>
-        if self.model in ['GCN', 'MLP']:
+        if self.model in ['GCN', 'GraphSAGE', 'GIN', 'GAT', 'PNA', 'MLP']:
+            from pyg_spectral.nn.models_pyg import kwargs_default
             # manually fix repr for logging
             conv_dct = {
                 'GCN': 'GCNConv',
+                'GraphSAGE': 'SAGEConv',
+                'GIN': 'GINConv',
+                'GAT': 'GATConv',
+                'PNA': 'PNAConv',
                 'MLP': 'Identity',
             }
             self.conv_repr = '-'.join((conv_dct[self.model], args.theta_scheme))
@@ -56,18 +61,32 @@ class ModelLoader(object):
             module_name = 'torch_geometric.nn.models'
             class_name = self.model
             kwargs = dict(
+                criterion='BCEWithLogitsLoss' if args.num_classes == 1 else 'CrossEntropyLoss',
                 in_channels=args.num_features,
                 out_channels=args.num_classes,
                 hidden_channels=args.hidden,
                 num_layers=num_layers,
                 dropout=args.dp_lin,
             )
+            if self.model in kwargs_default:
+                for k, v in kwargs_default[self.model].items():
+                    kwargs.setdefault(k, v)
+
+        elif self.model in ['ChebNet', ]:
+            from pyg_spectral.nn.models_pyg import kwvars
+            module_name = 'pyg_spectral.nn.models_pyg'
+            class_name = self.model
+            kwvar = kwvars[self.model]
+            kwargs = {k: args.__dict__[v] for k, v in kwvar.items()}
+            kwargs['criterion'] = 'BCELoss' if args.num_classes == 1 else 'NLLLoss'
+            trn = TrnFullbatch
 
         # Default to load from `pyg_spectral`
         else:
             module_name = 'pyg_spectral.nn.models'
             class_name = self.model
             kwargs = dict(
+                criterion='BCELoss' if args.num_classes == 1 else 'NLLLoss',
                 conv=self.conv,
                 num_hops=args.num_hops,
                 in_layers=args.in_layers,
@@ -137,6 +156,8 @@ class ModelLoader(object):
         self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)
 
         class_name, module_name, kwargs, trn = self._resolve_import(args)
+        args.criterion = kwargs.pop('criterion')
+
         model = load_import(class_name, module_name)(**kwargs)
         if hasattr(model, 'reset_parameters'):
             model.reset_parameters()
@@ -164,6 +185,8 @@ class ModelLoader_Trial(ModelLoader):
         self.signature = {key: args.__dict__[key] for key in self.signature_lst}
 
         class_name, module_name, kwargs, trn = self._resolve_import(args)
+        args.criterion = kwargs.pop('criterion')
+
         model = load_import(class_name, module_name)(**kwargs)
         if hasattr(model, 'reset_parameters'):
             model.reset_parameters()

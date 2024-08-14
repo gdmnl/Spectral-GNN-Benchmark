@@ -217,7 +217,7 @@ class BaseNN(nn.Module):
         if self.out_channels == 1:
             return torch.sigmoid(x)
         else:
-            return torch.log_softmax(x)
+            return torch.log_softmax(x, dim=-1)
 
 
 class BaseNNCompose(BaseNN):

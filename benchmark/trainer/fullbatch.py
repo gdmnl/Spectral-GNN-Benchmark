@@ -54,7 +54,6 @@ class TrnFullbatch(TrnBase):
         super(TrnFullbatch, self).__init__(model, data, args, **kwargs)
         metric = metric_loader(args).to(self.device)
         self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
-        self.criterion = nn.BCELoss() if self.num_classes == 1 else nn.NLLLoss()
 
         self.mask: dict = None
         self.flag_test_deg = args.test_deg if hasattr(args, 'test_deg') else False
@@ -65,11 +64,11 @@ class TrnFullbatch(TrnBase):
 
     def _fetch_data(self) -> Tuple[Data, dict]:
         r"""Process the single graph data."""
-        t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'train_mask', 'val_mask', 'test_mask'])
+        t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'edge_index', 'train_mask', 'val_mask', 'test_mask'])
         self.data = t_to_device(self.data)
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
-        if not pyg_utils.is_sparse(self.data.adj_t):
-            raise NotImplementedError
+        # if not pyg_utils.is_sparse(self.data.adj_t):
+        #     raise NotImplementedError
         # if pyg_utils.contains_isolated_nodes(self.data.edge_index):
         #     self.logger.warning(f"Graph {self.data} contains isolated nodes.")
 
@@ -78,7 +77,10 @@ class TrnFullbatch(TrnBase):
 
     def _fetch_input(self) -> tuple:
         r"""Process each sample of model input and label."""
-        input, label = (self.data.x, self.data.adj_t), self.data.y
+        if hasattr(self.data, 'adj_t'):
+            input, label = (self.data.x, self.data.adj_t), self.data.y
+        else:
+            input, label = (self.data.x, self.data.edge_index), self.data.y
         if hasattr(self.model, 'preprocess'):
             self.model.preprocess(*input)
         return input, label

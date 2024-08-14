@@ -130,12 +130,15 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     elif args.model in ['ACMGNNDec']:
         args.model_repr = 'DecoupledVar'
         args.conv_repr = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
-    elif args.model in ['GCN', 'MLP']:
+    elif args.model in ['GCN', 'GraphSAGE', 'GIN', 'GAT', 'PNA', 'MLP']:
         args.model_repr = {
             'ones': 'DecoupledFixed',
             'appr': 'IterativeFixed',
             'impulse': 'PrecomputedFixed',
             }[args.theta_scheme]
+        args.conv_repr = args.model
+    elif args.model in ['ChebNet',]:
+        args.model_repr = 'DecoupledFixed'
         args.conv_repr = args.model
     else:
         args.model_repr = args.model

@@ -11,6 +11,7 @@ import torch
 import torch.nn as nn
 from torch_geometric.data import Data
 from pyg_spectral import profile
+from pyg_spectral.utils import load_import
 
 from utils import CkptLogger, ResLogger
 
@@ -25,6 +26,7 @@ class TrnBase(object):
         args (Namespace): Configuration arguments.
             device (str): torch device.
             metric (str): Metric for evaluation.
+            criterion (set): Loss function in :mod:`torch.nn`.
             epoch (int): Number of training epochs.
             lr_[lin/conv] (float): Learning rate for linear/conv.
             wd_[lin/conv] (float): Weight decay for linear/conv.
@@ -64,6 +66,7 @@ class TrnBase(object):
 
         # Get entities
         self.model = model
+        self.criterion = load_import(args.criterion, 'torch.nn')()
         self.data = data
 
         # Evaluation metrics
