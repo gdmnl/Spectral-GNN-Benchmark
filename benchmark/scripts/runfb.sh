@@ -44,9 +44,9 @@ PARLIST="dp_lin,lr_lin,wd_lin"
 
 PARLIST="normg,dp_conv,$PARLIST"
     # Linear
-    python run_param.py --data $data --model $model --conv AdjiConv --param $PARLIST "${ARGS_P[@]}" \
+    python run_param.py --data $data --model DecoupledFixed --conv AdjiConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme ones --beta 1.0
-    python run_best.py  --data $data --model $model --conv AdjiConv "${ARGS_S[@]}" \
+    python run_best.py  --data $data --model DecoupledFixed --conv AdjiConv "${ARGS_S[@]}" \
         --theta_scheme ones --beta 1.0
 
 PARLIST="theta_param,$PARLIST"

@@ -1,6 +1,6 @@
 from .yandex import Yandex
 from .linkx import LINKX, FB100
-from .learning_filters import Filter
+from .grid2d import Grid2D
 
 from .utils import (
     idx2mask,
@@ -11,6 +11,6 @@ from .utils import (
 
 __all__ = [
     'Yandex', 'LINKX', 'FB100',
-    'Filter',
+    'Grid2D',
     'idx2mask', 'split_random', 'even_quantile_labels', 'get_iso_nodes_mapping'
 ]

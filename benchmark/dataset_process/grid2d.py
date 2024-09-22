@@ -3,17 +3,13 @@ import torch
 from torch_geometric.data.data import Data
 import scipy.io as sio
 import numpy as np
-import matplotlib.pyplot as plt
-from torch_geometric.utils import to_scipy_sparse_matrix,get_laplacian,remove_self_loops
-import os
 import os.path as osp
-from numpy.linalg import eig,eigh
-import math
 
-class Filter(InMemoryDataset):
+
+class Grid2D(InMemoryDataset):
     def __init__(self, root, name, transform=None, pre_transform=None):
         self.name = name.lower()
-        super(Filter, self).__init__(root, transform, pre_transform)
+        super(Grid2D, self).__init__(root, transform, pre_transform)
         self.load(self.processed_paths[0])
         self.data, self.slices = torch.load(self.processed_paths[0])
 

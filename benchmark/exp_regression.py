@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 import logging
 
-from trainer.filter import FilterLoader, TrnFilter
+from benchmark.trainer.regression import RegressionLoader, TrnRegression
 from trainer import ModelLoader
 from utils import (
     setup_seed,
@@ -21,13 +21,13 @@ def main(args):
     res_logger.concat([('seed', args.seed),])
 
     # ========== Load data
-    data_loader = FilterLoader(args, res_logger)
+    data_loader = RegressionLoader(args, res_logger)
     data, metric = data_loader(args)
 
     # ========== Load model
     model_loader = ModelLoader(args, res_logger)
     model, _ = model_loader(args)
-    trn = TrnFilter
+    trn = TrnRegression
     res_logger.suffix = trn.name
 
     # ========== Run trainer

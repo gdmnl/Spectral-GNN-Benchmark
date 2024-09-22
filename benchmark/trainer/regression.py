@@ -17,8 +17,8 @@ from .load_data import DATAPATH, split_random
 from utils import ResLogger
 
 
-class TrnFilter(TrnFullbatch):
-    name: str = 'filter'
+class TrnRegression(TrnFullbatch):
+    name: str = 'regression'
 
     def __init__(self,
                  model: nn.Module,
@@ -44,8 +44,8 @@ class TrnFilter(TrnFullbatch):
         return input, label
 
 
-class FilterLoader(object):
-    r"""Loader for filter learning datas.
+class RegressionLoader(object):
+    r"""Loader for regression learning datas.
     """
     def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
         r"""Assigning dataset identity.
@@ -65,9 +65,9 @@ class FilterLoader(object):
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
         assert self.data in ['2dgrid']
         module_name = 'dataset_process'
-        class_name = 'Filter'
+        class_name = 'Grid2D'
         kwargs = dict(
-            root=DATAPATH.joinpath('Filter'),
+            root=DATAPATH.joinpath('Grid2D'),
             name=self.data,
             transform=self.transform)
         self.metric = 's_r2'
@@ -87,7 +87,7 @@ class FilterLoader(object):
         data = dataset[0]
 
         # get specific filtered graph signal.
-        data.y = torch.tensor(np.load(DATAPATH.joinpath(f'Filter/y_{args.filter_type}.npy')), dtype=torch.float)
+        data.y = torch.tensor(np.load(DATAPATH.joinpath(f'Grid2D/y_{args.filter_type}.npy')), dtype=torch.float)
         args.num_features, args.num_classes = self.num_features, self.num_classes
         args.metric = self.metric
 
