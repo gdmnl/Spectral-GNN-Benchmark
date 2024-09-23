@@ -1,11 +1,20 @@
 import os.path as osp
 from typing import Callable, Optional
+from argparse import Namespace
 
 import numpy as np
 import torch
 
 from torch_geometric.data import Data, InMemoryDataset, download_url
 from torch_geometric.utils import coalesce
+import torch_geometric.transforms as T
+
+from .utils import get_split, resolve_data
+
+
+CLASS_NAME = 'Yandex'
+DATA_LIST = ['chameleon_filtered', 'squirrel_filtered', \
+             'roman_empire', 'amazon_ratings', 'minesweeper', 'tolokers', 'questions']
 
 
 class Yandex(InMemoryDataset):
@@ -64,3 +73,29 @@ class Yandex(InMemoryDataset):
             data = self.pre_transform(data)
 
         self.save([data], self.processed_paths[0])
+
+
+def get_data(datapath, transform, args: Namespace):
+    args.multi = False
+    args.metric = {
+        'chameleon_filtered': 's_f1i',
+        'squirrel_filtered': 's_f1i',
+        'roman_empire': 's_f1i',
+        'amazon_ratings': 's_f1i',
+        'minesweeper': 's_auroc',
+        'tolokers': 's_auroc',
+        'questions': 's_auroc'
+        }[args.data]
+    assert args.data_split.split('_')[0] == 'Random'
+
+    kwargs = dict(
+        root=datapath.joinpath(CLASS_NAME).resolve().absolute(),
+        name=args.data,
+        pre_transform=T.ToUndirected(),
+        transform=transform)
+
+    dataset = Yandex(**kwargs)
+    data = resolve_data(args, dataset)
+    data = get_split(args.data_split, data)
+
+    return data

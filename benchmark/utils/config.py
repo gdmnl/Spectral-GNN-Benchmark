@@ -54,7 +54,7 @@ def setup_argparse():
     parser.add_argument('--loglevel', type=int, default=10, help='10:progress, 15:train, 20:info, 25:result')
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
-    parser.add_argument('--data_split', type=str, default='60/20/20', help='Index or percentage of dataset split')
+    parser.add_argument('--data_split', type=str, default='Random_60/20/20', help='Dataset split')
     parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
     parser.add_argument('--normf', type=int, nargs='?', default=0, const=None, help='Embedding norm dimension. 0: feat-wise, 1: node-wise, None: disable')
     parser.add_argument('--multi', action='store_true', help='True for multi-label classification')

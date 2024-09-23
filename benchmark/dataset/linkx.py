@@ -1,5 +1,6 @@
 import os.path as osp
 from typing import Any, Callable, Optional
+from argparse import Namespace
 
 import numpy as np
 import scipy
@@ -9,12 +10,16 @@ import torch
 
 from torch_geometric.data import Data, InMemoryDataset, download_url, download_google_url
 from torch_geometric.utils import coalesce
-from torch_geometric.transforms import BaseTransform
+import torch_geometric.transforms as T
+from pyg_spectral.utils import load_import
 
-from .utils import even_quantile_labels
+from .utils import get_split, resolve_data, T_insert, even_quantile_labels
 
 
 NCLASS_Q = 5
+CLASS_NAME = 'LINKX'
+DATA_LIST = ['arxiv-year', 'genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki', \
+             'penn94', 'amherst41', 'cornell5', 'johns_hopkins55', 'reed98']
 
 
 class LINKX(InMemoryDataset):
@@ -71,17 +76,25 @@ class LINKX(InMemoryDataset):
         return 'data.pt'
 
     def download(self) -> None:
-        if self.name in ['genius']:
-            url = "https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data"
-            download_url(f'{url}/{self.name}.mat', self.raw_dir)
-            return
-
+        mat_downloaded = False
         for fname in self._dataset_drive_url:
             if fname.startswith(self.name):
                 download_google_url(self._dataset_drive_url[fname], self.raw_dir, filename=fname)
+                mat_downloaded = True
+        if not mat_downloaded:
+            url = "https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data"
+            download_url(f'{url}/{self.name}.mat', self.raw_dir)
+
+        split_downloaded = False
         for fname in self._splits_drive_url:
             if fname.startswith(self.name):
                 download_google_url(self._splits_drive_url[fname], self.raw_dir, filename=fname)
+                split_downloaded = True
+        if not split_downloaded and self.name != 'wiki':
+            url = "https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits"
+            fname = f'{self.name}_splits.npy'
+            download_url(f'{url}/{self.name}-splits.npy', self.raw_dir, filename=fname)
+
 
     def process(self) -> None:
         if self.name in ['twitch-gamer']:
@@ -118,8 +131,7 @@ class LINKX(InMemoryDataset):
             edge_index = coalesce(edge_index, num_nodes=n)
         kwargs = {'x': x, 'edge_index': edge_index, 'y': y}
 
-        splits_keys = [k.split('_')[0] for k in self._splits_drive_url]
-        if self.name in splits_keys:
+        if self.name != 'wiki':
             # 50/25/25 train/valid/test split
             splits_lst = np.load(osp.join(self.raw_dir, f'{self.name}_splits.npy'), allow_pickle=True)
             mask = {}
@@ -199,7 +211,7 @@ class FB100(InMemoryDataset):
         self.save([data], self.processed_paths[0])
 
 
-class T_arxiv_year(BaseTransform):
+class T_arxiv_year(T.BaseTransform):
     def forward(self, data: Any) -> Any:
         y = even_quantile_labels(data['node_year'].flatten(), NCLASS_Q, verbose=False)
         data.y = torch.tensor(y, dtype=torch.long)
@@ -207,11 +219,30 @@ class T_arxiv_year(BaseTransform):
         return data
 
 
-class T_ogbn_mag(BaseTransform):
-    def forward(self, data: Any) -> Any:
-        new_data = Data(
-            x=data.x_dict['paper'],
-            edge_index=data.edge_index_dict[('paper', 'cites', 'paper')],
-            y=data.y_dict['paper'],
-            num_nodes=data.x_dict['paper'].shape[0])
-        return new_data
+def get_data(datapath, transform, args: Namespace):
+    args.multi = False
+    args.metric = 's_auroc' if args.data in ['genius'] else 's_f1i'
+    # FIXME: check split
+    if args.data in ['arxiv-year', 'genius', 'pokec', 'snap-patents', 'twitch-gamer']:
+        args.data_split = f"Original_{args.seed}"
+
+    if args.data == 'snap-patents':
+        transform = T_insert(transform, T.ToUndirected(), index=0)
+    elif args.data == 'arxiv-year':
+        transform = T_insert(transform, T_arxiv_year(), index=0)
+    kwargs = dict(
+        root=datapath.joinpath(CLASS_NAME).resolve().absolute(),
+        name=args.data,
+        transform=transform)
+
+    if args.data in ['arxiv-year']:
+        dataset = load_import('PygNodePropPredDataset', 'ogb.nodeproppred')(**kwargs)
+    elif args.data in ['genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki']:
+        dataset = LINKX(**kwargs)
+    else:
+        dataset = FB100(**kwargs)
+
+    data = resolve_data(args, dataset)
+    data = get_split(args.data_split, data)
+
+    return data
