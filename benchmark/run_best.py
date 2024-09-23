@@ -26,6 +26,14 @@ def reverse_parse(parser, key, val):
     return type_func(val)
 
 
+def filter_res(s, metric):
+    # remove all substring start with s but not contain metric
+    flt_common = lambda x: not x.startswith('s_') and not '_' in x
+    flt_metric = lambda x: metric in x and x.endswith('_test')
+    lst = [x for x in s.split(', ') if flt_common(x.split(':')[0]) or flt_metric(x.split(':')[0])]
+    return ', '.join(lst)
+
+
 def main(args):
     # ========== Run configuration
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
@@ -51,7 +59,8 @@ def main(args):
     trn()
 
     logger.info(f"[args]: {args}")
-    logger.log(logging.LRES, f"[res]: {res_logger}")
+    resstr = filter_res(res_logger.get_str(), args.metric)
+    logger.log(logging.LRES, f"{resstr}")
     res_logger.save()
     save_args(args.logpath, vars(args))
     clear_logger(logger)

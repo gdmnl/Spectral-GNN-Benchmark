@@ -10,8 +10,8 @@ from copy import deepcopy
 from trainer import (
     SingleGraphLoader_Trial,
     ModelLoader_Trial,
-    TrnFullbatch,
-    TrnMinibatch_Trial, TrnBase_Trial)
+    TrnFullbatch, TrnFullbatch_Trial,
+    TrnMinibatch, TrnMinibatch_Trial)
 from utils import (
     force_list_str,
     setup_seed,
@@ -114,17 +114,18 @@ class TrnWrapper(object):
 
         if self.data is None:
             self.data = self.data_loader.get(args)
-            self.model, trn_cls = self.model_loader(args)
-            if trn_cls == TrnFullbatch:
-                self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
-            else:
-                self.trn_cls = TrnMinibatch_Trial
+            self.model, trn_cls = self.model_loader.get(args)
+            self.trn_cls = {
+                TrnFullbatch: TrnFullbatch_Trial,
+                TrnMinibatch: TrnMinibatch_Trial,
+            }[trn_cls]
 
             for key in ['num_features', 'num_classes', 'metric', 'multi', 'criterion']:
                 self.args.__dict__[key] = args.__dict__[key]
             self.metric = args.metric
-        self.data = self.data_loader.update(args, self.data)
-        self.model = self.model_loader.update(args, self.model)
+        else:
+            self.data = self.data_loader.update(args, self.data)
+            self.model = self.model_loader.update(args, self.model)
         res_logger = deepcopy(self.res_logger)
         for key in self.args.param:
             val = args.__dict__[key]
@@ -136,32 +137,24 @@ class TrnWrapper(object):
             res_logger.concat([(key, vali, fmt)])
             self.fmt_logger[key] = fmt_logger[key]
 
-        if self.trn_cls.__name__ == 'Trn_Trial':
-            trn = self.trn_cls(
+        if self.trn is None:
+            self.trn = self.trn_cls(
                 model=self.model,
                 data=self.data,
                 args=args,
                 res_logger=res_logger,)
         else:
-            if self.trn is None:
-                self.trn = self.trn_cls(
-                    model=self.model,
-                    data=self.data,
-                    args=args,
-                    res_logger=res_logger,)
-            else:
-                self.trn.update(
-                    model=self.model,
-                    data=self.data,
-                    args=args,
-                    res_logger=res_logger,)
-            trn = self.trn
-        trn.trial = trial
-        trn()
+            self.trn.update(
+                model=self.model,
+                data=self.data,
+                args=args,
+                res_logger=res_logger,)
+        self.trn.trial = trial
+        self.trn.run()
 
         res_logger.save()
         trial.set_user_attr("s_test", res_logger._get(col=self.metric+'_test', row=0))
-        return res_logger.data.loc[0, self.metric+'_val']
+        return res_logger.data.loc[0, self.metric+'_hyperval']
 
 
 def main(args):
@@ -175,9 +168,15 @@ def main(args):
     study_path, _ = setup_logpath(folder_args=(study_path,))
     study = optuna.create_study(
         study_name=args.logid,
-        storage=f'sqlite:///{str(study_path)}',
+        storage=optuna.storages.RDBStorage(
+            url=f'sqlite:///{str(study_path)}',
+            heartbeat_interval=3600),
         direction='maximize',
-        sampler=optuna.samplers.TPESampler(),
+        sampler=optuna.samplers.TPESampler(
+            n_startup_trials=8,
+            multivariate=True,
+            group=True,
+            warn_independent_sampling=False),
         pruner=optuna.pruners.HyperbandPruner(
             min_resource=2,
             max_resource=args.epoch,
@@ -214,6 +213,9 @@ def main(args):
     else:
         best_params = {k: trn.fmt_logger[k](v) for k, v in study.best_params.items()}
     save_args(args.logpath, best_params)
+    axes = optuna.visualization.matplotlib.plot_parallel_coordinate(
+        study, params=best_params.keys())
+    axes.get_figure().savefig(args.logpath.joinpath('parallel_coordinate.png'))
     clear_logger(logger)
 
 
@@ -225,6 +227,7 @@ if __name__ == '__main__':
     args = setup_args(parser)
 
     seed_lst = args.seed.copy()
+    args.n_trials /= len(seed_lst)
     for seed in seed_lst:
         args.seed = setup_seed(seed, args.cuda)
         args.flag = f'param-{args.seed}'

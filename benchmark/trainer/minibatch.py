@@ -11,7 +11,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from torch_geometric.data import Data, Dataset
-import torch_geometric.utils as pyg_utils
 
 from pyg_spectral.nn.norm import TensorStandardScaler
 from pyg_spectral.profile import Stopwatch, Accumulator
@@ -61,9 +60,6 @@ class TrnMinibatch(TrnBase):
             assert isinstance(args.normf, int)
             self.norm_prop = TensorStandardScaler(dim=args.normf)
 
-        metric = metric_loader(args).to(self.device)
-        self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
-
         self.shuffle = {'train': True, 'val': False, 'test': False}
         self.embed = None
 
@@ -71,7 +67,7 @@ class TrnMinibatch(TrnBase):
         del self.data, self.embed
         return super().clear()
 
-    def _fetch_data(self) -> Tuple[Data, dict]:
+    def _fetch_data(self) -> tuple:
         r"""Process the single graph data."""
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
         # if not pyg_utils.is_sparse(self.data.adj_t):
@@ -80,17 +76,28 @@ class TrnMinibatch(TrnBase):
         #     self.logger.warning(f"Graph {self.data} contains isolated nodes.")
 
         mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
-        return self.data, mask
 
-    def _fetch_preprocess(self, data: Data) -> tuple:
-        r"""Call model preprocess for precomputation."""
-        if hasattr(data, 'adj_t'):
-            input, label = (data.x, data.adj_t), data.y
+        if hasattr(self.data, 'adj_t'):
+            input, label = (self.data.x, self.data.adj_t), self.data.y
         else:
-            input, label = (data.x, data.edge_index), data.y
+            input, label = (self.data.x, self.data.edge_index), self.data.y
         if hasattr(self.model, 'preprocess'):
             self.model.preprocess(*input)
-        return input, label
+        del self.data
+        return input, label, mask
+
+    def _fetch_preprocess(self, embed: torch.Tensor, label: torch.Tensor, mask: dict) -> dict:
+        r"""Call model preprocess for precomputation."""
+        self.embed = {}
+        for k in self.splits:
+            dataset = TensorDataset(embed[mask[k]], label[mask[k]])
+            # self.embed[k] = DataLoader(dataset,
+            #                           batch_size=self.batch,
+            #                           shuffle=self.shuffle[k],
+            #                           num_workers=0)
+            self.embed[k] = dataset
+            self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.embed[k]) // self.batch}")
+        return self.embed
 
     def _fetch_input(self, split: str) -> Generator:
         r"""Process each sample of model input and label for training."""
@@ -154,10 +161,7 @@ class TrnMinibatch(TrnBase):
         r"""Pipeline for precomputation on CPU."""
         self.logger.debug('-'*20 + f" Start propagation: pre " + '-'*20)
 
-        data, mask = self._fetch_data()
-        input, label = self._fetch_preprocess(data)
-        del self.data
-
+        input, label, mask = self._fetch_data()
         stopwatch = Stopwatch()
         if hasattr(self.model, 'convolute'):
             with stopwatch:
@@ -169,15 +173,7 @@ class TrnMinibatch(TrnBase):
             self.norm_prop.fit(embed[mask['train']])
             embed = self.norm_prop(embed)
 
-        self.embed = {}
-        for k in self.splits:
-            dataset = TensorDataset(embed[mask[k]], label[mask[k]])
-            # self.embed[k] = DataLoader(dataset,
-            #                           batch_size=self.batch,
-            #                           shuffle=self.shuffle[k],
-            #                           num_workers=0)
-            self.embed[k] = dataset
-            self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.embed[k]) // self.batch}")
+        self._fetch_preprocess(embed, label, mask)
         return ResLogger()(
             [('time_pre', stopwatch.data)])
 
@@ -208,6 +204,28 @@ class TrnMinibatch_Trial(TrnMinibatch, TrnBase_Trial):
     r"""Trainer supporting optuna.pruners in training.
     Lazy calling precomputation.
     """
+    @TrnBase._log_memory(split='pre')
+    def preprocess(self) -> ResLogger:
+        r"""Pipeline for precomputation on CPU."""
+        self.logger.debug('-'*20 + f" Start propagation: pre " + '-'*20)
+
+        self.data = self.split_hyperval(self.data)
+        input, label, mask = self._fetch_data()
+        stopwatch = Stopwatch()
+        if hasattr(self.model, 'convolute'):
+            with stopwatch:
+                self.raw_embed = self.model.convolute(*input)
+        else:
+            self.raw_embed = input[0]
+
+        if hasattr(self, 'norm_prop'):
+            self.norm_prop.fit(self.raw_embed[mask['train']])
+            self.raw_embed = self.norm_prop(self.raw_embed)
+
+        self._fetch_preprocess(self.raw_embed, label, mask)
+        return ResLogger()(
+            [('time_pre', stopwatch.data)])
+
     def run(self) -> ResLogger:
         res_run = ResLogger()
 
@@ -228,17 +246,17 @@ class TrnMinibatch_Trial(TrnMinibatch, TrnBase_Trial):
         res_run.merge(res_train)
 
         self.model = self.ckpt_logger.load('best', model=self.model)
-        res_test = self.test()
+        res_test = self.test(['train', 'val', 'hyperval', 'test'])
         res_run.merge(res_test)
 
         return self.res_logger.merge(res_run)
 
     def update(self,
-                 model: nn.Module,
-                 data: Data,
-                 args: Namespace,
-                 res_logger: ResLogger = None,
-                 **kwargs):
+               model: nn.Module,
+               data: Data,
+               args: Namespace,
+               res_logger: ResLogger = None,
+               **kwargs):
         self.model = model
         self.data = data
         self.res_logger = res_logger or ResLogger()

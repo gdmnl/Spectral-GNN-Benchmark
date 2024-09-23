@@ -14,8 +14,7 @@ import torch_geometric.utils as pyg_utils
 
 from pyg_spectral.profile import Stopwatch
 
-from .base import TrnBase
-from .load_metric import metric_loader
+from .base import TrnBase, TrnBase_Trial
 from utils import ResLogger
 
 
@@ -52,8 +51,6 @@ class TrnFullbatch(TrnBase):
                  args: Namespace,
                  **kwargs):
         super(TrnFullbatch, self).__init__(model, data, args, **kwargs)
-        metric = metric_loader(args).to(self.device)
-        self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
 
         self.mask: dict = None
         self.flag_test_deg = args.test_deg if hasattr(args, 'test_deg') else False
@@ -64,7 +61,7 @@ class TrnFullbatch(TrnBase):
 
     def _fetch_data(self) -> Tuple[Data, dict]:
         r"""Process the single graph data."""
-        t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'edge_index', 'train_mask', 'val_mask', 'test_mask'])
+        t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'edge_index'] + [f'{k}_mask' for k in self.splits])
         self.data = t_to_device(self.data)
         # FIXME: Update to `EdgeIndex` [Release note 2.5.0](https://github.com/pyg-team/pytorch_geometric/releases/tag/2.5.0)
         # if not pyg_utils.is_sparse(self.data.adj_t):
@@ -176,3 +173,26 @@ class TrnFullbatch(TrnBase):
             res_run.merge(self.test_deg())
 
         return self.res_logger.merge(res_run)
+
+
+class TrnFullbatch_Trial(TrnFullbatch, TrnBase_Trial):
+    r"""Trainer supporting optuna.pruners in training.
+    """
+    def run(self) -> ResLogger:
+        res_run = ResLogger()
+        self.data = self.split_hyperval(self.data)
+        self._fetch_data()
+        self.model = self.model.to(self.device)
+        self.setup_optimizer()
+
+        res_train = self.train_val()
+        res_run.merge(res_train)
+
+        self.model = self.ckpt_logger.load('best', model=self.model)
+        res_test = self.test(['train', 'val', 'hyperval', 'test'])
+        res_run.merge(res_test)
+
+        return self.res_logger.merge(res_run)
+
+    def update(self, *args, **kwargs):
+        self.__init__(*args, **kwargs)

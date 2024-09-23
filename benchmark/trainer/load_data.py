@@ -92,7 +92,8 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
 
         T_insert(self.transform, Tspec.GenNorm(left=args.normg), index=-2)
         assert self.data in class_list, f"Invalid dataset: {self.data}"
-        data = func_list[class_list[self.data]](DATAPATH, self.transform, args)
+        get_data = func_list[class_list[self.data]]
+        data = get_data(DATAPATH, self.transform, args)
 
         self.res_logger.concat([('data', self.data, str), ('metric', args.metric, str)])
         return data

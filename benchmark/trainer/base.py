@@ -10,10 +10,14 @@ from argparse import Namespace
 import torch
 import torch.nn as nn
 from torch_geometric.data import Data
+import torch_geometric.utils as pyg_utils
+
 from pyg_spectral import profile
 from pyg_spectral.utils import load_import
 
+from dataset import split_random
 from utils import CkptLogger, ResLogger
+from .load_metric import metric_loader
 
 
 class TrnBase(object):
@@ -70,10 +74,12 @@ class TrnBase(object):
         self.data = data
 
         # Evaluation metrics
-        self.splits = ['train', 'val', 'test']
         self.multi = args.multi
         self.num_features = args.num_features
         self.num_classes = args.num_classes
+        self.splits = ['train', 'val', 'test']
+        metric = metric_loader(args).to(self.device)
+        self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
 
         # Loggers
         self.logger = logging.getLogger('log')
@@ -211,6 +217,29 @@ class TrnBase(object):
 class TrnBase_Trial(TrnBase):
     r"""Trainer supporting optuna.pruners in training.
     """
+    def __init__(self,
+                 model: nn.Module,
+                 data: Data,
+                 args: Namespace,
+                 res_logger: ResLogger = None,
+                 **kwargs):
+        super().__init__(model, data, args, res_logger, **kwargs)
+        self.splits = ['train', 'val', 'hyperval', 'test']
+        metric = metric_loader(args).to(self.device)
+        self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
+
+    def split_hyperval(self, data: Data) -> Data:
+        attr_to_index = lambda k: pyg_utils.mask_to_index(data[f'{k}_mask']) if hasattr(data, f'{k}_mask') else torch.tensor([])
+        idx = {k: attr_to_index(k) for k in ['train', 'val', 'hyperval']}
+        r_train = 1.0 * len(idx['train']) / (len(idx['train']) + len(idx['val']) + len(idx['hyperval']))
+        r_val = r_hyperval = (1.0 - r_train) / 2
+
+        label = data.y.detach().clone()
+        label[data.test_mask] = -1
+        data.train_mask, data.val_mask, data.hyperval_mask = split_random(label, r_train, r_val, ignore_neg=True)
+
+        return data
+
     def clear(self):
         if self.evaluator:
             for k in self.splits:

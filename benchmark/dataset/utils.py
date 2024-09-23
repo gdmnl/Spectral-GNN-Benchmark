@@ -2,7 +2,6 @@ from argparse import Namespace
 import numpy as np
 import torch
 from torch_geometric.data import Data, Dataset
-from torch_geometric.data.dataset import _get_flattened_data_list
 import torch_geometric.transforms as T
 
 
@@ -50,7 +49,7 @@ def resolve_data(args: Namespace, dataset: Dataset) -> Data:
 
 
 def resolve_split(data_split: str, data: Data) -> Data:
-    # TODO: support more split schemes
+    # TODO: support more split schemes (also in hyperval)
     scheme, split = data_split.split('_')
     if scheme == 'Random':
         (r_train, r_val) = map(int, split.split('/')[:2])
@@ -60,9 +59,7 @@ def resolve_split(data_split: str, data: Data) -> Data:
     else:
         assert hasattr(data, 'train_mask') and hasattr(data, 'val_mask') and hasattr(data, 'test_mask')
         if data.train_mask.dim() > 1:
-            split = int(split)
-            if split >= data.train_mask.size(1):
-                split = split % data.train_mask.size(1)
+            split = int(split) % data.train_mask.size(1)
             data.train_mask = data.train_mask[:, split]
             data.val_mask = data.val_mask[:, split]
             data.test_mask = data.test_mask[:, split]
