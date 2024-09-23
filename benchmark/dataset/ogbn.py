@@ -5,7 +5,7 @@ from torch_geometric.data import Data
 import torch_geometric.transforms as T
 from pyg_spectral.utils import load_import
 
-from .utils import idx2mask, get_split, resolve_data, T_insert, get_iso_nodes_mapping
+from .utils import idx2mask, resolve_split, resolve_data, T_insert, get_iso_nodes_mapping
 
 
 CLASS_NAME = 'OGB'
@@ -45,6 +45,6 @@ def get_data(datapath, transform, args: Namespace):
         for k in idx:
             idx[k] = idx[k]['paper']
     data.train_mask, data.val_mask, data.test_mask = idx2mask(idx, data.y.size(0))
-    data = get_split(args.data_split, data)
+    data = resolve_split(args.data_split, data)
 
     return data

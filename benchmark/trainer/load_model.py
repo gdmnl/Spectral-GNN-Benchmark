@@ -152,6 +152,9 @@ class ModelLoader(object):
             args.num_classes (int): Number of output classes.
             args.hidden (int): Number of hidden units.
             args.dp_[lin/conv] (float): Dropout rate for linear/conv.
+
+        Returns (update in args):
+            args.criterion (str): Criterion for loss calculation
         """
         self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)
 

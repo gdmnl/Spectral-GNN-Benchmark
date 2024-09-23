@@ -113,14 +113,16 @@ class TrnWrapper(object):
             raise optuna.TrialPruned()
 
         if self.data is None:
-            self.data, self.metric = self.data_loader(args)
-            self.args.metric = self.metric
+            self.data = self.data_loader.get(args)
             self.model, trn_cls = self.model_loader(args)
-            self.args.criterion = args.criterion
             if trn_cls == TrnFullbatch:
                 self.trn_cls = type('Trn_Trial', (trn_cls, TrnBase_Trial), {})
             else:
                 self.trn_cls = TrnMinibatch_Trial
+
+            for key in ['num_features', 'num_classes', 'metric', 'multi', 'criterion']:
+                self.args.__dict__[key] = args.__dict__[key]
+            self.metric = args.metric
         self.data = self.data_loader.update(args, self.data)
         self.model = self.model_loader.update(args, self.model)
         res_logger = deepcopy(self.res_logger)

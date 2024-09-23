@@ -9,7 +9,7 @@ from torch_geometric.data import Data, InMemoryDataset, download_url
 from torch_geometric.utils import coalesce
 import torch_geometric.transforms as T
 
-from .utils import get_split, resolve_data
+from .utils import resolve_split, resolve_data
 
 
 CLASS_NAME = 'Yandex'
@@ -96,6 +96,6 @@ def get_data(datapath, transform, args: Namespace):
 
     dataset = Yandex(**kwargs)
     data = resolve_data(args, dataset)
-    data = get_split(args.data_split, data)
+    data = resolve_split(args.data_split, data)
 
     return data

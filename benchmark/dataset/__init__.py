@@ -4,7 +4,7 @@ from .grid2d import Grid2D
 
 from .utils import (
     split_random,
-    T_insert, resolve_data, get_split
+    T_insert, resolve_data, resolve_split
 )
 
 import importlib
@@ -18,5 +18,5 @@ for classi in ['yandex', 'linkx', 'ogbn', 'pyg']:
 
 __all__ = [
     'Yandex', 'LINKX', 'FB100', 'Grid2D',
-    'T_insert', 'resolve_data', 'get_split',
+    'T_insert', 'resolve_data', 'resolve_split',
 ]

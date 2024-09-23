@@ -3,7 +3,7 @@ from argparse import Namespace
 import torch_geometric.transforms as T
 from pyg_spectral.utils import load_import
 
-from .utils import get_split, resolve_data, T_insert
+from .utils import resolve_split, resolve_data, T_insert
 
 
 CLASS_NAME = 'PyG'
@@ -48,6 +48,6 @@ def get_data(datapath, transform, args: Namespace):
 
     dataset = load_import(class_name, 'torch_geometric.datasets')(**kwargs)
     data = resolve_data(args, dataset)
-    data = get_split(args.data_split, data)
+    data = resolve_split(args.data_split, data)
 
     return data

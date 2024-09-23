@@ -22,7 +22,7 @@ def main(args):
 
     # ========== Load data
     data_loader = RegressionLoader(args, res_logger)
-    data, metric = data_loader(args)
+    data = data_loader(args)
 
     # ========== Load model
     model_loader = ModelLoader(args, res_logger)

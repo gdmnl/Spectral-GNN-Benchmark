@@ -49,7 +49,7 @@ def resolve_data(args: Namespace, dataset: Dataset) -> Data:
     return data
 
 
-def get_split(data_split: str, data: Data) -> Data:
+def resolve_split(data_split: str, data: Data) -> Data:
     # TODO: support more split schemes
     scheme, split = data_split.split('_')
     if scheme == 'Random':

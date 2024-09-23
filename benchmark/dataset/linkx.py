@@ -13,7 +13,7 @@ from torch_geometric.utils import coalesce
 import torch_geometric.transforms as T
 from pyg_spectral.utils import load_import
 
-from .utils import get_split, resolve_data, T_insert, even_quantile_labels
+from .utils import resolve_split, resolve_data, T_insert, even_quantile_labels
 
 
 NCLASS_Q = 5
@@ -236,13 +236,33 @@ def get_data(datapath, transform, args: Namespace):
         transform=transform)
 
     if args.data in ['arxiv-year']:
+        kwargs['name'] = 'ogbn-arxiv'
         dataset = load_import('PygNodePropPredDataset', 'ogb.nodeproppred')(**kwargs)
+
+        name = 'arxiv-year'
+        split_path = osp.join(dataset.raw_dir, f'{name}_splits.npy')
+        if not osp.exists(split_path):
+            url = "https://github.com/CUAI/Non-Homophily-Large-Scale/raw/master/data/splits"
+            fname = f'{name}_splits.npy'
+            download_url(f'{url}/{name}-splits.npy', dataset.raw_dir, filename=fname)
     elif args.data in ['genius', 'pokec', 'snap-patents', 'twitch-gamer', 'wiki']:
         dataset = LINKX(**kwargs)
     else:
         dataset = FB100(**kwargs)
 
     data = resolve_data(args, dataset)
-    data = get_split(args.data_split, data)
+    if args.data in ['arxiv-year']:
+        splits_lst = np.load(split_path, allow_pickle=True)
+        # 50/25/25 train/valid/test split
+        n = data.y.shape[0]
+        mask = {}
+        for k in ['train', 'valid', 'test']:
+            mask[k] = torch.zeros((n, len(splits_lst)), dtype=torch.bool)
+            for i in range(len(splits_lst)):
+                mask[k][splits_lst[i][k], i] = True
+        data['train_mask'] = mask['train']
+        data['val_mask'] = mask['valid']
+        data['test_mask'] = mask['test']
+    data = resolve_split(args.data_split, data)
 
     return data
