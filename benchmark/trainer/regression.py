@@ -13,7 +13,8 @@ from pyg_spectral.utils import load_import
 
 from .fullbatch import TrnFullbatch
 from .load_metric import ResCollection
-from .load_data import DATAPATH, split_random
+from .load_data import DATAPATH
+from dataset import split_random
 from utils import ResLogger
 
 
@@ -64,7 +65,7 @@ class RegressionLoader(object):
     # ===== Data acquisition
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
         assert self.data in ['2dgrid']
-        module_name = 'dataset_process'
+        module_name = 'dataset'
         class_name = 'Grid2D'
         kwargs = dict(
             root=DATAPATH.joinpath('Grid2D'),

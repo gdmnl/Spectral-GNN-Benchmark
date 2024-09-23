@@ -58,7 +58,7 @@ For advanced options, please refer to `Installation Options <_tutorial/installat
 
    _include/benchmark.trainer
    _include/benchmark.utils
-   _include/benchmark.dataset_process
+   _include/benchmark.dataset
 
 .. [1] Please refer to the `official guide <https://pytorch.org/get-started/locally/>`__ if a specific CUDA version is required for PyTorch.
 

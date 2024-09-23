@@ -1,7 +1,7 @@
-benchmark.dataset\_process
+benchmark.dataset
 ==================================
 
-.. automodule:: benchmark.dataset_process
+.. automodule:: benchmark.dataset
    :members:
    :undoc-members:
    :show-inheritance:

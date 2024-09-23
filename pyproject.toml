@@ -50,7 +50,7 @@ cpp=[
     "eigency>=1.77",
 ]
 docs=[
-    "sphinx>=5.1",
+    "sphinx>=7,<7.4",
     "sphinx_rtd_theme",
     "nbsphinx",
     "myst_parser",

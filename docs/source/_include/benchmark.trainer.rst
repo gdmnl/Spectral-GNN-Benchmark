@@ -17,10 +17,10 @@ benchmark.trainer.base
    :private-members:
    :no-index:
 
-benchmark.trainer.filter
+benchmark.trainer.regression
 --------------------------------
 
-.. automodule:: benchmark.trainer.filter
+.. automodule:: benchmark.trainer.regression
    :members:
    :undoc-members:
    :show-inheritance:

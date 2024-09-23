@@ -9,7 +9,7 @@ from .utils import (
 
 import importlib
 class_list, func_list = {}, {}
-for classi in ['yandex', 'linkx', 'ogbn', 'pyg']:
+for classi in ['yandex', 'linkx', 'ogbn', 'pygn']:
     module = importlib.import_module(f".{classi}", __name__)
     func_list[classi] = module.get_data
     for datai in module.DATA_LIST:

@@ -174,6 +174,7 @@ def main(args):
         direction='maximize',
         sampler=optuna.samplers.TPESampler(
             n_startup_trials=8,
+            n_ei_candidates=36,
             multivariate=True,
             group=True,
             warn_independent_sampling=False),
