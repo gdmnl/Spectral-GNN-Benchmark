@@ -5,6 +5,7 @@ File Created: 2024-04-29
 """
 from typing import Iterable
 import optuna
+import uuid
 from copy import deepcopy
 
 from trainer import (
@@ -165,9 +166,12 @@ def main(args):
 
     # ========== Study configuration
     study_path = '-'.join(filter(None, ['optuna', args.suffix])) + '.db'
-    study_path, _ = setup_logpath(folder_args=(study_path,))
+    study_path = setup_logpath(folder_args=(study_path,))
+    study_name = '/'.join(str(args.logpath).split('/')[-4:-1])
+    study_id = '/'.join((study_name, str(args.seed)))
+    study_id = uuid.uuid5(uuid.NAMESPACE_DNS, study_id).int % 2**32
     study = optuna.create_study(
-        study_name=args.logid,
+        study_name=study_name,
         storage=optuna.storages.RDBStorage(
             url=f'sqlite:///{str(study_path)}',
             heartbeat_interval=3600),
@@ -175,6 +179,7 @@ def main(args):
         sampler=optuna.samplers.TPESampler(
             n_startup_trials=8,
             n_ei_candidates=36,
+            seed=study_id,
             multivariate=True,
             group=True,
             warn_independent_sampling=False),
@@ -194,7 +199,7 @@ def main(args):
         res_logger=res_logger,)
     study.optimize(
         trn,
-        n_trials=args.n_trials,
+        n_trials=int(args.n_trials),
         gc_after_trial=True,
         show_progress_bar=True,)
 
@@ -231,8 +236,8 @@ if __name__ == '__main__':
     args.n_trials /= len(seed_lst)
     for seed in seed_lst:
         args.seed = setup_seed(seed, args.cuda)
-        args.flag = f'param-{args.seed}'
-        args.logpath, args.logid = setup_logpath(
+        args.flag = 'param'
+        args.logpath = setup_logpath(
             folder_args=(args.data, args.model_repr, args.conv_repr, args.flag),
             quiet=args.quiet)
 

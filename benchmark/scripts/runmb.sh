@@ -1,4 +1,4 @@
-# run_param+run_best, minibatch+Precomputed
+# search param + best, minibatch+Precomputed
 DEV=${1:-0}
 SEED_P=1
 
@@ -17,7 +17,6 @@ ARGS_ALL=(
     "--out_layers" "2"
     "--batch" "$lbatch"
     "--hidden" "128"
-    "--suffix" "mb"
 )
 # run_param args
 ARGS_P=(${ARGS_ALL[@]}
@@ -26,14 +25,16 @@ ARGS_P=(${ARGS_ALL[@]}
     "--loglevel" "30"
     "--epoch" "200"
     "--patience" "50"
+    "--suffix" "mb"
 )
-# run_best args
+# run_single args
 ARGS_S=(${ARGS_ALL[@]}
     "--seed" "$SEED_S"
-    "--seed_param" "$SEED_P"
     "--loglevel" "25"
     "--epoch" "500"
     "--patience" "-1"
+    "--suffix" "summary"
+    "--param"
 )
 
 for data in ${ldatas[@]}; do
@@ -46,14 +47,14 @@ PARLIST="dp_lin,lr_lin,wd_lin"
     python run_param.py --data $data --model MLP --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme impulse
     # Run repeatative with best hyperparameters
-    python run_best.py  --data $data --model MLP "${ARGS_S[@]}" \
+    python run_single.py  --data $data --model MLP "${ARGS_S[@]}" \
         --theta_scheme impulse
 
 PARLIST="normg,dp_conv,$PARLIST"
     # Linear
     python run_param.py --data $data --model $model --conv AdjSkipConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme ones --beta 1.0
-    python run_best.py  --data $data --model $model --conv AdjSkipConv "${ARGS_S[@]}" \
+    python run_single.py  --data $data --model $model --conv AdjSkipConv "${ARGS_S[@]}" \
         --theta_scheme ones --beta 1.0
 
 PARLIST="theta_param,$PARLIST"
@@ -63,7 +64,7 @@ PARLIST="theta_param,$PARLIST"
     for scheme in ${SCHEMES[@]}; do
         python run_param.py --data $data --model $model --conv $conv --param $PARLIST "${ARGS_P[@]}" \
             --theta_scheme $scheme
-        python run_best.py  --data $data --model $model --conv $conv "${ARGS_S[@]}" \
+        python run_single.py  --data $data --model $model --conv $conv "${ARGS_S[@]}" \
             --theta_scheme $scheme
     done
 
@@ -75,26 +76,26 @@ ARGS_S=("${ARGS_S[@]:0:${#ARGS_S[@]}-2}"
 PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
     # FiGURe
     python run_param.py --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv --param $PARLIST "${ARGS_P[@]}"
-    python run_best.py  --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
+    python run_single.py  --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
 
 PARLIST="$PARLIST,beta"
     # FAGNN
     python run_param.py --data $data --model PrecomputedFixedCompose --conv AdjSkipConv,AdjSkipConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme ones,ones --theta_param 1,1 --alpha 1.0,-1.0
-    python run_best.py  --data $data --model PrecomputedFixedCompose --conv AdjSkipConv,AdjSkipConv "${ARGS_S[@]}" \
+    python run_single.py  --data $data --model PrecomputedFixedCompose --conv AdjSkipConv,AdjSkipConv "${ARGS_S[@]}" \
         --theta_scheme ones,ones --theta_param 1,1 --alpha 1.0,-1.0
 
 PARLIST="$PARLIST,theta_param"
     # G2CN
     python run_param.py --data $data --model PrecomputedFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme gaussian,gaussian --alpha="-1.0,-1.0"
-    python run_best.py  --data $data --model PrecomputedFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv "${ARGS_S[@]}" \
+    python run_single.py  --data $data --model PrecomputedFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv "${ARGS_S[@]}" \
         --theta_scheme gaussian,gaussian --alpha="-1.0,-1.0"
 
     # GNN-LF/HF
     python run_param.py --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme appr,appr --alpha 1.0,1.0
-    python run_best.py  --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv "${ARGS_S[@]}" \
+    python run_single.py  --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv "${ARGS_S[@]}" \
         --theta_scheme appr,appr --alpha 1.0,1.0
 
 # ========== var
@@ -117,7 +118,7 @@ ARGS_S=("${ARGS_S[@]}"
         fi
 
         python run_param.py --data $data --model $model --conv $conv --param $PARLIST "${ARGS_P[@]}"
-        python run_best.py  --data $data --model $model --conv $conv "${ARGS_S[@]}"
+        python run_single.py  --data $data --model $model --conv $conv "${ARGS_S[@]}"
     done
 
 done

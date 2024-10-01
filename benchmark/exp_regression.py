@@ -56,7 +56,7 @@ if __name__ == '__main__':
     for seed in seed_lst:
         args.seed = setup_seed(seed, args.cuda)
         args.flag = f'{args.seed}'
-        args.logpath, args.logid = setup_logpath(
+        args.logpath = setup_logpath(
             folder_args=(args.data, args.model_repr, args.conv_repr, args.flag),
             quiet=args.quiet)
 

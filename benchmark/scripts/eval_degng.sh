@@ -1,6 +1,5 @@
-# run_eval: degree vs normg, fullbatch, DecoupledFixed/Var
+# eval: degree vs normg, fullbatch, DecoupledFixed/Var
 DEV=${1:--1}
-SEED_P=1
 SEED_S="60,61,62"
 
 DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
@@ -13,7 +12,6 @@ for data in ${DATAS[@]}; do
         ARGS_S=(
             "--dev" "$DEV"
             "--seed" "$SEED_S"
-            "--seed_param" "$SEED_P"
             "--loglevel" "25"
             "--num_hops" "10"
             "--in_layers" "1"
@@ -21,26 +19,25 @@ for data in ${DATAS[@]}; do
             "--hidden" "128"
             "--epoch" "500"
             "--patience" "-1"
-            "--eval_name" "deg_${PARKEY}"
-            "--suffix" "deg_${PARKEY}"
-            "--test_deg"
+            "--suffix" "eval_deg_${PARKEY}"
+            "-quiet" "--test_deg"
         )
         # MLP
-        python run_eval.py --data $data --model MLP "${ARGS_S[@]}" \
-            --param $PARKEY --"$PARKEY" $parval \
+        python run_single.py --data $data --model MLP \
+            --"$PARKEY" $parval --param $PARKEY "${ARGS_S[@]}" \
             --theta_scheme ones
 
         # Linear
-        python run_eval.py --data $data --model $model --conv AdjiConv \
-            --param $PARKEY --"$PARKEY" $parval "${ARGS_S[@]}" \
+        python run_single.py --data $data --model $model --conv AdjiConv \
+            --"$PARKEY" $parval --param $PARKEY "${ARGS_S[@]}" \
             --theta_scheme ones -beta 1.0
 
         model=DecoupledFixed
         conv=AdjConv
         SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")
         for scheme in ${SCHEMES[@]}; do
-            python run_eval.py --data $data --model $model --conv $conv \
-                --param $PARKEY --"$PARKEY" $parval "${ARGS_S[@]}" \
+            python run_single.py --data $data --model $model --conv $conv \
+                --"$PARKEY" $parval --param $PARKEY "${ARGS_S[@]}" \
                 --theta_scheme $scheme
         done
 
@@ -53,8 +50,8 @@ for data in ${DATAS[@]}; do
         CONVS=("AdjiConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
 
         for conv in ${CONVS[@]}; do
-            python run_eval.py --data $data --model $model --conv $conv \
-                --param $PARKEY --"$PARKEY" $parval "${ARGS_S[@]}"
+            python run_single.py --data $data --model $model --conv $conv \
+                --"$PARKEY" $parval --param $PARKEY "${ARGS_S[@]}"
         done
 
     done

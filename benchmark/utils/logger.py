@@ -82,7 +82,6 @@ def setup_logpath(dir: Union[Path, str] = LOGPATH,
 
     Returns:
         logpath (Path): Path for log directory.
-        logid (str): Path relative to dir.
     """
     dir_root = dir = Path(dir)
     flag = str(uuid.uuid4())[:6]
@@ -90,12 +89,10 @@ def setup_logpath(dir: Union[Path, str] = LOGPATH,
         folder_args = tuple(arg or flag for arg in folder_args)
         dir = dir.joinpath(*folder_args)
 
-    logid = str(dir.relative_to(dir_root))
     dir = dir.resolve().absolute()
     if not quiet:
         dir.mkdir(parents=True, exist_ok=True)
-
-    return dir, logid
+    return dir
 
 
 class ResLogger(object):
@@ -110,7 +107,7 @@ class ResLogger(object):
                  prefix: str = 'summary',
                  suffix: str = None,
                  quiet: bool = True):
-        self.prefix = prefix
+        self.prefix = prefix or 'summary'
         self.suffix = suffix
         self.logpath = Path(logpath)
         self.quiet = quiet
@@ -334,6 +331,16 @@ class ResLogger(object):
                 length = 0
             result.append(resstr)
         return ', '.join(result)
+
+    def flt_str(self, metric) -> str:
+        r"""Remove all substring start with s but not contain metric.
+
+        Args:
+            metric (str): Metric to keep."""
+        flt_common = lambda x: not x.startswith('s_') and not '_' in x
+        flt_metric = lambda x: metric in x and x.endswith('_test')
+        lst = [x for x in self.get_str().split(', ') if flt_common(x.split(':')[0]) or flt_metric(x.split(':')[0])]
+        return ', '.join(lst)
 
     def __str__(self) -> str:
         r"""String for print on screen."""

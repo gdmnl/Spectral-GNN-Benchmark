@@ -228,11 +228,10 @@ def get_data(datapath, transform, args: Namespace):
 
     if args.data == 'snap-patents':
         transform = T_insert(transform, T.ToUndirected(), index=0)
-    elif args.data == 'arxiv-year':
-        transform = T_insert(transform, T_arxiv_year(), index=0)
     kwargs = dict(
         root=datapath.joinpath(CLASS_NAME).resolve().absolute(),
         name=args.data,
+        pre_transform=T_arxiv_year() if args.data == 'arxiv-year' else None,
         transform=transform)
 
     if args.data in ['arxiv-year']:
