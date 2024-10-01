@@ -177,7 +177,7 @@ def main(args):
             heartbeat_interval=3600),
         direction='maximize',
         sampler=optuna.samplers.TPESampler(
-            n_startup_trials=8,
+            n_startup_trials=min(8, args.n_trials // 5),
             n_ei_candidates=36,
             seed=study_id,
             multivariate=True,
@@ -199,8 +199,8 @@ def main(args):
         res_logger=res_logger,)
     study.optimize(
         trn,
-        n_trials=int(args.n_trials),
-        gc_after_trial=True,
+        n_trials=args.n_trials,
+        gc_after_trial=False,
         show_progress_bar=True,)
 
     if 'Compose' in args.model:
@@ -233,7 +233,7 @@ if __name__ == '__main__':
     args = setup_args(parser)
 
     seed_lst = args.seed.copy()
-    args.n_trials /= len(seed_lst)
+    args.n_trials = args.n_trials // len(seed_lst)
     for seed in seed_lst:
         args.seed = setup_seed(seed, args.cuda)
         args.flag = 'param'

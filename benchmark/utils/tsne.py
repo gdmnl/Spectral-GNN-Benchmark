@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 
 
 def plt_tsne(embeddings, labels, save_path=None, title='Title'):
-    print('Drawing t-SNE plot ...')
-    print("Embedding size:", embeddings.shape)
     tsne = TSNE(n_components = 2, perplexity = 30.0, early_exaggeration = 12,
                n_iter = 1000, learning_rate = 368)
 

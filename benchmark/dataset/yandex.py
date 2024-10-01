@@ -86,7 +86,7 @@ def get_data(datapath, transform, args: Namespace):
         'tolokers': 's_auroc',
         'questions': 's_auroc'
         }[args.data]
-    assert args.data_split.split('_')[0] == 'Random'
+    assert args.data_split.split('_')[0] in ['Random', 'Stratify']
 
     kwargs = dict(
         root=datapath.joinpath(CLASS_NAME).resolve().absolute(),

@@ -6,6 +6,7 @@ File Created: 2024-02-26
 from pathlib import Path
 from argparse import Namespace
 import logging
+import uuid
 
 import torch
 import torch_geometric
@@ -14,7 +15,7 @@ import torch_geometric.transforms as T
 import pyg_spectral.transforms as Tspec
 
 from utils import ResLogger
-from dataset import class_list, func_list, T_insert
+from dataset import dataset_map, f_get_data, T_insert
 
 
 DATAPATH = Path('../data')
@@ -65,9 +66,8 @@ class SingleGraphLoader(object):
         self.logger.debug('-'*20 + f" Loading data: {self} " + '-'*20)
 
         T_insert(self.transform, Tspec.GenNorm(left=args.normg), index=-2)
-        assert self.data in class_list, f"Invalid dataset: {self.data}"
-        get_data = func_list[class_list[self.data]]
-        data = get_data(DATAPATH, self.transform, args)
+        # get_data(datapath, transform, args)
+        data = f_get_data[dataset_map[self.data]](DATAPATH, self.transform, args)
 
         self.logger.info(f"[dataset]: {self.data} (features={args.num_features}, classes={args.num_classes}, metric={args.metric})")
         self.logger.info(f"[data]: {data}")
@@ -89,11 +89,11 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
     def get(self, args: Namespace) -> Data:
         self.signature_lst = ['normg']
         self.signature = {key: args.__dict__[key] for key in self.signature_lst}
+        self.random_state = args.seed
+        args.data_split += f"_{args.seed}"
 
         T_insert(self.transform, Tspec.GenNorm(left=args.normg), index=-2)
-        assert self.data in class_list, f"Invalid dataset: {self.data}"
-        get_data = func_list[class_list[self.data]]
-        data = get_data(DATAPATH, self.transform, args)
+        data = f_get_data[dataset_map[self.data]](DATAPATH, self.transform, args)
 
         self.res_logger.concat([('data', self.data, str), ('metric', args.metric, str)])
         return data
@@ -103,7 +103,11 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
         """
         signature = {key: args.__dict__[key] for key in self.signature_lst}
         if self.signature != signature:
+            self.signature = signature
+            self.random_state = uuid.uuid5(uuid.NAMESPACE_DNS, str(self.random_state)).int % 2**32
+            args.data_split = '_'.join(args.data_split.split('_')[:2] + [str(self.random_state)])
+
             self.transform.transforms[-2] = Tspec.GenNorm(left=args.normg)
-            data = func_list[class_list[self.data]](DATAPATH, self.transform, args)
+            data = f_get_data[dataset_map[self.data]](DATAPATH, self.transform, args)
 
         return data

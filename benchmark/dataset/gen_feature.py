@@ -18,7 +18,6 @@ def main():
     # Save the sparse matrix in compressed .npz format
     save_npz('../../data/SBM/SBM-_feature.npz', matrix)
 
-    print("Sparse matrix generated and saved successfully.")
 
 if __name__ == "__main__":
     main()

@@ -3,18 +3,18 @@ from .linkx import LINKX, FB100
 from .grid2d import Grid2D
 
 from .utils import (
-    split_random,
+    split_crossval,
     T_insert, resolve_data, resolve_split
 )
 
 import importlib
-class_list, func_list = {}, {}
+dataset_map, f_get_data = {}, {}
 for classi in ['yandex', 'linkx', 'ogbn', 'pygn']:
     module = importlib.import_module(f".{classi}", __name__)
-    func_list[classi] = module.get_data
+    f_get_data[classi] = module.get_data
     for datai in module.DATA_LIST:
-        assert datai not in class_list, f"Duplicate dataset: {datai}"
-        class_list[datai] = classi
+        assert datai not in dataset_map, f"Duplicate dataset: {datai}"
+        dataset_map[datai] = classi
 
 __all__ = [
     'Yandex', 'LINKX', 'FB100', 'Grid2D',

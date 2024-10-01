@@ -14,7 +14,7 @@ from pyg_spectral.utils import load_import
 from .fullbatch import TrnFullbatch
 from .load_metric import ResCollection
 from .load_data import DATAPATH
-from dataset import split_random
+from dataset import split_crossval
 from utils import ResLogger
 
 
@@ -94,7 +94,7 @@ class RegressionLoader(object):
 
         (r_train, r_val) = map(int, args.data_split.split('/')[:2])
         r_train, r_val = r_train / 100, r_val / 100
-        train_mask, val_mask, test_mask = split_random(data.y[:,args.img_idx], r_train, r_val)
+        train_mask, val_mask, test_mask = split_crossval(data.y[:,args.img_idx], r_train, r_val)
         data.train_mask = torch.as_tensor(train_mask)
         data.val_mask = torch.as_tensor(val_mask)
         data.test_mask = torch.as_tensor(test_mask)

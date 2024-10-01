@@ -15,7 +15,7 @@ import torch_geometric.utils as pyg_utils
 from pyg_spectral import profile
 from pyg_spectral.utils import load_import
 
-from dataset import split_random
+from dataset import split_crossval
 from utils import CkptLogger, ResLogger
 from .load_metric import metric_loader
 
@@ -236,7 +236,7 @@ class TrnBase_Trial(TrnBase):
 
         label = data.y.detach().clone()
         label[data.test_mask] = -1
-        data.train_mask, data.val_mask, data.hyperval_mask = split_random(label, r_train, r_val, ignore_neg=True)
+        data.train_mask, data.val_mask, data.hyperval_mask = split_crossval(label, r_train, r_val, ignore_neg=True, stratify=True)
 
         return data
 

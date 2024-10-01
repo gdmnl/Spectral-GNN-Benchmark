@@ -54,7 +54,7 @@ def setup_argparse():
     parser.add_argument('--storage', type=str, default='state_gpu', choices=['state_file', 'state_ram', 'state_gpu'], help='Storage scheme for saving the checkpoints')
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
-    parser.add_argument('--data_split', type=str, default='Random_60/20/20', help='Dataset split')
+    parser.add_argument('--data_split', type=str, default='Stratify_60/20/20', help='Dataset split')
     parser.add_argument('--normg', type=float, default=0.5, help='Generalized graph norm')
     parser.add_argument('--normf', type=int, nargs='?', default=0, const=None, help='Embedding norm dimension. 0: feat-wise, 1: node-wise, None: disable')
     parser.add_argument('--multi', action='store_true', help='True for multi-label classification')

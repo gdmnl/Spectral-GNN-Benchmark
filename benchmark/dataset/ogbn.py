@@ -3,9 +3,10 @@ from argparse import Namespace
 
 from torch_geometric.data import Data
 import torch_geometric.transforms as T
+from torch_geometric.utils import index_to_mask
 from pyg_spectral.utils import load_import
 
-from .utils import idx2mask, resolve_split, resolve_data, T_insert, get_iso_nodes_mapping
+from .utils import resolve_split, resolve_data, T_insert, get_iso_nodes_mapping
 
 
 CLASS_NAME = 'OGB'
@@ -44,7 +45,9 @@ def get_data(datapath, transform, args: Namespace):
     elif args.data == 'ogbn-mag':
         for k in idx:
             idx[k] = idx[k]['paper']
-    data.train_mask, data.val_mask, data.test_mask = idx2mask(idx, data.y.size(0))
+    data.train_mask = index_to_mask(idx['train'], data.y.size(0))
+    data.val_mask = index_to_mask(idx['valid'], data.y.size(0))
+    data.test_mask = index_to_mask(idx['test'], data.y.size(0))
     data = resolve_split(args.data_split, data)
 
     return data

@@ -1,17 +1,12 @@
+from typing import Tuple
 from argparse import Namespace
 import numpy as np
+from sklearn.model_selection import train_test_split
+
 import torch
 from torch_geometric.data import Data, Dataset
 import torch_geometric.transforms as T
-
-
-def idx2mask(idx: dict, n: int) -> tuple:
-    res = tuple()
-    for k in ['train', 'valid', 'test']:
-        mask = torch.zeros(n, dtype=bool)
-        mask[idx[k]] = True
-        res += (mask,)
-    return res
+from torch_geometric.utils import index_to_mask
 
 
 def T_insert(transform, new_t: T.BaseTransform, index=-1) -> T.Compose:
@@ -49,13 +44,24 @@ def resolve_data(args: Namespace, dataset: Dataset) -> Data:
 
 
 def resolve_split(data_split: str, data: Data) -> Data:
-    # TODO: support more split schemes (also in hyperval)
-    scheme, split = data_split.split('_')
-    if scheme == 'Random':
+    ctx = data_split.split('_')
+    if len(ctx) == 2:
+        scheme, split = ctx
+        seed = None
+    else:
+        scheme, split, seed = ctx
+    scheme = scheme.capitalize()
+
+    if scheme in ['Random', 'Stratify']:
         (r_train, r_val) = map(int, split.split('/')[:2])
         r_train, r_val = r_train / 100, r_val / 100
 
-        data.train_mask, data.val_mask, data.test_mask = split_random(data.y, r_train, r_val)
+        assert data.num_nodes == data.y.shape[0]
+        data.train_mask, data.val_mask, data.test_mask = split_crossval(
+            data.y, r_train, r_val,
+            seed=int(seed),
+            ignore_neg=True,
+            stratify=(scheme == 'Stratify'))
     else:
         assert hasattr(data, 'train_mask') and hasattr(data, 'val_mask') and hasattr(data, 'test_mask')
         if data.train_mask.dim() > 1:
@@ -70,26 +76,26 @@ def resolve_split(data_split: str, data: Data) -> Data:
     return data
 
 
-def split_random(label: torch.Tensor, r_train: float, r_val: float, ignore_neg=True) -> tuple:
-    """Split index randomly"""
-    node_labeled = torch.where(label >= 0)[0] if ignore_neg else label
-    n = node_labeled.shape[0]
-    n_train, n_val = int(np.ceil(n * r_train)), int(np.ceil(n * r_val))
-    rnd = np.random.permutation(n)
+def split_crossval(label: torch.Tensor,
+                   r_train: float,
+                   r_val: float,
+                   seed: int = None,
+                   ignore_neg=True,
+                   stratify=False) -> Tuple[torch.Tensor]:
+    r"""Split index by cross-validation"""
+    node_labeled = torch.where(label >= 0)[0] if ignore_neg else np.arange(label.shape[0])
 
-    train_idx = np.sort(rnd[:n_train])
-    val_idx = np.sort(rnd[n_train:n_train + n_val])
-    train_val_idx = np.concatenate((train_idx, val_idx))
-    test_idx = np.sort(np.setdiff1d(np.arange(n), train_val_idx))
+    train_idx, val_idx = train_test_split(node_labeled,
+                            test_size=r_val,
+                            train_size=r_train,
+                            random_state=seed,
+                            stratify=label[node_labeled] if stratify else None)
+    used_idx = np.concatenate((train_idx, val_idx))
+    test_idx = np.setdiff1d(node_labeled, used_idx, assume_unique=True)
 
-    if ignore_neg:
-        idx = {'train': node_labeled[train_idx],
-               'valid': node_labeled[val_idx],
-               'test': node_labeled[test_idx]}
-        return idx2mask(idx, label.shape[0])
-    else:
-        idx = {'train': train_idx, 'valid': val_idx, 'test': test_idx}
-        return idx2mask(idx, n)
+    return (index_to_mask(torch.as_tensor(train_idx), size=label.shape[0]),
+            index_to_mask(torch.as_tensor(val_idx), size=label.shape[0]),
+            index_to_mask(torch.as_tensor(test_idx), size=label.shape[0]))
 
 
 def even_quantile_labels(vals, nclasses, verbose=True):
@@ -112,7 +118,6 @@ def even_quantile_labels(vals, nclasses, verbose=True):
     label[vals >= lower] = nclasses - 1
     interval_lst.append((lower, np.inf))
     if verbose:
-        print('Class Label Intervals:')
         for class_idx, interval in enumerate(interval_lst):
             print(f'Class {class_idx}: [{interval[0]}, {interval[1]})]')
     return label
