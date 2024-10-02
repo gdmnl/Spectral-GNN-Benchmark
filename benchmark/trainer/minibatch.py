@@ -28,24 +28,22 @@ class TrnMinibatch(TrnBase):
     Args:
         args.batch (int): Batch size.
         args.normf (int): Embedding normalization.
-        --- TrnBase Args ---
-        model (nn.Module): Pytorch model to be trained.
-        data (Data): PyG style data.
-        logger (Logger): Logger object.
-        args (Namespace): Configuration arguments.
-            device (str): torch device.
-            metric (str): Metric for evaluation.
-            epoch (int): Number of training epochs.
-            lr_[lin/conv] (float): Learning rate for linear/conv.
-            wd_[lin/conv] (float): Weight decay for linear/conv.
-            patience (int): Patience for early stopping.
-            period (int): Period for checkpoint saving.
-            suffix (str): Suffix for checkpoint saving.
-            storage (str): Storage scheme for checkpoint saving.
-            logpath (Path): Path for logging.
-            multi (bool): True for multi-label classification.
-            num_features (int): Number of data input features.
-            num_classes (int): Number of data output classes.
+        model, data, res_logger: args for :class:`TrnBase`.
+        args: args for :class:`TrnBase`.
+
+            * device (str): torch device.
+            * metric (str): Metric for evaluation.
+            * epoch (int): Number of training epochs.
+            * lr_[lin/conv] (float): Learning rate for linear/conv.
+            * wd_[lin/conv] (float): Weight decay for linear/conv.
+            * patience (int): Patience for early stopping.
+            * period (int): Period for checkpoint saving.
+            * suffix (str): Suffix for checkpoint saving.
+            * storage (str): Storage scheme for checkpoint saving.
+            * logpath (Path): Path for logging.
+            * multi (bool): True for multi-label classification.
+            * num_features (int): Number of data input features.
+            * num_classes (int): Number of data output classes.
     """
     name: str = 'mb'
 

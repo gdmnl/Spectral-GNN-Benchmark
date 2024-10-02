@@ -220,6 +220,23 @@ class T_arxiv_year(T.BaseTransform):
 
 
 def get_data(datapath, transform, args: Namespace):
+    r"""Load data based on parameters and configurations.
+
+    Args:
+        datapath: Path to the root data directory.
+        transform: Data transformation pipeline.
+        args: Parameters.
+
+            * args.data (str): Dataset name.
+            * args.data_split (str): Index of dataset split.
+    Returns:
+        data (Data): The resolved data sample from the dataset.
+    Updates:
+        args.num_features (int): Number of input features.
+        args.num_classes (int): Number of output classes.
+        args.multi (bool): True for multi-label classification.
+        args.metric (str): Main metric name for evaluation.
+    """
     args.multi = False
     args.metric = 's_auroc' if args.data in ['genius'] else 's_f1i'
     # FIXME: check split

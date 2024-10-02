@@ -22,16 +22,18 @@ DATAPATH = Path('../data')
 
 
 class SingleGraphLoader(object):
-    r"""Loader for PyG.data.Data object for one graph.
+    r"""Loader for :class:`torch_geometric.data.Data` object for one graph.
 
     Args:
-        args.seed (int): Random seed.
-        args.data (str): Dataset name.
-        args.data_split (str): Index of dataset split.
+        args: Configuration arguments.
+
+            * args.seed (int): Random seed.
+            * args.data (str): Dataset name.
+            * args.data_split (str): Index of dataset split.
+        res_logger: Logger for results.
     """
     def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
-        r"""Assigning dataset identity.
-        """
+        # Assigning dataset identity.
         self.seed = args.seed
         self.data = args.data.lower()
 
@@ -57,7 +59,7 @@ class SingleGraphLoader(object):
         Args:
             args.normg (float): Generalized graph norm.
 
-        Returns (update in args):
+        Updates:
             args.num_features (int): Number of input features.
             args.num_classes (int): Number of output classes.
             args.multi (bool): True for multi-label classification.

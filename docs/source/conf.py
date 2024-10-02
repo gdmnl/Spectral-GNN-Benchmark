@@ -58,6 +58,7 @@ copybutton_exclude = '.linenos, .gp'
 napoleon_numpy_docstring = False
 napoleon_custom_sections = [
     ('Returns', 'params_style'),
+    ('Updates', 'params_style'),
 ]
 napoleon_use_rtype = False
 napoleon_use_ivar = True
@@ -114,9 +115,12 @@ autodoc_default_options = {
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
-    'torch': ('https://pytorch.org/docs/master', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'pandas': ('http://pandas.pydata.org/pandas-docs/stable/', None),
+    'torch': ('https://pytorch.org/docs/stable/', None),
     'pyg': ('https://pytorch-geometric.readthedocs.io/en/latest/', None),
     'torch_geometric': ('https://pytorch-geometric.readthedocs.io/en/latest/', None),
+    'torchmetrics': ('https://lightning.ai/docs/torchmetrics/stable/', None),
 }
 
 code_url = f"https://github.com/gdmnl/Spectral-GNN-Benchmark/blob/main"

@@ -50,8 +50,8 @@ def setup_argparse():
     parser.add_argument('-v', '--dev', type=int, default=0, help='GPU id')
     parser.add_argument('-z', '--suffix', type=str, default=None, help='Result log file name. None:not saving results')
     parser.add_argument('-quiet', action='store_true', help='File log. True:dry run without saving logs')
+    parser.add_argument('--storage', type=str, default='state_gpu', choices=['state_file', 'state_ram', 'state_gpu'], help='Checkpoint log storage scheme')
     parser.add_argument('--loglevel', type=int, default=10, help='Console log. 10:progress, 15:train, 20:info, 25:result')
-    parser.add_argument('--storage', type=str, default='state_gpu', choices=['state_file', 'state_ram', 'state_gpu'], help='Storage scheme for saving the checkpoints')
     # Data configuration
     parser.add_argument('-d', '--data', type=str, default='cora', help='Dataset name')
     parser.add_argument('--data_split', type=str, default='Stratify_60/20/20', help='Dataset split')
@@ -120,7 +120,7 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     elif args.model in ['PrecomputedVar', 'PrecomputedVarCompose']:
         args.model_repr = 'PrecomputedVar'
         args.conv_repr = args.conv
-    # FIXME: separate arch for AdaGNN
+    # TODO: separate arch for AdaGNN
     elif args.model in ['AdaGNN']:
         args.model_repr = 'DecoupledVar'
         args.conv_repr = args.conv

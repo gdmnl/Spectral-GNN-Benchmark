@@ -16,11 +16,14 @@ from utils import ResLogger
 
 
 class ModelLoader(object):
-    r"""Loader for nn.Module object.
+    r"""Loader for :class:`torch.nn.Module` object.
 
     Args:
-        args.model (str): Model architecture name.
-        args.conv (str): Convolution layer name.
+        args: Configuration arguments.
+
+            args.model (str): Model architecture name.
+            args.conv (str): Convolution layer name.
+        res_logger: Logger for results.
     """
     def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
         r"""Assigning model identity.
@@ -153,7 +156,7 @@ class ModelLoader(object):
             args.hidden (int): Number of hidden units.
             args.dp_[lin/conv] (float): Dropout rate for linear/conv.
 
-        Returns (update in args):
+        Updates:
             args.criterion (str): Criterion for loss calculation
         """
         self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)

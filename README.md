@@ -93,7 +93,7 @@ Figures can be plotted by: [`benchmark/notebook/fig_hop.ipynb`](benchmark/notebo
 
 #### Frequency response (*Table 12*):
 ```bash
-bash scripts/exp_filter.sh
+bash scripts/exp_regression.sh
 ```
 
 ## Customization
@@ -109,11 +109,11 @@ options:
     # Logging configuration
     --seed SEED                 random seed
     --dev DEV                   GPU id
-    --suffix SUFFIX             Save name suffix.
-    -quiet                      Dry run without saving logs.
+    --suffix SUFFIX             Result log file name. None:not saving results
+    -quiet                      File log. True:dry run without saving logs
     --storage {state_file,state_ram,state_gpu}
-                                Storage scheme for saving the checkpoints.
-    --loglevel LOGLEVEL         10:progress, 15:train, 20:info, 25:result
+                                Checkpoint log storage scheme.
+    --loglevel LOGLEVEL         Console log. 10:progress, 15:train, 20:info, 25:result
     # Data configuration
     --data DATA                 Dataset name
     --data_split DATA_SPLIT     Index or percentage of dataset split

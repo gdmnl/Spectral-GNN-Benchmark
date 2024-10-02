@@ -16,14 +16,14 @@ class CkptLogger(object):
     stopping during training.
 
     Args:
-        logpath (Path or str): Path to checkpoints saving directory.
-        patience (int, optional): Patience for early stopping. Defaults no early stopping.
-        period (int, optional): Periodic saving interval. Defaults to no periodic saving.
-        prefix (str, optional): Prefix for the checkpoint file names.
-        storage (str, optional): Storage scheme for saving the checkpoints.
-            - 'model' vs 'state': Save model object or state_dict.
-            - '_file', '_ram', '_gpu': Save as file, RAM, or GPU memory.
-        metric_cmp (function or ['max', 'min'], optional): Comparison function for the metric.
+        logpath: Path to checkpoints saving directory.
+        patience: Patience for early stopping. Defaults no early stopping.
+        period: Periodic saving interval. Defaults to no periodic saving.
+        prefix: Prefix for the checkpoint file names.
+        storage: Storage scheme for saving the checkpoints.
+            * 'model' vs 'state': Save model object or state_dict.
+            * '_file', '_ram', '_gpu': Save as file, RAM, or GPU memory.
+        metric_cmp: Comparison function for the metric. Can be 'max' or 'min'.
     """
     def __init__(self,
                  logpath: Union[Path, str],
@@ -108,8 +108,8 @@ class CkptLogger(object):
 
         Args:
             suffix: Variable length argument for suffix in the model file name.
-            model (nn.Module): The model structure to load.
-            map_location (str, optional): `map_location` argument for `torch.load`.
+            model: The model structure to load.
+            map_location: `map_location` argument for `torch.load`.
 
         Returns:
             model (nn.Module): The loaded model.
@@ -163,8 +163,8 @@ class CkptLogger(object):
         """Step one epoch with periodic saving and early stopping.
 
         Args:
-            metric (float): Metric value for the current step.
-            model (nn.Module, optional): Model for the current step. Defaults to None.
+            metric: Metric value for the current step.
+            model: Model for the current step. Defaults to None.
 
         Returns:
             early_stop (bool): True if early stopping criteria is met.

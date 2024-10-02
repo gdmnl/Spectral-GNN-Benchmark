@@ -42,4 +42,4 @@ Figures can be plotted by: `benchmark/notebook/fig_hop.ipynb <https://github.com
 
 .. code-block:: console
 
-   $ bash scripts/exp_filter.sh
+   $ bash scripts/exp_regression.sh

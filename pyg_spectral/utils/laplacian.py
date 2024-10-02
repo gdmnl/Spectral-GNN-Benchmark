@@ -4,7 +4,7 @@ import torch
 from torch import Tensor
 
 from torch_geometric.typing import Adj, OptTensor, SparseTensor
-from torch_geometric.utils import add_self_loops, remove_self_loops, scatter
+from torch_geometric.utils import add_self_loops, remove_self_loops, scatter, is_torch_sparse_tensor
 from torch_geometric.utils.num_nodes import maybe_num_nodes
 
 
@@ -19,14 +19,13 @@ def get_laplacian(
     r"""Computes the graph Laplacian of the graph given by :obj:`edge_index`
     and optional :obj:`edge_weight`.
     Remove the normalization of graph adjacency matrix in
-    :class:`torch_geometric.transforms.get_laplacian`.
+    :func:`torch_geometric.utils.get_laplacian`.
 
     Args:
-        edge_index (LongTensor or SparseTensor): The edge indices.
-        edge_weight (Tensor, optional): One-dimensional edge weights.
-            (default: :obj:`None`)
-        normalization (bool, optional): The normalization scheme for the graph
-            Laplacian (default: :obj:`True`):
+        edge_index: The edge indices.
+        edge_weight: One-dimensional edge weights.
+        normalization: The normalization scheme for the graph
+            Laplacian:
 
             1. :obj:`False`: No normalization
             :math:`\mathbf{L} = \mathbf{D} - \mathbf{A}`
@@ -34,12 +33,11 @@ def get_laplacian(
             2. :obj:`"True"`: Normalization already applied
             :math:`\mathbf{L} = diag * \mathbf{I} - \mathbf{A}`
 
-        diag (float, optional): Weight of identity when normalization=True.
-            (default: :obj:`1.0`)
-        dtype (torch.dtype, optional): The desired data type of returned tensor
-            in case :obj:`edge_weight=None`. (default: :obj:`None`)
-        num_nodes (int, optional): The number of nodes, *i.e.*
-            :obj:`max_val + 1` of :attr:`edge_index`. (default: :obj:`None`)
+        diag: Weight of identity when normalization=True.
+        dtype: The desired data type of returned tensor
+            in case :obj:`edge_weight=None`.
+        num_nodes: The number of nodes, *i.e.*
+            :obj:`max_val + 1` of :attr:`edge_index`.
     """
     if isinstance(edge_index, SparseTensor):
         assert edge_weight is None
@@ -55,8 +53,9 @@ def get_laplacian(
             edge_index = edge_index.set_diag(deg)
         return edge_index
 
-    elif isinstance(edge_index, Tensor) and edge_index.is_sparse_csr:
+    elif is_torch_sparse_tensor(edge_index):
         import scipy.sparse as sp
+        edge_index = edge_index.to_sparse_csr().coalesce()
         data = edge_index.values().cpu().detach().numpy()
         indices = edge_index.col_indices().cpu().detach().numpy()
         indptr = edge_index.crow_indices().cpu().detach().numpy()

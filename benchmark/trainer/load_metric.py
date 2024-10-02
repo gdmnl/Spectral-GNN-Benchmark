@@ -16,17 +16,19 @@ from torchmetrics.classification import (
 
 class ResCollection(MetricCollection):
     def compute(self) -> List[Tuple[str, Any, Callable]]:
-        r"""Wrap compute output to ResLogger style."""
+        r"""Wrap compute output to :class:`ResLogger` style."""
         dct = self._compute_and_reduce("compute")
         return [(k, v.cpu().numpy(), (lambda x: format(x*100, '.3f'))) for k, v in dct.items()]
 
 
 def metric_loader(args: Namespace) -> MetricCollection:
-    r"""Loader for torchmetrics.Metric object.
+    r"""Loader for :class:`torchmetrics.Metric` object.
 
     Args:
-        args.multi (bool): True for multi-label classification.
-        args.num_classes (int): Number of output classes/labels.
+        args: Configuration arguments.
+
+            args.multi (bool): True for multi-label classification.
+            args.num_classes (int): Number of output classes/labels.
     """
     # FEATURE: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)
     if args.multi:

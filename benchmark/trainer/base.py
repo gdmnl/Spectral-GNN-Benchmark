@@ -24,24 +24,25 @@ class TrnBase(object):
     r"""Base trainer class for general pipelines and tasks.
 
     Args:
-        model (nn.Module): Pytorch model to be trained.
-        data (Data): PyG style data.
-        logger (Logger): Logger object.
-        args (Namespace): Configuration arguments.
-            device (str): torch device.
-            metric (str): Metric for evaluation.
-            criterion (set): Loss function in :mod:`torch.nn`.
-            epoch (int): Number of training epochs.
-            lr_[lin/conv] (float): Learning rate for linear/conv.
-            wd_[lin/conv] (float): Weight decay for linear/conv.
-            patience (int): Patience for early stopping.
-            period (int): Period for checkpoint saving.
-            suffix (str): Suffix for checkpoint saving.
-            storage (str): Storage scheme for checkpoint saving.
-            logpath (Path): Path for logging.
-            multi (bool): True for multi-label classification.
-            num_features (int): Number of data input features.
-            num_classes (int): Number of data output classes.
+        model: Pytorch model to be trained.
+        data: PyG style data.
+        res_logger: Logger for results.
+        args: Configuration arguments.
+
+            * device (str): torch device.
+            * metric (str): Metric for evaluation.
+            * criterion (set): Loss function in :mod:`torch.nn`.
+            * epoch (int): Number of training epochs.
+            * lr_[lin/conv] (float): Learning rate for linear/conv.
+            * wd_[lin/conv] (float): Weight decay for linear/conv.
+            * patience (int): Patience for early stopping.
+            * period (int): Period for checkpoint saving.
+            * suffix (str): Suffix for checkpoint saving.
+            * storage (str): Storage scheme for checkpoint saving.
+            * logpath (Path): Path for logging.
+            * multi (bool): True for multi-label classification.
+            * num_features (int): Number of data input features.
+            * num_classes (int): Number of data output classes.
 
     Methods:
         setup_optimizer: Set up the optimizer and scheduler.

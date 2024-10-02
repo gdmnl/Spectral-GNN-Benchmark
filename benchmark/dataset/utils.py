@@ -23,6 +23,19 @@ def T_insert(transform, new_t: T.BaseTransform, index=-1) -> T.Compose:
 
 
 def resolve_data(args: Namespace, dataset: Dataset) -> Data:
+    r"""Acquire data and properties from dataset.
+
+    Args:
+        args: Parameters.
+
+            * args.multi (bool): ``True`` for multi-label classification.
+        dataset: PyG dataset object.
+    Returns:
+        data (Data): The resolved PyG data object from the dataset.
+    Updates:
+        args.num_features (int): Number of input features.
+        args.num_classes (int): Number of output classes.
+    """
     # Avoid triggering transform when getting simple properties.
     # data = dataset.get(dataset.indices()[0])
     # if hasattr(dataset, '_data_list') and dataset._data_list is not None:
@@ -44,6 +57,18 @@ def resolve_data(args: Namespace, dataset: Dataset) -> Data:
 
 
 def resolve_split(data_split: str, data: Data) -> Data:
+    r"""Apply data split masks.
+
+    Args:
+        data_split: Index of dataset split, formatted as ``scheme_split`` or ``scheme_split_seed``.
+
+            * ``scheme='Random'``: Random split, ``split`` is ``train/val/test`` ratio.
+            * ``scheme='Stratify'``: Stratified split, ``split`` is ``train/val/test`` ratio.
+            * ``scheme='Original'``: Original split, ``split`` is the index of split.
+        data: PyG data object containing the dataset and its attributes.
+    Returns:
+        data (Data): The updated PyG data object with split masks (train/val/test).
+    """
     ctx = data_split.split('_')
     if len(ctx) == 2:
         scheme, split = ctx
@@ -80,8 +105,8 @@ def split_crossval(label: torch.Tensor,
                    r_train: float,
                    r_val: float,
                    seed: int = None,
-                   ignore_neg=True,
-                   stratify=False) -> Tuple[torch.Tensor]:
+                   ignore_neg: bool =True,
+                   stratify: bool =False) -> Tuple[torch.Tensor]:
     r"""Split index by cross-validation"""
     node_labeled = torch.where(label >= 0)[0] if ignore_neg else np.arange(label.shape[0])
 
@@ -98,13 +123,15 @@ def split_crossval(label: torch.Tensor,
             index_to_mask(torch.as_tensor(test_idx), size=label.shape[0]))
 
 
-def even_quantile_labels(vals, nclasses, verbose=True):
+def even_quantile_labels(vals: np.ndarray, nclasses: int, verbose:bool=True):
     """ partitions vals into nclasses by a quantile based split,
     where the first class is less than the 1/nclasses quantile,
     second class is less than the 2/nclasses quantile, and so on
 
-    vals is np array
-    returns an np array of int class labels
+    Args:
+        vals: The input array to be partitioned.
+        nclasses: The number of classes to partition the array into.
+        verbose: Prints the intervals for each class.
     """
     label = -1 * np.ones(vals.shape[0], dtype=int)
     interval_lst = []

@@ -16,12 +16,12 @@ Refer to the help text by:
 
 --seed SEED                 random seed
 --dev DEV                   GPU id
---suffix SUFFIX             Save name suffix
--quiet                      Dry run without saving logs
+--suffix SUFFIX             Result log file name. ``None``:not saving results
+-quiet                      File log. ``True``:dry run without saving logs
 --storage STORAGE
-                            Storage scheme for saving the checkpoints.
+                            Checkpoint log storage scheme.
                             Options: ``state_file``, ``state_ram``, ``state_gpu``
---loglevel LOGLEVEL         ``10``:progress, ``15``:train, ``20``:info, ``25``:result
+--loglevel LOGLEVEL         Console log. ``10``:progress, ``15``:train, ``20``:info, ``25``:result
 
 .. rubric:: Data configuration
 

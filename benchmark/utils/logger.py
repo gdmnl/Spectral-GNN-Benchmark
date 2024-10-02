@@ -76,9 +76,9 @@ def setup_logpath(dir: Union[Path, str] = LOGPATH,
     r"""Resolve log path for saving.
 
     Args:
-        dir (Path or str): Base directory for saving logs. Default is '../log/'.
-        folder_args (Tuple): Subfolder names.
-        quiet (bool, optional): Quiet run without creating directories.
+        dir: Base directory for saving logs.
+        folder_args: Subfolder names.
+        quiet: Quiet run without creating directories.
 
     Returns:
         logpath (Path): Path for log directory.
@@ -99,8 +99,8 @@ class ResLogger(object):
     r"""Logger for formatting result to strings by wrapping pd.DataFrame table.
 
     Args:
-        logpath (Path or str): Path to CSV file saving directory.
-        quiet (bool): Quiet run without saving file.
+        logpath: Path to CSV file saving directory.
+        quiet: Quiet run without saving file.
     """
     def __init__(self,
                  logpath: Union[Path, str] = LOGPATH,
@@ -151,8 +151,8 @@ class ResLogger(object):
         r"""Sets the data from input DataFrame.
 
         Args:
-            data (DataFrame): Concat on columns, inner join on index.
-            fmt (Series): Inner join on columns.
+            data: Concat on columns, inner join on index.
+            fmt: Inner join on columns.
         """
         cols_left = self.data.columns.tolist()
         cols_right = data.columns.tolist()
@@ -169,9 +169,9 @@ class ResLogger(object):
         r"""Concatenate data entries of a single row to data.
 
         Args:
-            vals (List or Dict): list of entries (key, value, formatter).
-            row (int): New index in self dataframe for vals to be logged.
-            suffix (str): Suffix string for input keys. Default is None.
+            vals: list of entries (key, value, formatter).
+            row: New index in self dataframe for vals to be logged.
+            suffix: Suffix string for input keys. Default is None.
 
         Returns:
             self (ResLogger)
@@ -208,9 +208,9 @@ class ResLogger(object):
         r"""Merge from another logger.
 
         Args:
-            vals (TabLogger): Logger to merge.
-            row (List): New index in self dataframe.
-            suffix (str): Suffix string for input keys. Default is None.
+            logger: Logger to merge.
+            row: New index in self dataframe.
+            suffix: Suffix string for input keys. Default is None.
         """
         if rows:
             assert len(rows) == logger.nrows
@@ -226,19 +226,21 @@ class ResLogger(object):
         r"""Delete columns from data.
 
         Args:
-            col (str or list): Column(s) to delete.
+            col: Column(s) to delete.
         """
         self.data = self.data.drop(columns=col)
         self.fmt = self.fmt.drop(index=col)
         return self
 
     # ===== Output
-    def _get(self, col=None, row=None) -> Union[DataFrame, Series, str]:
+    def _get(self,
+             col: Union[List, str]=None,
+             row: Union[List, str]=None) -> Union[DataFrame, Series, str]:
         r"""Retrieve one or sliced data and apply string format.
 
         Args:
-            col (str or list): Column(s) to retrieve. Defaults to all.
-            row (str or list): Row(s) to retrieve. Defaults to all.
+            col: Column(s) to retrieve. Defaults to all.
+            row: Row(s) to retrieve. Defaults to all.
 
         Returns:
             val: Formatted data.
@@ -294,9 +296,9 @@ class ResLogger(object):
         and rows.
 
         Args:
-            col (str or list): Column(s) to retrieve. Defaults to all.
-            row (str or list): Row(s) to retrieve. Defaults to all.
-            maxlen (int): Max line length of the resulting string.
+            col: Column(s) to retrieve. Defaults to all.
+            row: Row(s) to retrieve. Defaults to all.
+            maxlen: Max line length of the resulting string.
 
         Returns:
             s (str): Formatted string representation.
