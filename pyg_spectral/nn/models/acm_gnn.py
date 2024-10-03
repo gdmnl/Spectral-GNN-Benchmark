@@ -28,6 +28,9 @@ class ACMGNN(BaseNN):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    # FEATURE: separate arch
+    name = 'Iterative'
+    conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
 
     def init_conv(self,
         conv: str,
@@ -77,6 +80,9 @@ class ACMGNNDec(BaseNN):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    # FEATURE: separate arch
+    name = 'DecoupledVar'
+    conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
 
     def init_conv(self,
         conv: str,

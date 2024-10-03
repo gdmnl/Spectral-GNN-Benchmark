@@ -22,6 +22,12 @@ class AdjiConv(BaseMP):
     """
     # For similar convs supporting batching, use AdjConv or AdjSkipConv
     supports_batch: bool = False
+    name = lambda _: 'AdjiConv'
+    pargs = ['alpha', 'beta']
+    param = {
+        'alpha': ('float', (0.00, 1.00), {'step': 0.01}, lambda x: round(x, 2)),
+        'beta':  ('float', (0.01, 2.00), {'step': 0.01}, lambda x: round(x, 2)),
+    }
 
     def __init__(self,
         num_hops: int = 0,
@@ -89,6 +95,8 @@ class Adji2Conv(AdjiConv):
             ``beta = 'var'`` for learnable beta as parameter.
         hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'Adji2Conv'
+
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         r""" Perform 2-hop propagation.
         """
@@ -109,6 +117,13 @@ class AdjSkipConv(BaseMP):
             ``beta = 'var'`` for learnable beta as parameter.
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'AdjSkipConv'
+    pargs = ['alpha', 'beta']
+    param = {
+        'alpha': ('float', (0.00, 1.00), {'step': 0.01}, lambda x: round(x, 2)),
+        'beta':  ('float', (0.01, 2.00), {'step': 0.01}, lambda x: round(x, 2)),
+    }
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -181,6 +196,8 @@ class AdjSkip2Conv(AdjSkipConv):
             ``beta = 'var'`` for learnable beta as parameter.
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'AdjSkip2Conv'
+
     def message_and_aggregate(self, adj_t: Adj, x: Tensor) -> Tensor:
         r""" Perform 2-hop propagation.
         """
@@ -201,6 +218,13 @@ class AdjResConv(BaseMP):
             ``beta = 'var'`` for learnable beta as parameter.
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'AdjResConv'
+    pargs = ['alpha', 'beta']
+    param = {
+        'alpha': ('float', (0.00, 1.00), {'step': 0.01}, lambda x: round(x, 2)),
+        'beta':  ('float', (0.01, 2.00), {'step': 0.01}, lambda x: round(x, 2)),
+    }
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,

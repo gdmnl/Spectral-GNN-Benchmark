@@ -31,6 +31,7 @@ class ChebIIConv(BaseMP):
     Args:
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'ChebIIConv'
     coeffs_data = None
 
     def __init__(self,

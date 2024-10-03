@@ -57,7 +57,7 @@ if __name__ == '__main__':
         args.seed = setup_seed(seed, args.cuda)
         args.flag = f'{args.seed}'
         args.logpath = setup_logpath(
-            folder_args=(args.data, args.model_repr, args.conv_repr, args.flag),
+            folder_args=(args.data, *ModelLoader.get_name(args), args.flag),
             quiet=args.quiet)
 
         main(args)

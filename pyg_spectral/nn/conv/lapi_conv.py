@@ -16,6 +16,7 @@ class LapiConv(BaseMP):
     """
     # For similar convs supporting batching, use LapSkipConv
     supports_batch: bool = False
+    name = lambda _: 'LapiConv'
 
     def __init__(self,
         num_hops: int = 0,

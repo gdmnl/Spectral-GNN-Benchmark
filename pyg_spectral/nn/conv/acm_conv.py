@@ -22,6 +22,8 @@ class ACMConv(BaseMP):
         num_hops, hop, cached: args for :class:`BaseMP`
     """
     supports_batch: bool = False
+    name = lambda args: f'ACMConv-{args.alpha:d}'
+    pargs = ['alpha']
 
     def __init__(self,
         num_hops: int = 0,

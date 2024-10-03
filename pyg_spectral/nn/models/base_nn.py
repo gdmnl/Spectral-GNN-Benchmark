@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, Final, List, Optional, Union
+from typing import Any, Callable, Dict, Final, List, Tuple, Optional, Union
+type ParamTuple = Tuple[str, tuple, Dict[str, Any], Callable[[Any], str]]
 
 import torch
 import torch.nn as nn
@@ -39,6 +40,55 @@ class BaseNN(nn.Module):
     supports_edge_attr: Final[bool] = False
     supports_norm_batch: Final[bool]
     supports_batch: bool
+    name: str
+    conv_name: Callable[[str, Any], str] = lambda x, args: x
+    pargs: List[str] = ['conv', 'num_hops', 'in_layers', 'out_layers',
+                        'in_channels', 'hidden_channels', 'out_channels',
+                        'dropout_lin', 'dropout_conv',]
+    param: Dict[str, ParamTuple] = {
+            'num_hops':     ('int', (2, 30), {'step': 2}, lambda x: x),
+            'in_layers':    ('int', (1, 3), {}, lambda x: x),
+            'out_layers':   ('int', (1, 3), {}, lambda x: x),
+            'hidden_channels':  ('categorical', ([16, 32, 64, 128, 256],), {}, lambda x: x),
+            'dropout_lin':  ('float', (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
+            'dropout_conv': ('float', (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
+    }
+
+    @classmethod
+    def register_classes(cls,
+            model_name_map: Dict[str, str] = {},
+            wrap_conv_name_map: Dict[str, Callable[[str, Any], str]] = {},
+            model_pargs: Dict[str, List[str]] = {},
+            model_param: Dict[str, Dict[str, ParamTuple]] = {}):
+        r"""Register args for all subclass.
+
+        Args:
+            model_name_map: Model class logging path name.
+            wrap_conv_name_map: Wrap conv logging path name.
+            model_pargs: Model arguments from argparse.
+            model_param: Model parameters to tune.
+
+                * (str) parameter type,
+                * (tuple) args for :func:`optuna.trial.suggest_<type>`,
+                * (dict) kwargs for :func:`optuna.trial.suggest_<type>`,
+                * (callable) format function to str.
+        """
+        for subcls in cls.__subclasses__():
+            subname = subcls.__name__
+            # Traverse the MRO and accumulate args from parent classes
+            model_pargs[subname], model_param[subname] = [], {}
+            for basecls in subcls.mro():
+                if hasattr(basecls, 'pargs'):
+                    model_pargs[subname].extend(basecls.pargs)
+                if hasattr(basecls, 'param'):
+                    model_param[subname].update(basecls.param)
+            if hasattr(subcls, 'name'):
+                model_name_map[subname] = subcls.name
+            if hasattr(subcls, 'conv_name'):
+                wrap_conv_name_map[subname] = subcls.conv_name
+
+            subcls.register_classes(model_name_map, wrap_conv_name_map, model_pargs, model_param)
+        return model_name_map, wrap_conv_name_map, model_pargs, model_param
 
     def __init__(self,
             conv: str,
@@ -240,6 +290,8 @@ class BaseNNCompose(BaseNN):
         lib_conv: Parent module library other than :class:`pyg_spectral.nn.conv`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    pargs = ['combine']
+    param = {'combine': ('categorical', ['sum', 'sum_weighted', 'cat'], {}, lambda x: x)}
 
     def init_channel_list(self, conv: str, in_channels: int, hidden_channels: int, out_channels: int, **kwargs) -> List[int]:
         """

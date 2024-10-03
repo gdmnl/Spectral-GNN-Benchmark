@@ -77,7 +77,7 @@ if __name__ == '__main__':
     if args.param is not None:
         import json
         study_path = setup_logpath(
-            folder_args=(args.data, args.model_repr, args.conv_repr, 'param',
+            folder_args=(args.data, *ModelLoader.get_name(args), 'param',
                         'config.json'))
         with open(study_path, 'r') as config_file:
             best_params = json.load(config_file)
@@ -97,7 +97,7 @@ if __name__ == '__main__':
         args.seed = setup_seed(seed, args.cuda)
         args.flag = f'{args.seed}'
         args.logpath = setup_logpath(
-            folder_args=(args.data, args.model_repr, args.conv_repr, args.flag),
+            folder_args=(args.data, *ModelLoader.get_name(args), args.flag),
             quiet=args.quiet)
 
         main(args)

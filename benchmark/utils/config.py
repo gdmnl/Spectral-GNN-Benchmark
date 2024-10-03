@@ -98,35 +98,7 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = parser.parse_args()
     args = setup_cuda(args)
     # Set new args
-    if args.model in ['DecoupledFixed', 'DecoupledFixedCompose']:
-        args.model_repr = 'DecoupledFixed'
-        args.conv_repr = f'{args.conv}-{args.theta_scheme}'
-    elif args.model in ['PrecomputedFixed', 'PrecomputedFixedCompose']:
-        args.model_repr = 'PrecomputedFixed'
-        args.conv_repr = f'{args.conv}-{args.theta_scheme}'
-    elif args.model in ['IterativeFixed', 'IterativeFixedCompose']:
-        args.model_repr = 'IterativeFixed'
-        args.conv_repr = f'{args.conv}-{args.theta_scheme}'
-    elif args.model in ['IterativeCompose']:
-        args.model_repr = 'Iterative'
-        args.conv_repr = args.conv
-    elif args.model in ['DecoupledVar', 'DecoupledVarCompose']:
-        args.model_repr = 'DecoupledVar'
-        args.conv_repr = args.conv
-    elif args.model in ['PrecomputedVar', 'PrecomputedVarCompose']:
-        args.model_repr = 'PrecomputedVar'
-        args.conv_repr = args.conv
-    # TODO: separate arch for AdaGNN
-    elif args.model in ['AdaGNN']:
-        args.model_repr = 'DecoupledVar'
-        args.conv_repr = args.conv
-    elif args.model in ['ACMGNN']:
-        args.model_repr = 'Iterative'
-        args.conv_repr = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
-    elif args.model in ['ACMGNNDec']:
-        args.model_repr = 'DecoupledVar'
-        args.conv_repr = f'{args.conv}-{args.alpha}-{args.theta_scheme}'
-    elif args.model in ['GCN', 'GraphSAGE', 'GIN', 'GAT', 'PNA', 'MLP']:
+    if args.model in ['GCN', 'GraphSAGE', 'GIN', 'GAT', 'PNA', 'MLP']:
         args.model_repr = {
             'ones': 'DecoupledFixed',
             'appr': 'IterativeFixed',
@@ -136,9 +108,6 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     elif args.model in ['ChebNet',]:
         args.model_repr = 'DecoupledFixed'
         args.conv_repr = args.model
-    else:
-        args.model_repr = args.model
-        args.conv_repr = args.conv
     return args
 
 

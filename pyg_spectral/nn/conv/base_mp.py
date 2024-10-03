@@ -1,4 +1,5 @@
-from typing import Optional, Any
+from typing import Any, Callable, Dict, List, Tuple, Optional
+type ParamTuple = Tuple[str, tuple, Dict[str, Any], Callable[[Any], str]]
 import re
 
 import torch
@@ -22,7 +23,42 @@ class BaseMP(MessagePassing):
     """
     supports_batch: bool = True
     supports_norm_batch: bool = True
+    name: Callable[[Any], str]  # args -> str
+    pargs: List[str] = []
+    param: Dict[str, ParamTuple] = {}
     _cache: Optional[Any]
+
+    @classmethod
+    def register_classes(cls,
+            conv_name_map: Dict[str, str] = {},
+            conv_pargs: Dict[str, List[str]] = {},
+            conv_param: Dict[str, Dict[str, ParamTuple]] = {}):
+        r"""Register args for all subclass.
+
+        Args:
+            conv_name_map: Conv class logging path name.
+            conv_pargs: Conv arguments from argparse.
+            conv_param: Conv parameters to tune.
+
+                * (str) parameter type,
+                * (tuple) args for :func:`optuna.trial.suggest_<type>`,
+                * (dict) kwargs for :func:`optuna.trial.suggest_<type>`,
+                * (callable) format function to str.
+        """
+        for subcls in cls.__subclasses__():
+            subname = subcls.__name__
+            # Traverse the MRO and accumulate args from parent classes
+            conv_pargs[subname], conv_param[subname] = [], {}
+            for basecls in subcls.mro():
+                if hasattr(basecls, 'pargs'):
+                    conv_pargs[subname].extend(basecls.pargs)
+                if hasattr(basecls, 'param'):
+                    conv_param[subname].update(basecls.param)
+            if hasattr(subcls, 'name'):
+                conv_name_map[subname] = subcls.name
+
+            subcls.register_classes(conv_name_map, conv_pargs, conv_param)
+        return conv_name_map, conv_pargs, conv_param
 
     def __init__(self,
         num_hops: int = 0,

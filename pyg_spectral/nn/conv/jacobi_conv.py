@@ -14,6 +14,13 @@ class JacobiConv(BaseMP):
         alpha, beta: hyperparameters in Jacobi polynomials.
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'JacobiConv'
+    pargs = ['alpha', 'beta']
+    param = {
+        'alpha': ('float', (0.00, 1.00), {'step': 0.01}, lambda x: round(x, 2)),
+        'beta':  ('float', (0.00, 1.00), {'step': 0.01}, lambda x: round(x, 2)),
+    }
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,

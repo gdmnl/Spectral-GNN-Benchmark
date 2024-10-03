@@ -7,6 +7,7 @@ from typing import Tuple
 from argparse import Namespace
 import logging
 import torch.nn as nn
+from pyg_spectral.nn import get_nn_name, set_pargs
 from pyg_spectral.utils import load_import
 
 from .base import TrnBase
@@ -30,10 +31,26 @@ class ModelLoader(object):
         """
         self.model = args.model
         self.conv = args.conv
-        self.conv_repr = args.conv_repr
+        _, self.conv_repr = self.get_name(args)
 
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
+
+    @staticmethod
+    def get_name(args: Namespace) -> Tuple[str]:
+        """Get model+conv name for logging path from argparse input without instantiation.
+        Wrapper for :func:`pyg_spectral.nn.get_nn_name`.
+
+        Args:
+            args: Configuration arguments.
+
+                * args.model (str): Model architecture name.
+                * args.conv (str): Convolution layer name.
+                * other args specified in module :attr:`name` function.
+        Returns:
+            nn_name (Tuple[str]): Name strings ``(model_name, conv_name)``.
+        """
+        return get_nn_name(args.model, args.conv, args)
 
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict, TrnBase]:
         # >>>>>>>>>>
@@ -88,59 +105,20 @@ class ModelLoader(object):
         else:
             module_name = 'pyg_spectral.nn.models'
             class_name = self.model
-            kwargs = dict(
-                criterion='BCELoss' if args.out_channels == 1 else 'NLLLoss',
-                conv=self.conv,
-                num_hops=args.num_hops,
-                in_layers=args.in_layers,
-                out_layers=args.out_layers,
-                in_channels=args.in_channels,
-                out_channels=args.out_channels,
-                hidden_channels=args.hidden_channels,
-                dropout_lin=args.dropout_lin,
-                dropout_conv=args.dropout_conv,
-            )
+            kwargs = set_pargs(self.model, self.conv, args)
+            kwargs['criterion'] = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
+            print(args)
 
             # Parse conv args
             for conv in self.conv.split(','):
-                if conv in ['AdjConv', 'ChebConv', 'HornerConv', 'ClenshawConv', 'ACMConv']:
-                    kwargs.update(dict(
-                        alpha=args.alpha,))
-                elif conv in ['JacobiConv', 'AdjDiffConv', 'AdjiConv', 'Adji2Conv', \
-                            'AdjSkipConv', 'AdjSkip2Conv', 'AdjResConv']:
-                    kwargs.update(dict(
-                        alpha=args.alpha,
-                        beta=args.beta,))
-                    if conv == 'Adji2Conv':
-                        kwargs['num_hops'] = int(kwargs['num_hops'] / 2)
+                if conv in ['Adji2Conv', 'AdjSkip2Conv']:
+                    kwargs['num_hops'] = int(kwargs['num_hops'] / 2)
 
             # Parse model args
-            if self.model in ['Iterative', 'IterativeCompose', 'ACMGNN', 'ACMGNNDec']:
-                trn = TrnFullbatch
-            elif self.model in ['DecoupledFixed', 'DecoupledVar', 'AdaGNN']:
-                kwargs.update(dict(
-                    theta_scheme=args.theta_scheme,
-                    theta_param=args.theta_param,))
-                trn = TrnFullbatch
-            elif self.model in ['DecoupledFixedCompose', 'DecoupledVarCompose']:
-                kwargs.update(dict(
-                    theta_scheme=args.theta_scheme,
-                    theta_param=args.theta_param,
-                    combine=args.combine,))
-                trn = TrnFullbatch
-            elif self.model in ['PrecomputedFixed', 'PrecomputedVar', 'CppPrecFixed']:
-                kwargs.update(dict(
-                    theta_scheme=args.theta_scheme,
-                    theta_param=args.theta_param,))
-                trn = TrnMinibatch
-            elif self.model in ['PrecomputedFixedCompose', 'PrecomputedVarCompose']:
-                kwargs.update(dict(
-                    theta_scheme=args.theta_scheme,
-                    theta_param=args.theta_param,
-                    combine=args.combine,))
+            if self.model in ['PrecomputedFixed', 'PrecomputedVar', 'PrecomputedFixedCompose', 'PrecomputedVarCompose', 'CppPrecFixed']:
                 trn = TrnMinibatch
             else:
-                raise ValueError(f"Model '{self}' not found.")
+                trn = TrnFullbatch
         # <<<<<<<<<<
         return class_name, module_name, kwargs, trn
 

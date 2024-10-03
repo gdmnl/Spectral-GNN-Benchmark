@@ -25,6 +25,8 @@ class PrecomputedFixed(DecoupledFixed):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'PrecomputedFixed'
+    param = {'in_layers': ('int', (0, 0), {}, lambda x: x),}
 
     def __init__(self, in_layers: Optional[int] = None, **kwargs):
         assert in_layers is None or in_layers == 0, "PrecomputedFixed does not support in_layers."
@@ -82,6 +84,9 @@ class PrecomputedVar(DecoupledVar):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'PrecomputedVar'
+    param = {'in_layers': ('int', (0, 0), {}, lambda x: x),}
+
     def __init__(self, in_layers: Optional[int] = None, **kwargs):
         assert in_layers is None or in_layers == 0, "PrecomputedVar does not support in_layers."
         super(PrecomputedVar, self).__init__(in_layers=in_layers, **kwargs)
@@ -152,6 +157,8 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'PrecomputedFixed'
+    param = {'in_layers': ('int', (0, 0), {}, lambda x: x),}
 
     def convolute(self,
         x: Tensor,
@@ -219,6 +226,8 @@ class PrecomputedVarCompose(DecoupledVarCompose):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'PrecomputedVar'
+    param = {'in_layers': ('int', (0, 0), {}, lambda x: x),}
 
     def convolute(self,
         x: Tensor,

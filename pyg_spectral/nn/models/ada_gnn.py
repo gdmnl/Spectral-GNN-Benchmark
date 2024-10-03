@@ -4,7 +4,7 @@ from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.inits import reset
 
 from pyg_spectral.nn.models.base_nn import BaseNN
-from pyg_spectral.nn.models.decoupled import gen_theta
+from pyg_spectral.nn.models.decoupled import gen_theta, theta_param
 from pyg_spectral.utils import load_import
 
 
@@ -23,6 +23,9 @@ class AdaGNN(BaseNN):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'DecoupledVar'
+    pargs = ['theta_scheme', 'theta_param']
+    param = {'theta_param': lambda x: theta_param.get(x, None)}
 
     def init_conv(self,
         conv: str,

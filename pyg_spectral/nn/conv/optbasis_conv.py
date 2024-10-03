@@ -14,6 +14,8 @@ class OptBasisConv(BaseMP):
     Args:
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'OptBasisConv'
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,

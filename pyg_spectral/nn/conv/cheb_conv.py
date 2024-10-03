@@ -14,6 +14,10 @@ class ChebConv(BaseMP):
         alpha: decay factor for each hop :math:`1/k^\alpha`.
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'ChebConv'
+    pargs = ['alpha']
+    param = {'alpha': ('float', (0.00, 1.00), {'step': 0.01}, lambda x: round(x, 2))}
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,

@@ -24,6 +24,7 @@ class Iterative(BaseNN):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'Iterative'
 
     def init_conv(self,
         conv: str,
@@ -74,6 +75,7 @@ class IterativeCompose(BaseNNCompose):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'Iterative'
 
     def init_conv(self,
         conv: str,

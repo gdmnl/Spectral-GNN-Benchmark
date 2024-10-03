@@ -13,6 +13,10 @@ class AdjConv(BaseMP):
             :class:`torch_geometric.nn.conv.GCNConv`.
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'AdjConv'
+    pargs = ['beta']
+    param = {'beta': ('float', (0.01, 2.00), {'step': 0.01}, lambda x: round(x, 2))}
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
@@ -56,6 +60,10 @@ class AdjDiffConv(AdjConv):
             :class:`torch_geometric.nn.conv.GCNConv`.
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'AdjDiffConv'
+    pargs = ['alpha']
+    param = {'alpha': ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2))}
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,

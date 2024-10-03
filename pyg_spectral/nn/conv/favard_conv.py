@@ -20,6 +20,7 @@ class FavardConv(BaseMP):
         num_hops, hop, cached: args for :class:`BaseMP`
     """
     supports_batch: bool = False
+    name = lambda _: 'FavardConv'
 
     def __init__(self,
         num_hops: int = 0,

@@ -15,6 +15,8 @@ class LegendreConv(BaseMP):
     Args:
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'LegendreConv'
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,

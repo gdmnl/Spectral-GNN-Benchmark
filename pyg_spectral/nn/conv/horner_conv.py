@@ -17,6 +17,10 @@ class HornerConv(BaseMP):
         alpha: transformation strength.
         num_hops, hop, cached: args for :class:`BaseMP`
     """
+    name = lambda _: 'HornerConv'
+    pargs = ['alpha']
+    param = {'alpha': ('float', (1e-2, 10), {'log': True}, lambda x: float(f'{x:.2e}')),}
+
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,

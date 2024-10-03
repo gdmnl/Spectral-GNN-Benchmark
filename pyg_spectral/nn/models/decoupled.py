@@ -12,6 +12,19 @@ from pyg_spectral.nn.models.base_nn import BaseNN, BaseNNCompose
 from pyg_spectral.utils import load_import
 
 
+theta_param = {
+    # "impulse": (lambda x, _: x[0], (self.args.num_hops,), {}),
+    "ones":     ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+    "impulse":  ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+    "appr":     ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+    "nappr":    ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+    "mono":     ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+    "hk":       ('float', (1e-2, 10), {'log': True}, lambda x: float(f'{x:.2e}')),
+    "gaussian": ('float', (1e-2, 10), {'log': True}, lambda x: float(f'{x:.2e}')),
+    "log":      ('float', (1e-2, 10), {'log': True}, lambda x: float(f'{x:.2e}')),
+}
+
+
 def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = None) -> Tensor:
     r"""Generate list of hop parameters based on given scheme.
 
@@ -135,6 +148,11 @@ class DecoupledFixed(BaseNN):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'DecoupledFixed'
+    conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
+    pargs = ['theta_scheme', 'theta_param']
+    param = {'theta_param': lambda x: theta_param.get(x, None)}
+    # TODO: if iscallable(param[key])
 
     def init_conv(self,
         conv: str,
@@ -177,6 +195,9 @@ class DecoupledVar(BaseNN):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'DecoupledVar'
+    pargs = ['theta_scheme', 'theta_param']
+    param = {'theta_param': lambda x: theta_param.get(x, None)}
 
     def init_conv(self,
         conv: str,
@@ -227,6 +248,10 @@ class DecoupledFixedCompose(BaseNNCompose):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'DecoupledFixed'
+    conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
+    pargs = ['theta_scheme', 'theta_param']
+    param = {'theta_param': lambda x: theta_param.get(x, None)}
 
     def init_conv(self,
         conv: str,
@@ -283,6 +308,9 @@ class DecoupledVarCompose(BaseNNCompose):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    name = 'DecoupledVar'
+    pargs = ['theta_scheme', 'theta_param']
+    param = {'theta_param': lambda x: theta_param.get(x, None)}
 
     def init_conv(self,
         conv: str,
