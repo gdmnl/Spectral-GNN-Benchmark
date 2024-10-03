@@ -16,7 +16,7 @@ for data in ${DATAS[@]}; do
             "--num_hops" "10"
             "--in_layers" "1"
             "--out_layers" "1"
-            "--hidden" "128"
+            "--hidden_channels" "128"
             "--epoch" "500"
             "--patience" "-1"
             "--suffix" "eval_deg_${PARKEY}"

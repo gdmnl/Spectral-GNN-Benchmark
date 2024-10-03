@@ -41,7 +41,7 @@ def main(args):
     res_logger = ResLogger(prefix=args.suffix, quiet=(args.suffix is None))
     res_logger.concat([('seed', args.seed),])
     if args.param is not None and args.param != ['']:
-        res_logger.concat([(key, args.__dict__[key]) for key in args.param])
+        res_logger.concat([(key, getattr(args, key)) for key in args.param])
 
     # ========== Load data
     data_loader = SingleGraphLoader(args, res_logger)
@@ -73,6 +73,7 @@ if __name__ == '__main__':
     parser.add_argument('--param', type=force_list_str, nargs='?', default=None, const='', help='List of hyperparameters to change')
     args = setup_args(parser)
 
+    # If args.param is None: use hyperparameters in args
     if args.param is not None:
         import json
         study_path = setup_logpath(

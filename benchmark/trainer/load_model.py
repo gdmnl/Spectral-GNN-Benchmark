@@ -21,8 +21,8 @@ class ModelLoader(object):
     Args:
         args: Configuration arguments.
 
-            args.model (str): Model architecture name.
-            args.conv (str): Convolution layer name.
+            * args.model (str): Model architecture name.
+            * args.conv (str): Convolution layer name.
         res_logger: Logger for results.
     """
     def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
@@ -64,12 +64,12 @@ class ModelLoader(object):
             module_name = 'torch_geometric.nn.models'
             class_name = self.model
             kwargs = dict(
-                criterion='BCEWithLogitsLoss' if args.num_classes == 1 else 'CrossEntropyLoss',
-                in_channels=args.num_features,
-                out_channels=args.num_classes,
-                hidden_channels=args.hidden,
+                criterion='BCEWithLogitsLoss' if args.out_channels == 1 else 'CrossEntropyLoss',
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                hidden_channels=args.hidden_channels,
                 num_layers=num_layers,
-                dropout=args.dp_lin,
+                dropout=args.dropout_lin,
             )
             if self.model in kwargs_default:
                 for k, v in kwargs_default[self.model].items():
@@ -80,8 +80,8 @@ class ModelLoader(object):
             module_name = 'pyg_spectral.nn.models_pyg'
             class_name = self.model
             kwvar = kwvars[self.model]
-            kwargs = {k: args.__dict__[v] for k, v in kwvar.items()}
-            kwargs['criterion'] = 'BCELoss' if args.num_classes == 1 else 'NLLLoss'
+            kwargs = {k: getattr(args, v) for k, v in kwvar.items()}
+            kwargs['criterion'] = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
             trn = TrnFullbatch
 
         # Default to load from `pyg_spectral`
@@ -89,16 +89,16 @@ class ModelLoader(object):
             module_name = 'pyg_spectral.nn.models'
             class_name = self.model
             kwargs = dict(
-                criterion='BCELoss' if args.num_classes == 1 else 'NLLLoss',
+                criterion='BCELoss' if args.out_channels == 1 else 'NLLLoss',
                 conv=self.conv,
                 num_hops=args.num_hops,
                 in_layers=args.in_layers,
                 out_layers=args.out_layers,
-                in_channels=args.num_features,
-                out_channels=args.num_classes,
-                hidden_channels=args.hidden,
-                dropout_lin=args.dp_lin,
-                dropout_conv=args.dp_conv,
+                in_channels=args.in_channels,
+                out_channels=args.out_channels,
+                hidden_channels=args.hidden_channels,
+                dropout_lin=args.dropout_lin,
+                dropout_conv=args.dropout_conv,
             )
 
             # Parse conv args
@@ -128,7 +128,7 @@ class ModelLoader(object):
                     theta_param=args.theta_param,
                     combine=args.combine,))
                 trn = TrnFullbatch
-            elif self.model in ['PrecomputedFixed', 'PrecomputedVar', 'CppCompFixed']:
+            elif self.model in ['PrecomputedFixed', 'PrecomputedVar', 'CppPrecFixed']:
                 kwargs.update(dict(
                     theta_scheme=args.theta_scheme,
                     theta_param=args.theta_param,))
@@ -151,10 +151,10 @@ class ModelLoader(object):
             args.num_hops (int): Number of conv hops.
             args.in_layers (int): Number of MLP layers before conv.
             args.out_layers (int): Number of MLP layers after conv.
-            args.num_features (int): Number of input features.
-            args.num_classes (int): Number of output classes.
-            args.hidden (int): Number of hidden units.
-            args.dp_[lin/conv] (float): Dropout rate for linear/conv.
+            args.in_channels (int): Number of input features.
+            args.out_channels (int): Number of output classes.
+            args.hidden_channels (int): Number of hidden units.
+            args.dropout_[lin/conv] (float): Dropout rate for linear/conv.
 
         Updates:
             args.criterion (str): Criterion for loss calculation
@@ -187,8 +187,8 @@ class ModelLoader_Trial(ModelLoader):
     r"""Reuse necessary data for multiple runs.
     """
     def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
-        self.signature_lst = ['num_hops', 'in_layers', 'out_layers', 'hidden', 'dp_lin', 'dp_conv']
-        self.signature = {key: args.__dict__[key] for key in self.signature_lst}
+        self.signature_lst = ['num_hops', 'in_layers', 'out_layers', 'hidden_channels', 'dropout_lin', 'dropout_conv']
+        self.signature = {key: getattr(args, key) for key in self.signature_lst}
 
         class_name, module_name, kwargs, trn = self._resolve_import(args)
         args.criterion = kwargs.pop('criterion')
@@ -203,7 +203,7 @@ class ModelLoader_Trial(ModelLoader):
         return model, trn
 
     def update(self, args: Namespace, model: nn.Module) -> nn.Module:
-        signature = {key: args.__dict__[key] for key in self.signature_lst}
+        signature = {key: getattr(args, key) for key in self.signature_lst}
         if self.signature != signature:
             self.signature = signature
             model, _ = self.get(args)

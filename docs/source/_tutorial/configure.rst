@@ -37,9 +37,9 @@ Refer to the help text by:
 --num_hops NUM_HOPS         Number of conv hops
 --in_layers IN_LAYERS       Number of MLP layers before conv
 --out_layers OUT_LAYERS     Number of MLP layers after conv
---hidden HIDDEN             Number of hidden width
---dp_lin DP_LIN             Dropout rate for linear
---dp_conv DP_CONV           Dropout rate for conv
+--hidden_channels HIDDEN    Number of hidden width
+--dropout_lin DP_LIN        Dropout rate for linear
+--dropout_conv DP_CONV      Dropout rate for conv
 
 .. rubric:: Training configuration
 

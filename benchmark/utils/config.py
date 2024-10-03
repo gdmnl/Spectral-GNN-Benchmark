@@ -64,32 +64,28 @@ def setup_argparse():
     parser.add_argument('-k', '--num_hops', type=int, default=10, help='Number of conv hops')
     parser.add_argument('-l1', '--in_layers',  type=int, default=1, help='Number of MLP layers before conv')
     parser.add_argument('-l2', '--out_layers', type=int, default=1, help='Number of MLP layers after conv')
-    parser.add_argument('-w', '--hidden', type=int, default=128, help='Number of hidden width')
-    parser.add_argument('--dp_lin', type=float, default=0.5, help='Dropout rate for linear')
-    parser.add_argument('--dp_conv', type=float, default=0.5, help='Dropout rate for conv')
+    parser.add_argument('-w', '--hidden_channels', type=int, default=128, help='Number of hidden width')
+    parser.add_argument('-dpl', '--dropout_lin', type=float, default=0.5, help='Dropout rate for linear')
+    parser.add_argument('-dp', '--dropout_conv', type=float, default=0.5, help='Dropout rate for conv')
     # Training configuration
     parser.add_argument('-e', '--epoch', type=int, default=20, help='Number of epochs')
     parser.add_argument('-p', '--patience', type=int, default=50, help='Patience epoch for early stopping')
-    parser.add_argument('--period', type=int, default=-1, help='Periodic saving epoch interval')
+    parser.add_argument('-pp', '--period', type=int, default=-1, help='Periodic saving epoch interval')
     parser.add_argument('-b', '--batch', type=int, default=4096, help='Batch size')
-    parser.add_argument('--lr_lin', type=float, default=1.0e-2, help='Learning rate for linear')
+    parser.add_argument('-lrl', '--lr_lin', type=float, default=1.0e-2, help='Learning rate for linear')
     parser.add_argument('-lr', '--lr_conv', type=float, default=1.0e-3, help='Learning rate for conv')
-    parser.add_argument('--wd_lin', type=float, default=5e-6, help='Weight decay for linear')
+    parser.add_argument('-wdl', '--wd_lin', type=float, default=5e-6, help='Weight decay for linear')
     parser.add_argument('-wd', '--wd_conv', type=float, default=5e-6, help='Weight decay for conv')
 
     # >>>>>>>>>>
     # Model-specific
-    # - Decoupled, ACMGNN
     parser.add_argument('--theta_scheme', type=str, default="ones", help='Filter name')
     parser.add_argument('--theta_param', type=list_float, default=1.0, help='Hyperparameter for filter') # Support list by default
-    # - DecoupledCompose
     parser.add_argument('--combine', type=str, default="sum_weighted", choices=['sum', 'sum_weighted', 'cat'], help='How to combine different channels of convs')
 
     # Conv-specific
-    # - AdjConv, ChebConv, Horner, Clenshaw, ACMGNN
-    parser.add_argument('--alpha', type=list_float, help='Decay factor')
-    # - AdjiConv
-    parser.add_argument('--beta', type=list_float, help='Scaling factor')
+    parser.add_argument('--alpha', type=list_float, help='Decay factor for propagation')
+    parser.add_argument('--beta', type=list_float, help='Scaling factor for identity')
     # <<<<<<<<<<
 
     # Test flags
@@ -108,7 +104,7 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     elif args.model in ['PrecomputedFixed', 'PrecomputedFixedCompose']:
         args.model_repr = 'PrecomputedFixed'
         args.conv_repr = f'{args.conv}-{args.theta_scheme}'
-    elif args.model in ['Iterative', 'IterativeCompose']:
+    elif args.model in ['IterativeFixed', 'IterativeFixedCompose']:
         args.model_repr = 'IterativeFixed'
         args.conv_repr = f'{args.conv}-{args.theta_scheme}'
     elif args.model in ['IterativeCompose']:

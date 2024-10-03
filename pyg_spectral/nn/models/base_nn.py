@@ -37,8 +37,8 @@ class BaseNN(nn.Module):
     """
     supports_edge_weight: Final[bool] = False
     supports_edge_attr: Final[bool] = False
-    supports_batch: Final[bool] = False
     supports_norm_batch: Final[bool]
+    supports_batch: bool
 
     def __init__(self,
             conv: str,

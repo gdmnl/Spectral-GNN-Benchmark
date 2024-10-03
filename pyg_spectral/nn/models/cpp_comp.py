@@ -6,7 +6,7 @@ from pyg_spectral.nn.models.precomputed import PrecomputedFixed
 from pyg_spectral.propagations import PyPropComp
 
 
-class CppCompFixed(PrecomputedFixed):
+class CppPrecFixed(PrecomputedFixed):
     r"""Decoupled structure with C++ propagation precomputation.
     Fixed scalar propagation parameters and accumulating precompute results.
     """

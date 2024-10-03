@@ -27,6 +27,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
             - 'nappr': Negative PPR, :math:`\theta_k = p^k`.
             - 'hk': Heat Kernel, :math:`\theta_k = e^{-p}p^k / k!`.
             - 'gaussian': Graph Gaussian Kernel, :math:`theta_k = p^{k} / k!`.
+            - 'log': Logarithmic, :math:`\theta_k = log(p / (k+1) + 1)`.
             - 'chebyshev': Chebyshev polynomial.
             - 'uniform': Random uniform distribution.
             - 'normal_std': Standard random Gaussian distribution N(0, p).
@@ -42,6 +43,7 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
             - 'nappr': Decay factor, :math:`p \in [-1, 1]`.
             - 'hk': Decay factor, :math:`p > 0`.
             - 'gaussian': Decay factor, :math:`p > 0`.
+            - 'log': Decay factor, :math:`p > 0`.
             - 'chebyshev': NA.
             - 'uniform': Distribution bound.
             - 'normal_std': Distribution variance.
@@ -88,6 +90,9 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         param = param if param is not None else 1.0
         factorial = torch.tensor([np.math.factorial(i) for i in range(num_hops+1)])
         return (param ** torch.arange(num_hops+1)) / factorial
+    elif scheme == 'log':
+        param = param if param is not None else 1.0
+        return torch.log(param / (torch.arange(num_hops+1).float() + 1) + 1).clamp_max(1.0)
     elif scheme == 'chebyshev':
         return (torch.cos((num_hops-torch.arange(num_hops+1)+0.5) * torch.pi/(num_hops+1))) ** 2
     elif scheme == 'uniform':

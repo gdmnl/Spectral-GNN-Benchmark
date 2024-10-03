@@ -52,22 +52,22 @@ class TrnWrapper(object):
         }
         suggest_dct = {
             # critical
-            'num_hops':     (trial.suggest_int, (2, 30), {'step': 2}, nofmt),
-            'in_layers':    (trial.suggest_int, (1, 3), {}, nofmt),
-            'out_layers':   (trial.suggest_int, (1, 3), {}, nofmt),
-            'hidden':       (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}, nofmt),
-            'combine':      (trial.suggest_categorical, (["sum", "sum_weighted", "cat"],), {}, nofmt),
+            'num_hops':         (trial.suggest_int, (2, 30), {'step': 2}, nofmt),
+            'in_layers':        (trial.suggest_int, (1, 3), {}, nofmt),
+            'out_layers':       (trial.suggest_int, (1, 3), {}, nofmt),
+            'hidden_channels':  (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}, nofmt),
+            'combine':          (trial.suggest_categorical, (["sum", "sum_weighted", "cat"],), {}, nofmt),
             # secondary
             'theta_param': theta_dct.get(self.args.theta_scheme, None),
-            'normg':        (trial.suggest_float, (0.0, 1.0), {'step': 0.05}, lambda x: round(x, 2)),
-            'dp_lin':       (trial.suggest_float, (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
-            'dp_conv':      (trial.suggest_float, (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
-            'lr_lin':       (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
-            'lr_conv':      (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
-            'wd_lin':       (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
-            'wd_conv':      (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
-            'alpha':        (trial.suggest_float, (0.01, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
-            'beta':         (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+            'normg':            (trial.suggest_float, (0.0, 1.0), {'step': 0.05}, lambda x: round(x, 2)),
+            'dropout_lin':      (trial.suggest_float, (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
+            'dropout_conv':     (trial.suggest_float, (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
+            'lr_lin':           (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'lr_conv':          (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'wd_lin':           (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'wd_conv':          (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
+            'alpha':            (trial.suggest_float, (0.01, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
+            'beta':             (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
         }
 
         # Model/conv-specific
@@ -121,7 +121,7 @@ class TrnWrapper(object):
                 TrnMinibatch: TrnMinibatch_Trial,
             }[trn_cls]
 
-            for key in ['num_features', 'num_classes', 'metric', 'multi', 'criterion']:
+            for key in ['in_channels', 'out_channels', 'metric', 'multi', 'criterion']:
                 self.args.__dict__[key] = args.__dict__[key]
             self.metric = args.metric
         else:

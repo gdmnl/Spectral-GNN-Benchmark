@@ -83,9 +83,8 @@ def setup_logpath(dir: Union[Path, str] = LOGPATH,
     Returns:
         logpath (Path): Path for log directory.
     """
-    dir_root = dir = Path(dir)
-    flag = str(uuid.uuid4())[:6]
     if folder_args is not None:
+        flag = str(uuid.uuid4())[:6]
         folder_args = tuple(arg or flag for arg in folder_args)
         dir = dir.joinpath(*folder_args)
 

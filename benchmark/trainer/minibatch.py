@@ -42,8 +42,8 @@ class TrnMinibatch(TrnBase):
             * storage (str): Storage scheme for checkpoint saving.
             * logpath (Path): Path for logging.
             * multi (bool): True for multi-label classification.
-            * num_features (int): Number of data input features.
-            * num_classes (int): Number of data output classes.
+            * in_channels (int): Number of data input features.
+            * out_channels (int): Number of data output classes.
     """
     name: str = 'mb'
 
@@ -268,7 +268,7 @@ class TrnMinibatch_Trial(TrnMinibatch, TrnBase_Trial):
             storage=self.storage)
 
         self.signature_lst = ['normg', 'alpha', 'beta', 'theta_param']
-        signature = {key: args.__dict__[key] for key in self.signature_lst}
+        signature = {key: getattr(args, key) for key in self.signature_lst}
         if not hasattr(self, 'signature') or self.signature != signature:
             self.signature = signature
             self.embed = None

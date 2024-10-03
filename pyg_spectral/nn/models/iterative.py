@@ -118,3 +118,13 @@ class IterativeCompose(BaseNNCompose):
                     convsi[-1]._init_with_theta()
             convs.append(convsi)
         return convs
+
+
+class IterativeFixed(Iterative):
+    name = 'IterativeFixed'
+    conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
+
+
+class IterativeFixedCompose(IterativeCompose):
+    name = 'IterativeFixed'
+    conv_name = lambda x, args: '-'.join([x, args.theta_scheme])

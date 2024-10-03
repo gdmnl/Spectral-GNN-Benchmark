@@ -16,7 +16,7 @@ ARGS_ALL=(
     "--in_layers"  "0"
     "--out_layers" "2"
     "--batch" "$lbatch"
-    "--hidden" "128"
+    "--hidden_channels" "128"
 )
 # run_param args
 ARGS_P=(${ARGS_ALL[@]}
@@ -41,7 +41,7 @@ for data in ${ldatas[@]}; do
 # ========== fix
 ARGS_P=(${ARGS_P[@]} "--normf" "0")
 ARGS_S=(${ARGS_S[@]} "--normf" "0")
-PARLIST="dp_lin,lr_lin,wd_lin"
+PARLIST="dropout_lin,lr_lin,wd_lin"
     # MLP
     # Run hyperparameter search
     python run_param.py --data $data --model MLP --param $PARLIST "${ARGS_P[@]}" \
@@ -50,7 +50,7 @@ PARLIST="dp_lin,lr_lin,wd_lin"
     python run_single.py  --data $data --model MLP "${ARGS_S[@]}" \
         --theta_scheme impulse
 
-PARLIST="normg,dp_conv,$PARLIST"
+PARLIST="normg,dropout_conv,$PARLIST"
     # Linear
     python run_param.py --data $data --model $model --conv AdjSkipConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme ones --beta 1.0
@@ -73,7 +73,7 @@ ARGS_P=("${ARGS_P[@]:0:${#ARGS_P[@]}-2}"
     "--combine" "sum_weighted" "--normf")
 ARGS_S=("${ARGS_S[@]:0:${#ARGS_S[@]}-2}"
     "--combine" "sum_weighted" "--normf")
-PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
+PARLIST="normg,dropout_lin,dropout_conv,lr_lin,lr_conv,wd_lin,wd_conv"
     # FiGURe
     python run_param.py --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv --param $PARLIST "${ARGS_P[@]}"
     python run_single.py  --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
@@ -94,9 +94,9 @@ PARLIST="$PARLIST,theta_param"
 
     # GNN-LF/HF
     python run_param.py --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv --param $PARLIST "${ARGS_P[@]}" \
-        --theta_scheme appr,appr --alpha 1.0,1.0
+        --theta_scheme appr,appr --beta 1.0,1.0
     python run_single.py  --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv "${ARGS_S[@]}" \
-        --theta_scheme appr,appr --alpha 1.0,1.0
+        --theta_scheme appr,appr --beta 1.0,1.0
 
 # ========== var
 ARGS_P=("${ARGS_P[@]}"
@@ -109,7 +109,7 @@ ARGS_S=("${ARGS_S[@]}"
     CONVS=("AdjSkipConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" \
            "BernConv" "LegendreConv" "JacobiConv" "OptBasisConv")
     for conv in ${CONVS[@]}; do
-        PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
+        PARLIST="normg,dropout_lin,dropout_conv,lr_lin,lr_conv,wd_lin,wd_conv"
         # Add model/conv-specific args/params here
         if [[ "$conv" == "HornerConv" || "$conv" == "ClenshawConv" ]]; then
             PARLIST="$PARLIST,alpha"

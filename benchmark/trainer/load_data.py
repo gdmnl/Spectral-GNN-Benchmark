@@ -60,8 +60,8 @@ class SingleGraphLoader(object):
             args.normg (float): Generalized graph norm.
 
         Updates:
-            args.num_features (int): Number of input features.
-            args.num_classes (int): Number of output classes.
+            args.in_channels (int): Number of input features.
+            args.out_channels (int): Number of output classes.
             args.multi (bool): True for multi-label classification.
             args.metric (str): Main metric name for evaluation.
         """
@@ -71,7 +71,7 @@ class SingleGraphLoader(object):
         # get_data(datapath, transform, args)
         data = f_get_data[dataset_map[self.data]](DATAPATH, self.transform, args)
 
-        self.logger.info(f"[dataset]: {self.data} (features={args.num_features}, classes={args.num_classes}, metric={args.metric})")
+        self.logger.info(f"[dataset]: {self.data} (features={args.in_channels}, classes={args.out_channels}, metric={args.metric})")
         self.logger.info(f"[data]: {data}")
         split_dict = {k[:-5]: v.sum().item() for k, v in data.items() if k.endswith('_mask')}
         self.logger.info(f"[split]: {args.data_split} {split_dict}")
@@ -90,7 +90,7 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
     """
     def get(self, args: Namespace) -> Data:
         self.signature_lst = ['normg']
-        self.signature = {key: args.__dict__[key] for key in self.signature_lst}
+        self.signature = {key: getattr(args, key) for key in self.signature_lst}
         self.random_state = args.seed
         args.data_split += f"_{args.seed}"
 
@@ -103,7 +103,7 @@ class SingleGraphLoader_Trial(SingleGraphLoader):
     def update(self, args: Namespace, data: Data) -> Data:
         r"""Update data split for the next trial.
         """
-        signature = {key: args.__dict__[key] for key in self.signature_lst}
+        signature = {key: getattr(args, key) for key in self.signature_lst}
         if self.signature != signature:
             self.signature = signature
             self.random_state = uuid.uuid5(uuid.NAMESPACE_DNS, str(self.random_state)).int % 2**32

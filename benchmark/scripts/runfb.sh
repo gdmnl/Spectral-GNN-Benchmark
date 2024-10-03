@@ -7,7 +7,7 @@ ARGS_ALL=(
     "--num_hops" "10"
     "--in_layers" "1"
     "--out_layers" "1"
-    "--hidden" "128"
+    "--hidden_channels" "128"
 )
 # run_param args
 ARGS_P=(${ARGS_ALL[@]}
@@ -34,7 +34,7 @@ DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filter
 
 for data in ${DATAS[@]}; do
 # ========== fix
-PARLIST="dp_lin,lr_lin,wd_lin"
+PARLIST="dropout_lin,lr_lin,wd_lin"
     # MLP
     # Run hyperparameter search
     python run_param.py  --data $data --model MLP --param $PARLIST "${ARGS_P[@]}" \
@@ -43,7 +43,7 @@ PARLIST="dp_lin,lr_lin,wd_lin"
     python run_single.py --data $data --model MLP "${ARGS_S[@]}" \
         --theta_scheme ones
 
-PARLIST="normg,dp_conv,$PARLIST"
+PARLIST="normg,dropout_conv,$PARLIST"
     # Linear
     python run_param.py  --data $data --model DecoupledFixed --conv AdjiConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme ones --beta 1.0
@@ -66,7 +66,7 @@ ARGS_P=("${ARGS_P[@]}"
     "--combine" "sum_weighted")
 ARGS_S=("${ARGS_S[@]}"
     "--combine" "sum_weighted")
-PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
+PARLIST="normg,dropout_lin,dropout_conv,lr_lin,lr_conv,wd_lin,wd_conv"
     # AdaGNN
     for conv in "LapiConv"; do
         python run_param.py  --data $data --model AdaGNN --conv $conv --param $PARLIST "${ARGS_P[@]}" \
@@ -78,6 +78,16 @@ PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
     # FiGURe
     python run_param.py  --data $data --model DecoupledVarCompose --conv AdjConv,ChebConv,BernConv --param $PARLIST "${ARGS_P[@]}"
     python run_single.py --data $data --model DecoupledVarCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
+
+    # ACMGNN/FBGNN-I/II
+    for alpha in 1 2; do
+        for theta_scheme in "low-high-id" "low-high"; do
+            python run_param.py  --data $data --model ACMGNNDec --conv ACMConv --param $PARLIST "${ARGS_P[@]}" \
+                --alpha $alpha --theta_scheme $theta_scheme
+            python run_single.py --data $data --model ACMGNNDec --conv ACMConv "${ARGS_S[@]}" \
+                --alpha $alpha --theta_scheme $theta_scheme
+        done
+    done
 
 PARLIST="$PARLIST,beta"
     # FAGNN
@@ -95,9 +105,9 @@ PARLIST="$PARLIST,theta_param"
 
     # GNN-LF/HF
     python run_param.py  --data $data --model DecoupledFixedCompose --conv AdjDiffConv,AdjDiffConv --param $PARLIST "${ARGS_P[@]}" \
-        --theta_scheme appr,appr --alpha 1.0,1.0
+        --theta_scheme appr,appr --beta 1.0,1.0
     python run_single.py --data $data --model DecoupledFixedCompose --conv AdjDiffConv,AdjDiffConv "${ARGS_S[@]}" \
-        --theta_scheme appr,appr --alpha 1.0,1.0
+        --theta_scheme appr,appr --beta 1.0,1.0
 
 # ========== var
 ARGS_P=("${ARGS_P[@]}"
@@ -110,7 +120,7 @@ ARGS_S=("${ARGS_S[@]}"
     CONVS=("AdjiConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" \
            "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
     for conv in ${CONVS[@]}; do
-        PARLIST="normg,dp_lin,dp_conv,lr_lin,lr_conv,wd_lin,wd_conv"
+        PARLIST="normg,dropout_lin,dropout_conv,lr_lin,lr_conv,wd_lin,wd_conv"
         # Add model/conv-specific args/params here
         if [[ "$conv" == "HornerConv" || "$conv" == "ClenshawConv" ]]; then
             PARLIST="$PARLIST,alpha"

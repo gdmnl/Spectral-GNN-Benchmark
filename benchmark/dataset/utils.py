@@ -33,8 +33,8 @@ def resolve_data(args: Namespace, dataset: Dataset) -> Data:
     Returns:
         data (Data): The resolved PyG data object from the dataset.
     Updates:
-        args.num_features (int): Number of input features.
-        args.num_classes (int): Number of output classes.
+        args.in_channels (int): Number of input features.
+        args.out_channels (int): Number of output classes.
     """
     # Avoid triggering transform when getting simple properties.
     # data = dataset.get(dataset.indices()[0])
@@ -44,14 +44,14 @@ def resolve_data(args: Namespace, dataset: Dataset) -> Data:
     data = dataset[0]
 
     assert hasattr(data, 'num_node_features')
-    args.num_features = data.num_node_features
-    args.num_classes = dataset._infer_num_classes(data.y)
+    args.in_channels = data.num_node_features
+    args.out_channels = dataset._infer_num_classes(data.y)
 
     # Remaining resolvers
     if not args.multi and data.y.dim() > 1 and data.y.size(1) == 1:
         data.y = data.y.flatten()
-    # if not args.multi and self.num_classes == 2:
-    #     args.num_classes = self.num_classes = 1
+    # if not args.multi and self.out_channels == 2:
+    #     args.out_channels = self.out_channels = 1
     #     data.y = data.y.unsqueeze(1).float()
     return data
 
@@ -75,6 +75,7 @@ def resolve_split(data_split: str, data: Data) -> Data:
         seed = None
     else:
         scheme, split, seed = ctx
+        seed = int(seed)
     scheme = scheme.capitalize()
 
     if scheme in ['Random', 'Stratify']:
@@ -84,7 +85,7 @@ def resolve_split(data_split: str, data: Data) -> Data:
         assert data.num_nodes == data.y.shape[0]
         data.train_mask, data.val_mask, data.test_mask = split_crossval(
             data.y, r_train, r_val,
-            seed=int(seed),
+            seed=seed,
             ignore_neg=True,
             stratify=(scheme == 'Stratify'))
     else:

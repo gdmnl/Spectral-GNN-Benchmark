@@ -38,8 +38,8 @@ class TrnFullbatch(TrnBase):
             * storage (str): Storage scheme for checkpoint saving.
             * logpath (Path): Path for logging.
             * multi (bool): True for multi-label classification.
-            * num_features (int): Number of data input features.
-            * num_classes (int): Number of data output classes.
+            * in_channels (int): Number of data input features.
+            * out_channels (int): Number of data output classes.
     """
     name: str = 'fb'
 

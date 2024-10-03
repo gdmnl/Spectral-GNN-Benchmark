@@ -44,7 +44,7 @@ pyg\_spectral.nn
    pyg_spectral.nn.models.AdaGNN
    pyg_spectral.nn.models.BaseNN
    pyg_spectral.nn.models.BaseNNCompose
-   pyg_spectral.nn.models.CppCompFixed
+   pyg_spectral.nn.models.CppPrecFixed
    pyg_spectral.nn.models.DecoupledFixed
    pyg_spectral.nn.models.DecoupledFixedCompose
    pyg_spectral.nn.models.DecoupledVar

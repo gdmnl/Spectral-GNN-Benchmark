@@ -8,21 +8,21 @@ class AdjConv(BaseMP):
     r"""Linear filter using the normalized adjacency matrix for propagation.
 
     Args:
-        alpha: additional scaling for self-loop in adjacency matrix
-            :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. :obj:`improved` in
+        beta: additional scaling for self-loop in adjacency matrix
+            :math:`\mathbf{A} + \beta\mathbf{I}`, i.e. :obj:`improved` in
             :class:`torch_geometric.nn.conv.GCNConv`.
         num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
         num_hops: int = 0,
         hop: int = 0,
-        alpha: float = None,
+        beta: float = None,
         cached: bool = True,
         **kwargs
     ):
-        kwargs.setdefault('propagate_mat', 'A+alpha*I')
+        kwargs.setdefault('propagate_mat', 'A+beta*I')
         super(AdjConv, self).__init__(num_hops, hop, cached, **kwargs)
-        self.alpha = alpha or 0.0
+        self.beta = beta or 0.0
 
     def _forward(self,
         x: Tensor,
@@ -46,14 +46,14 @@ class AdjConv(BaseMP):
 
 class AdjDiffConv(AdjConv):
     r"""Linear filter using the normalized adjacency matrix for propagation.
-    Preprocess the feature by distinguish matrix :math:`\beta\mathbf{L} + \mathbf{I}`.
+    Preprocess the feature by distinguish matrix :math:`\alpha\mathbf{L} + \mathbf{I}`.
 
     Args:
-        alpha: additional scaling for self-loop in adjacency matrix
-            :math:`\mathbf{A} + \alpha\mathbf{I}`, i.e. :obj:`improved` in
+        alpha: scaling for self-loop in distinguish matrix
+            :math:`\alpha\mathbf{L} + \mathbf{I}`
+        beta: additional scaling for self-loop in adjacency matrix
+            :math:`\mathbf{A} + \beta\mathbf{I}`, i.e. :obj:`improved` in
             :class:`torch_geometric.nn.conv.GCNConv`.
-        beta: scaling for self-loop in distinguish matrix
-            :math:`\beta\mathbf{L} + \mathbf{I}`
         num_hops, hop, cached: args for :class:`BaseMP`
     """
     def __init__(self,
@@ -64,8 +64,8 @@ class AdjDiffConv(AdjConv):
         cached: bool = True,
         **kwargs
     ):
-        super(AdjDiffConv, self).__init__(num_hops, hop, alpha, cached, **kwargs)
-        self.beta = beta or 1.0
+        super(AdjDiffConv, self).__init__(num_hops, hop, beta, cached, **kwargs)
+        self.alpha = alpha or 1.0
 
     def _forward(self,
         x: Tensor,
@@ -77,9 +77,9 @@ class AdjDiffConv(AdjConv):
             prop (Adj): propagation matrix
         """
         if self.hop == 0:
-            # I + beta * L -> (1+beta) * I - beta * A
+            # I + alpha * L -> (1+alpha) * I - alpha * A
             h = self.propagate(prop, x=x)
-            h = (1 + self.beta) * x - self.beta * h
+            h = (1 + self.alpha) * x - self.alpha * h
             return {'x': h, 'prop': prop}
 
         # propagate_type: (x: Tensor)

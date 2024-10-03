@@ -15,7 +15,7 @@ for data in ${DATAS[@]}; do
             "--loglevel" "25"
             "--in_layers" "1"
             "--out_layers" "1"
-            "--hidden" "128"
+            "--hidden_channels" "128"
             "--epoch" "500"
             "--patience" "-1"
             "--suffix" "eval_acc_${PARKEY}"

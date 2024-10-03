@@ -46,8 +46,8 @@ class ChebNet(nn.Module):
 kwvars_ChebNet = {
     'conv': 'conv',
     'num_hops': 'num_hops',
-    'in_channels': 'num_features',
-    'hidden_channels': 'hidden',
-    'out_channels': 'num_classes',
-    'dropout_conv': 'dp_conv',
+    'in_channels': 'in_channels',
+    'hidden_channels': 'hidden_channels',
+    'out_channels': 'out_channels',
+    'dropout_conv': 'dropout_conv',
 }

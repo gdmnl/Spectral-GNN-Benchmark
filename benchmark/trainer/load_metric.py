@@ -27,19 +27,19 @@ def metric_loader(args: Namespace) -> MetricCollection:
     Args:
         args: Configuration arguments.
 
-            args.multi (bool): True for multi-label classification.
-            args.num_classes (int): Number of output classes/labels.
+            * args.multi (bool): True for multi-label classification.
+            * args.out_channels (int): Number of output classes/labels.
     """
     # FEATURE: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)
     if args.multi:
         metric = ResCollection({
-            's_acc': MultilabelAccuracy(num_classes=args.num_classes),
-            's_f1i': MultilabelF1Score(num_labels=args.num_classes, average='micro'),
-            # 's_f1a': MultilabelF1Score(num_labels=args.num_classes, average='macro'),
-            's_auroc': MultilabelAUROC(num_classes=args.num_classes),
-            's_ap': MultilabelAveragePrecision(num_classes=args.num_classes),
+            's_acc': MultilabelAccuracy(num_classes=args.out_channels),
+            's_f1i': MultilabelF1Score(num_labels=args.out_channels, average='micro'),
+            # 's_f1a': MultilabelF1Score(num_labels=args.out_channels, average='macro'),
+            's_auroc': MultilabelAUROC(num_classes=args.out_channels),
+            's_ap': MultilabelAveragePrecision(num_classes=args.out_channels),
         })
-    elif args.num_classes == 1:
+    elif args.out_channels == 1:
         metric = ResCollection({
             's_acc': BinaryAccuracy(),
             's_f1i': BinaryF1Score(),
@@ -48,10 +48,10 @@ def metric_loader(args: Namespace) -> MetricCollection:
         })
     else:
         metric = ResCollection({
-            's_acc': MulticlassAccuracy(num_classes=args.num_classes),
-            's_f1i': MulticlassF1Score(num_classes=args.num_classes, average='micro'),
-            # 's_f1a': MulticlassF1Score(num_classes=args.num_classes, average='macro'),
-            's_auroc': MulticlassAUROC(num_classes=args.num_classes),
-            's_ap': MulticlassAveragePrecision(num_classes=args.num_classes),
+            's_acc': MulticlassAccuracy(num_classes=args.out_channels),
+            's_f1i': MulticlassF1Score(num_classes=args.out_channels, average='micro'),
+            # 's_f1a': MulticlassF1Score(num_classes=args.out_channels, average='macro'),
+            's_auroc': MulticlassAUROC(num_classes=args.out_channels),
+            's_ap': MulticlassAveragePrecision(num_classes=args.out_channels),
         })
     return metric

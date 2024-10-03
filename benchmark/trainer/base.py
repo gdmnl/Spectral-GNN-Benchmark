@@ -41,8 +41,8 @@ class TrnBase(object):
             * storage (str): Storage scheme for checkpoint saving.
             * logpath (Path): Path for logging.
             * multi (bool): True for multi-label classification.
-            * num_features (int): Number of data input features.
-            * num_classes (int): Number of data output classes.
+            * in_channels (int): Number of data input features.
+            * out_channels (int): Number of data output classes.
 
     Methods:
         setup_optimizer: Set up the optimizer and scheduler.
@@ -76,8 +76,8 @@ class TrnBase(object):
 
         # Evaluation metrics
         self.multi = args.multi
-        self.num_features = args.num_features
-        self.num_classes = args.num_classes
+        self.in_channels = args.in_channels
+        self.out_channels = args.out_channels
         self.splits = ['train', 'val', 'test']
         metric = metric_loader(args).to(self.device)
         self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}

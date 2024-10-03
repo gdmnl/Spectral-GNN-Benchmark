@@ -56,8 +56,8 @@ class RegressionLoader(object):
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
         self.metric = None
-        self.num_features = 1
-        self.num_classes = 1
+        self.in_channels = 1
+        self.out_channels = 1
         self.transform = T.Compose([
             T.ToSparseTensor(remove_edge_index=True, layout=torch.sparse_csr),  # torch.sparse.Tensor
         ])
@@ -89,7 +89,7 @@ class RegressionLoader(object):
 
         # get specific filtered graph signal.
         data.y = torch.tensor(np.load(DATAPATH.joinpath(f'Grid2D/y_{args.filter_type}.npy')), dtype=torch.float)
-        args.num_features, args.num_classes = self.num_features, self.num_classes
+        args.in_channels, args.out_channels = self.in_channels, self.out_channels
         args.metric = self.metric
 
         (r_train, r_val) = map(int, args.data_split.split('/')[:2])
@@ -99,7 +99,7 @@ class RegressionLoader(object):
         data.val_mask = torch.as_tensor(val_mask)
         data.test_mask = torch.as_tensor(test_mask)
 
-        self.logger.info(f"[dataset]: {dataset} (features={self.num_features}, classes={self.num_classes})")
+        self.logger.info(f"[dataset]: {dataset} (features={self.in_channels}, classes={self.out_channels})")
         self.logger.info(f"[data]: {data}")
         self.logger.info(f"[metric]: {metric}")
         self.res_logger.concat([('data', self.data, str), ('metric', metric, str)])
