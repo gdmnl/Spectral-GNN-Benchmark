@@ -26,7 +26,7 @@ class AdaGNN(BaseNN):
     # FEATURE: separate arch
     name = 'DecoupledVar'
     pargs = ['theta_scheme', 'theta_param']
-    param = {'theta_param': lambda x: theta_param.get(x, None)}
+    param = {'theta_param': lambda args: theta_param.get(args.theta_scheme, None)}
 
     def init_conv(self,
         conv: str,

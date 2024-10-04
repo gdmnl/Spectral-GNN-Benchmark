@@ -124,7 +124,7 @@ def split_crossval(label: torch.Tensor,
             index_to_mask(torch.as_tensor(test_idx), size=label.shape[0]))
 
 
-def even_quantile_labels(vals: np.ndarray, nclasses: int, verbose:bool=True):
+def even_quantile_labels(vals: np.ndarray, nclasses: int):
     """ partitions vals into nclasses by a quantile based split,
     where the first class is less than the 1/nclasses quantile,
     second class is less than the 2/nclasses quantile, and so on
@@ -145,9 +145,6 @@ def even_quantile_labels(vals: np.ndarray, nclasses: int, verbose:bool=True):
         lower = upper
     label[vals >= lower] = nclasses - 1
     interval_lst.append((lower, np.inf))
-    if verbose:
-        for class_idx, interval in enumerate(interval_lst):
-            print(f'Class {class_idx}: [{interval[0]}, {interval[1]})]')
     return label
 
 

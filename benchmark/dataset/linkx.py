@@ -121,7 +121,7 @@ class LINKX(InMemoryDataset):
             data = scipy.io.loadmat(osp.join(self.raw_dir, f'{self.name}.mat'))
             if self.name in ['snap-patents']:
                 x = torch.tensor(data['node_feat'].todense(), dtype=torch.float)
-                y = even_quantile_labels(data['years'].flatten(), NCLASS_Q, verbose=False)
+                y = even_quantile_labels(data['years'].flatten(), NCLASS_Q)
                 y = torch.tensor(y, dtype=torch.long)
             else:
                 x = torch.tensor(data['node_feat'], dtype=torch.float)
@@ -213,7 +213,7 @@ class FB100(InMemoryDataset):
 
 class T_arxiv_year(T.BaseTransform):
     def forward(self, data: Any) -> Any:
-        y = even_quantile_labels(data['node_year'].flatten(), NCLASS_Q, verbose=False)
+        y = even_quantile_labels(data['node_year'].flatten(), NCLASS_Q)
         data.y = torch.tensor(y, dtype=torch.long)
         del data['node_year']
         return data

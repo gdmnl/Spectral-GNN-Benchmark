@@ -41,14 +41,13 @@ for data in ${ldatas[@]}; do
 # ========== fix
 ARGS_P=(${ARGS_P[@]} "--normf" "0")
 ARGS_S=(${ARGS_S[@]} "--normf" "0")
+model=PrecomputedFixed
 PARLIST="dropout_lin,lr_lin,wd_lin"
     # MLP
     # Run hyperparameter search
-    python run_param.py  --data $data --model MLP --param $PARLIST "${ARGS_P[@]}" \
-        --theta_scheme impulse
+    python run_param.py  --data $data --model MLP --conv $model --param $PARLIST "${ARGS_P[@]}"
     # Run repeatative with best hyperparameters
-    python run_single.py --data $data --model MLP "${ARGS_S[@]}" \
-        --theta_scheme impulse
+    python run_single.py --data $data --model MLP --conv $model "${ARGS_S[@]}"
 
 PARLIST="normg,dropout_conv,$PARLIST"
     # Linear
@@ -58,7 +57,6 @@ PARLIST="normg,dropout_conv,$PARLIST"
         --theta_scheme ones --beta 1.0
 
 PARLIST="theta_param,$PARLIST"
-    model=PrecomputedFixed
     conv=AdjConv
     SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")
     for scheme in ${SCHEMES[@]}; do

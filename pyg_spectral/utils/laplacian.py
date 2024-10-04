@@ -55,7 +55,7 @@ def get_laplacian(
 
     elif is_torch_sparse_tensor(edge_index):
         import scipy.sparse as sp
-        edge_index = edge_index.to_sparse_csr().coalesce()
+        edge_index = edge_index.to_sparse_csr()
         data = edge_index.values().cpu().detach().numpy()
         indices = edge_index.col_indices().cpu().detach().numpy()
         indptr = edge_index.crow_indices().cpu().detach().numpy()

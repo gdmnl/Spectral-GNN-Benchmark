@@ -1,10 +1,10 @@
-# search param + best, fullbatch+Decoupled
+# search param + best, fullbatch+Iterative
 DEV=${1:-0}
 SEED_P=1
 SEED_S="20,21,22,23,24"
 ARGS_ALL=(
     "--dev" "$DEV"
-    "--num_hops" "10"
+    "--num_hops" "2"
     "--in_layers" "1"
     "--out_layers" "1"
     "--hidden_channels" "128"
@@ -34,7 +34,7 @@ DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filter
 
 for data in ${DATAS[@]}; do
 # ========== fix
-model=DecoupledFixed
+model=IterativeFixed
 PARLIST="dropout_lin,lr_lin,wd_lin"
     # MLP
     # Run hyperparameter search
@@ -49,20 +49,17 @@ PARLIST="normg,dropout_conv,$PARLIST"
     python run_single.py --data $data --model $model --conv AdjiConv "${ARGS_S[@]}" \
         --theta_scheme ones --beta 1.0
 
-PARLIST="theta_param,$PARLIST"
-    conv=AdjConv
-    SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")
-    for scheme in ${SCHEMES[@]}; do
-        python run_param.py  --data $data --model $model --conv $conv --param $PARLIST "${ARGS_P[@]}" \
-            --theta_scheme $scheme
-        python run_single.py --data $data --model $model --conv $conv "${ARGS_S[@]}" \
-            --theta_scheme $scheme
-    done
+PARLIST="beta,$PARLIST"
+    # PPR
+    python run_param.py  --data $data --model $model --conv AdjResConv --param $PARLIST "${ARGS_P[@]}" \
+        --theta_scheme appr
+    python run_single.py --data $data --model $model --conv AdjResConv "${ARGS_S[@]}" \
+        --theta_scheme appr
 
 : '
 # ========== PyG
 PARLIST="dropout_lin,lr_lin,wd_lin"
-    MODELS=("ChebNet")
+    MODELS=("GCN" "GraphSAGE")
     for model in ${MODELS[@]}; do
         python run_param.py  --data $data --model $model --conv $model --param $PARLIST "${ARGS_P[@]}"
         python run_single.py --data $data --model $model --conv $model "${ARGS_S[@]}"
@@ -75,47 +72,19 @@ ARGS_P=("${ARGS_P[@]}"
 ARGS_S=("${ARGS_S[@]}"
     "--combine" "sum_weighted")
 PARLIST="normg,dropout_lin,dropout_conv,lr_lin,lr_conv,wd_lin,wd_conv"
-    # AdaGNN
-    for conv in "LapiConv"; do
-        python run_param.py  --data $data --model AdaGNN --conv $conv --param $PARLIST "${ARGS_P[@]}" \
-            --theta_scheme normal --theta_param 1e-7
-        python run_single.py --data $data --model AdaGNN --conv $conv "${ARGS_S[@]}" \
-            --theta_scheme normal --theta_param 1e-7
-    done
-
     # FiGURe
-    python run_param.py  --data $data --model DecoupledVarCompose --conv AdjConv,ChebConv,BernConv --param $PARLIST "${ARGS_P[@]}"
-    python run_single.py --data $data --model DecoupledVarCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
+    python run_param.py  --data $data --model IterativeVarCompose --conv AdjConv,ChebConv,BernConv --param $PARLIST "${ARGS_P[@]}"
+    python run_single.py --data $data --model IterativeVarCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
 
     # ACMGNN/FBGNN-I/II
     for alpha in 1 2; do
         for theta_scheme in "low-high-id" "low-high"; do
-            python run_param.py  --data $data --model ACMGNNDec --conv ACMConv --param $PARLIST "${ARGS_P[@]}" \
+            python run_param.py  --data $data --model ACMGNN --conv ACMConv --param $PARLIST "${ARGS_P[@]}" \
                 --alpha $alpha --theta_scheme $theta_scheme
-            python run_single.py --data $data --model ACMGNNDec --conv ACMConv "${ARGS_S[@]}" \
+            python run_single.py --data $data --model ACMGNN --conv ACMConv "${ARGS_S[@]}" \
                 --alpha $alpha --theta_scheme $theta_scheme
         done
     done
-
-PARLIST="$PARLIST,beta"
-    # FAGNN
-    python run_param.py  --data $data --model DecoupledFixedCompose --conv AdjiConv,AdjiConv --param $PARLIST "${ARGS_P[@]}" \
-        --theta_scheme ones,ones --theta_param 1,1 --alpha 1.0,-1.0
-    python run_single.py --data $data --model DecoupledFixedCompose --conv AdjiConv,AdjiConv "${ARGS_S[@]}" \
-        --theta_scheme ones,ones --theta_param 1,1 --alpha 1.0,-1.0
-
-PARLIST="$PARLIST,theta_param"
-    # G2CN
-    python run_param.py  --data $data --model DecoupledFixedCompose --conv Adji2Conv,Adji2Conv --param $PARLIST "${ARGS_P[@]}" \
-        --theta_scheme gaussian,gaussian --alpha="-1.0,-1.0"
-    python run_single.py --data $data --model DecoupledFixedCompose --conv Adji2Conv,Adji2Conv "${ARGS_S[@]}" \
-        --theta_scheme gaussian,gaussian --alpha="-1.0,-1.0"
-
-    # GNN-LF/HF
-    python run_param.py  --data $data --model DecoupledFixedCompose --conv AdjDiffConv,AdjDiffConv --param $PARLIST "${ARGS_P[@]}" \
-        --theta_scheme appr,appr --beta 1.0,1.0
-    python run_single.py --data $data --model DecoupledFixedCompose --conv AdjDiffConv,AdjDiffConv "${ARGS_S[@]}" \
-        --theta_scheme appr,appr --beta 1.0,1.0
 
 # ========== var
 ARGS_P=("${ARGS_P[@]}"
@@ -124,7 +93,7 @@ ARGS_P=("${ARGS_P[@]}"
 ARGS_S=("${ARGS_S[@]}"
     "--theta_scheme" "ones"
     "--theta_param" "1.0")
-    model="DecoupledVar"
+    model="IterativeVar"
     CONVS=("AdjiConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" \
            "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
     for conv in ${CONVS[@]}; do

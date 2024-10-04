@@ -98,16 +98,6 @@ def setup_args(parser: argparse.ArgumentParser) -> argparse.Namespace:
     args = parser.parse_args()
     args = setup_cuda(args)
     # Set new args
-    if args.model in ['GCN', 'GraphSAGE', 'GIN', 'GAT', 'PNA', 'MLP']:
-        args.model_repr = {
-            'ones': 'DecoupledFixed',
-            'appr': 'IterativeFixed',
-            'impulse': 'PrecomputedFixed',
-            }[args.theta_scheme]
-        args.conv_repr = args.model
-    elif args.model in ['ChebNet',]:
-        args.model_repr = 'DecoupledFixed'
-        args.conv_repr = args.model
     return args
 
 

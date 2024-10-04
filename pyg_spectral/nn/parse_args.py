@@ -1,7 +1,8 @@
 from functools import wraps
 
-from .conv import BaseMP
-from .models import BaseNN
+from .conv.base_mp import BaseMP
+from .models.base_nn import BaseNN
+from .models_pyg import model_regi_pyg, conv_regi_pyg
 
 
 def update_regi(regi, new_regi):
@@ -11,7 +12,9 @@ def update_regi(regi, new_regi):
 
 
 conv_regi = BaseMP.register_classes()
+conv_regi = update_regi(conv_regi, conv_regi_pyg)
 model_regi = BaseNN.register_classes()
+model_regi = update_regi(model_regi, model_regi_pyg)
 
 full_pargs = set(v for pargs in conv_regi['pargs'].values() for v in pargs)
 full_pargs.update(v for pargs in model_regi['pargs'].values() for v in pargs)
@@ -27,6 +30,12 @@ compose_name = {
         'Adji2Conv,Adji2Conv-gaussian,gaussian': 'G2CN',
         'AdjDiffConv,AdjDiffConv-appr,appr': 'GNN-LFHF',},
     'DecoupledVarCompose': {
+        'AdjConv,ChebConv,BernConv': 'FiGURe',},
+    'PrecomputedFixedCompose': {
+        'AdjSkipConv,AdjSkipConv-ones,ones': 'FAGNN',
+        'AdjSkip2Conv,AdjSkip2Conv-gaussian,gaussian': 'G2CN',
+        'AdjDiffConv,AdjDiffConv-appr,appr': 'GNN-LFHF',},
+    'PrecomputedVarCompose': {
         'AdjConv,ChebConv,BernConv': 'FiGURe',}
 }
 

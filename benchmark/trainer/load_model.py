@@ -68,49 +68,15 @@ class ModelLoader(object):
 
         # >>>>>>>>>>
         if module_name == 'torch_geometric.nn.models':
-            from pyg_spectral.nn.models_pyg import kwargs_default
-            # manually fix repr for logging
-            conv_dct = {
-                'GCN': 'GCNConv',
-                'GraphSAGE': 'SAGEConv',
-                'GIN': 'GINConv',
-                'GAT': 'GATConv',
-                'PNA': 'PNAConv',
-                'MLP': 'Identity',
-            }
-            self.conv_repr = '-'.join((conv_dct[self.model], args.theta_scheme))
+            args.criterion = 'BCEWithLogitsLoss' if args.out_channels == 1 else 'CrossEntropyLoss'
 
-            # workaround for aligning MLP num_layers
-            if args.theta_scheme == 'ones':
-                num_layers = args.in_layers + args.out_layers
-                trn = TrnFullbatch
-            elif args.theta_scheme == 'appr':
-                num_layers = args.in_layers + args.num_hops + args.out_layers
-                trn = TrnFullbatch
-            else:
-                num_layers = args.out_layers
-                trn = TrnMinibatch
+            kwargs.setdefault('num_layers', kwargs.pop('num_hops'))
+            kwargs.setdefault('dropout', kwargs.pop('dropout_lin'))
 
-            kwargs = dict(
-                in_channels=args.in_channels,
-                out_channels=args.out_channels,
-                hidden_channels=args.hidden_channels,
-                num_layers=num_layers,
-                dropout=args.dropout_lin,
-            )
-            if self.model in kwargs_default:
-                for k, v in kwargs_default[self.model].items():
-                    kwargs.setdefault(k, v)
-            args.criterion = 'BCEWithLogitsLoss' if args.out_channels == 1 else 'CrossEntropyLoss',
-
-        elif self.model in ['ChebNet', ]:
-            from pyg_spectral.nn.models_pyg import kwvars
-            kwvar = kwvars[self.model]
-            kwargs = {k: getattr(args, v) for k, v in kwvar.items()}
+        elif module_name == 'pyg_spectral.nn.models_pyg':
             args.criterion = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
-            trn = TrnFullbatch
 
-        # Default to load from `pyg_spectral`
+        # Default to load from `pyg_spectral.nn.models`
         else:
             args.criterion = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
 

@@ -1,27 +1,13 @@
-from .iterative import ChebNet, kwvars_ChebNet
+from .iterative import ChebNet
 
-kwvars = {
-    'ChebNet': kwvars_ChebNet,
-}
+from .parse_args import model_regi_pyg, conv_regi_pyg, register_class
 
-kwargs_default = {
-    'GCN': {
-        'cached': False,
-        'add_self_loops': False,
-        'improved': False,
-        'normalize': True,
-    },
-    'GraphSAGE': {
-        'normalize': True,
-    },
-    'GIN': {
-        'eps': 0.0,
-        'train_eps': False,
-    },
-    'GAT': {
-        'heads': 8,
-        'concat': True,
-        'share_weights': False,
-        'add_self_loops': False,
-    },
-}
+
+# >>>>>>>>>>
+for model in [ChebNet, ]:
+# <<<<<<<<<<
+    register_class(model, model_regi_pyg)
+    register_class(model, conv_regi_pyg)
+    model_regi_pyg['module'][model.__name__] = '.'.join(model.__module__.split('.')[:-1])
+    for k, dv in {'name': lambda _: '', 'pargs': [], 'pargs_default': {}, 'param': {}}.items():
+        conv_regi_pyg[k].setdefault(model.__name__, dv)
