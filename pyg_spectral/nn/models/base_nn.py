@@ -12,6 +12,9 @@ from torch_geometric.nn.models import MLP
 from torch_geometric.nn.inits import reset
 
 
+MODEL_REGI_INIT = {k: {} for k in ['name', 'conv_name', 'module', 'pargs', 'pargs_default', 'param']}
+
+
 class myMLP(MLP):
     def __repr__(self) -> str:
         """Fix repr of MLP"""
@@ -55,18 +58,16 @@ class BaseNN(nn.Module):
     }
 
     @classmethod
-    def register_classes(cls,
-            model_name_map: Dict[str, str] = {},
-            wrap_conv_name_map: Dict[str, Callable[[str, Any], str]] = {},
-            model_pargs: Dict[str, List[str]] = {},
-            model_param: Dict[str, Dict[str, ParamTuple]] = {}):
+    def register_classes(cls, registry: Dict[str, Dict[str, Any]] = MODEL_REGI_INIT):
         r"""Register args for all subclass.
 
         Args:
-            model_name_map: Model class logging path name.
-            wrap_conv_name_map: Wrap conv logging path name.
-            model_pargs: Model arguments from argparse.
-            model_param: Model parameters to tune.
+            name (Dict[str, str]): Model class logging path name.
+            conv_name (Dict[str, Callable[[str, Any], str]]): Wrap conv logging path name.
+            module (Dict[str, str]): Module for importing the model.
+            pargs (Dict[str, List[str]]): Model arguments from argparse.
+            pargs_default (Dict[str, Dict[str, Any]]): Default values for model arguments. Not recommended.
+            param (Dict[str, Dict[str, ParamTuple]]): Model parameters to tune.
 
                 * (str) parameter type,
                 * (tuple) args for :func:`optuna.trial.suggest_<type>`,
@@ -76,19 +77,22 @@ class BaseNN(nn.Module):
         for subcls in cls.__subclasses__():
             subname = subcls.__name__
             # Traverse the MRO and accumulate args from parent classes
-            model_pargs[subname], model_param[subname] = [], {}
+            registry['pargs'][subname], registry['param'][subname] = [], {}
             for basecls in subcls.mro():
                 if hasattr(basecls, 'pargs'):
-                    model_pargs[subname].extend(basecls.pargs)
+                    registry['pargs'][subname].extend(basecls.pargs)
+                if hasattr(basecls, 'pargs_default'):
+                    registry['pargs_default'][subname].update(basecls.pargs_default)
                 if hasattr(basecls, 'param'):
-                    model_param[subname].update(basecls.param)
+                    registry['param'][subname].update(basecls.param)
             if hasattr(subcls, 'name'):
-                model_name_map[subname] = subcls.name
+                registry['name'][subname] = subcls.name
             if hasattr(subcls, 'conv_name'):
-                wrap_conv_name_map[subname] = subcls.conv_name
+                registry['conv_name'][subname] = subcls.conv_name
+            registry['module'][subname] = '.'.join(cls.__module__.split('.')[:-1])
 
-            subcls.register_classes(model_name_map, wrap_conv_name_map, model_pargs, model_param)
-        return model_name_map, wrap_conv_name_map, model_pargs, model_param
+            subcls.register_classes(registry)
+        return registry
 
     def __init__(self,
             conv: str,

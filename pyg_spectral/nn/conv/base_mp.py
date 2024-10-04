@@ -12,6 +12,9 @@ from torch_geometric.utils import spmm
 from pyg_spectral.utils import get_laplacian
 
 
+CONV_REGI_INIT = {k: {} for k in ['name', 'pargs', 'pargs_default', 'param']}
+
+
 class BaseMP(MessagePassing):
     r"""Base filter layer structure.
 
@@ -29,16 +32,14 @@ class BaseMP(MessagePassing):
     _cache: Optional[Any]
 
     @classmethod
-    def register_classes(cls,
-            conv_name_map: Dict[str, str] = {},
-            conv_pargs: Dict[str, List[str]] = {},
-            conv_param: Dict[str, Dict[str, ParamTuple]] = {}):
+    def register_classes(cls, registry: Dict[str, Dict[str, Any]] = CONV_REGI_INIT):
         r"""Register args for all subclass.
 
         Args:
-            conv_name_map: Conv class logging path name.
-            conv_pargs: Conv arguments from argparse.
-            conv_param: Conv parameters to tune.
+            name (Dict[str, str]): Conv class logging path name.
+            pargs (Dict[str, List[str]]): Conv arguments from argparse.
+            pargs_default (Dict[str, Dict[str, Any]]): Default values for model arguments. Not recommended.
+            param (Dict[str, Dict[str, ParamTuple]]): Conv parameters to tune.
 
                 * (str) parameter type,
                 * (tuple) args for :func:`optuna.trial.suggest_<type>`,
@@ -48,17 +49,19 @@ class BaseMP(MessagePassing):
         for subcls in cls.__subclasses__():
             subname = subcls.__name__
             # Traverse the MRO and accumulate args from parent classes
-            conv_pargs[subname], conv_param[subname] = [], {}
+            registry['pargs'][subname], registry['param'][subname] = [], {}
             for basecls in subcls.mro():
                 if hasattr(basecls, 'pargs'):
-                    conv_pargs[subname].extend(basecls.pargs)
+                    registry['pargs'][subname].extend(basecls.pargs)
+                if hasattr(basecls, 'pargs_default'):
+                    registry['pargs_default'][subname].update(basecls.pargs_default)
                 if hasattr(basecls, 'param'):
-                    conv_param[subname].update(basecls.param)
+                    registry['param'][subname].update(basecls.param)
             if hasattr(subcls, 'name'):
-                conv_name_map[subname] = subcls.name
+                registry['name'][subname] = subcls.name
 
-            subcls.register_classes(conv_name_map, conv_pargs, conv_param)
-        return conv_name_map, conv_pargs, conv_param
+            subcls.register_classes(registry)
+        return registry
 
     def __init__(self,
         num_hops: int = 0,

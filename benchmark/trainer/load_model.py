@@ -7,7 +7,7 @@ from typing import Tuple
 from argparse import Namespace
 import logging
 import torch.nn as nn
-from pyg_spectral.nn import get_nn_name, set_pargs
+from pyg_spectral.nn import get_model_regi, get_nn_name, set_pargs
 from pyg_spectral.utils import load_import
 
 from .base import TrnBase
@@ -31,7 +31,7 @@ class ModelLoader(object):
         """
         self.model = args.model
         self.conv = args.conv
-        _, self.conv_repr = self.get_name(args)
+        self.model_repr, self.conv_repr = self.get_name(args)
 
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
@@ -39,7 +39,7 @@ class ModelLoader(object):
     @staticmethod
     def get_name(args: Namespace) -> Tuple[str]:
         """Get model+conv name for logging path from argparse input without instantiation.
-        Wrapper for :func:`pyg_spectral.nn.get_nn_name`.
+        Wrapper for :func:`pyg_spectral.nn.get_nn_name()`.
 
         Args:
             args: Configuration arguments.
@@ -53,8 +53,21 @@ class ModelLoader(object):
         return get_nn_name(args.model, args.conv, args)
 
     def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict, TrnBase]:
+        class_name = self.model
+        module_name = get_model_regi(self.model, 'module', args)
+        kwargs = set_pargs(self.model, self.conv, args)
+        trn = {
+            'DecoupledFixed':   TrnFullbatch,
+            'DecoupledVar':     TrnFullbatch,
+            'Iterative':        TrnFullbatch,
+            'IterativeFixed':   TrnFullbatch,
+            'PrecomputedVar':   TrnMinibatch,
+            'PrecomputedFixed': TrnMinibatch,
+            'CppPrecFixed':     TrnMinibatch,
+        }[self.model_repr]
+
         # >>>>>>>>>>
-        if self.model in ['GCN', 'GraphSAGE', 'GIN', 'GAT', 'PNA', 'MLP']:
+        if module_name == 'torch_geometric.nn.models':
             from pyg_spectral.nn.models_pyg import kwargs_default
             # manually fix repr for logging
             conv_dct = {
@@ -78,10 +91,7 @@ class ModelLoader(object):
                 num_layers = args.out_layers
                 trn = TrnMinibatch
 
-            module_name = 'torch_geometric.nn.models'
-            class_name = self.model
             kwargs = dict(
-                criterion='BCEWithLogitsLoss' if args.out_channels == 1 else 'CrossEntropyLoss',
                 in_channels=args.in_channels,
                 out_channels=args.out_channels,
                 hidden_channels=args.hidden_channels,
@@ -91,34 +101,24 @@ class ModelLoader(object):
             if self.model in kwargs_default:
                 for k, v in kwargs_default[self.model].items():
                     kwargs.setdefault(k, v)
+            args.criterion = 'BCEWithLogitsLoss' if args.out_channels == 1 else 'CrossEntropyLoss',
 
         elif self.model in ['ChebNet', ]:
             from pyg_spectral.nn.models_pyg import kwvars
-            module_name = 'pyg_spectral.nn.models_pyg'
-            class_name = self.model
             kwvar = kwvars[self.model]
             kwargs = {k: getattr(args, v) for k, v in kwvar.items()}
-            kwargs['criterion'] = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
+            args.criterion = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
             trn = TrnFullbatch
 
         # Default to load from `pyg_spectral`
         else:
-            module_name = 'pyg_spectral.nn.models'
-            class_name = self.model
-            kwargs = set_pargs(self.model, self.conv, args)
-            kwargs['criterion'] = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
-            print(args)
+            args.criterion = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
 
             # Parse conv args
             for conv in self.conv.split(','):
                 if conv in ['Adji2Conv', 'AdjSkip2Conv']:
                     kwargs['num_hops'] = int(kwargs['num_hops'] / 2)
-
             # Parse model args
-            if self.model in ['PrecomputedFixed', 'PrecomputedVar', 'PrecomputedFixedCompose', 'PrecomputedVarCompose', 'CppPrecFixed']:
-                trn = TrnMinibatch
-            else:
-                trn = TrnFullbatch
         # <<<<<<<<<<
         return class_name, module_name, kwargs, trn
 
@@ -133,15 +133,10 @@ class ModelLoader(object):
             args.out_channels (int): Number of output classes.
             args.hidden_channels (int): Number of hidden units.
             args.dropout_[lin/conv] (float): Dropout rate for linear/conv.
-
-        Updates:
-            args.criterion (str): Criterion for loss calculation
         """
         self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)
 
         class_name, module_name, kwargs, trn = self._resolve_import(args)
-        args.criterion = kwargs.pop('criterion')
-
         model = load_import(class_name, module_name)(**kwargs)
         if hasattr(model, 'reset_parameters'):
             model.reset_parameters()
@@ -169,8 +164,6 @@ class ModelLoader_Trial(ModelLoader):
         self.signature = {key: getattr(args, key) for key in self.signature_lst}
 
         class_name, module_name, kwargs, trn = self._resolve_import(args)
-        args.criterion = kwargs.pop('criterion')
-
         model = load_import(class_name, module_name)(**kwargs)
         if hasattr(model, 'reset_parameters'):
             model.reset_parameters()

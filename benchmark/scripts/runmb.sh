@@ -44,17 +44,17 @@ ARGS_S=(${ARGS_S[@]} "--normf" "0")
 PARLIST="dropout_lin,lr_lin,wd_lin"
     # MLP
     # Run hyperparameter search
-    python run_param.py --data $data --model MLP --param $PARLIST "${ARGS_P[@]}" \
+    python run_param.py  --data $data --model MLP --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme impulse
     # Run repeatative with best hyperparameters
-    python run_single.py  --data $data --model MLP "${ARGS_S[@]}" \
+    python run_single.py --data $data --model MLP "${ARGS_S[@]}" \
         --theta_scheme impulse
 
 PARLIST="normg,dropout_conv,$PARLIST"
     # Linear
-    python run_param.py --data $data --model $model --conv AdjSkipConv --param $PARLIST "${ARGS_P[@]}" \
+    python run_param.py  --data $data --model $model --conv AdjSkipConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme ones --beta 1.0
-    python run_single.py  --data $data --model $model --conv AdjSkipConv "${ARGS_S[@]}" \
+    python run_single.py --data $data --model $model --conv AdjSkipConv "${ARGS_S[@]}" \
         --theta_scheme ones --beta 1.0
 
 PARLIST="theta_param,$PARLIST"
@@ -62,9 +62,9 @@ PARLIST="theta_param,$PARLIST"
     conv=AdjConv
     SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")
     for scheme in ${SCHEMES[@]}; do
-        python run_param.py --data $data --model $model --conv $conv --param $PARLIST "${ARGS_P[@]}" \
+        python run_param.py  --data $data --model $model --conv $conv --param $PARLIST "${ARGS_P[@]}" \
             --theta_scheme $scheme
-        python run_single.py  --data $data --model $model --conv $conv "${ARGS_S[@]}" \
+        python run_single.py --data $data --model $model --conv $conv "${ARGS_S[@]}" \
             --theta_scheme $scheme
     done
 
@@ -75,27 +75,27 @@ ARGS_S=("${ARGS_S[@]:0:${#ARGS_S[@]}-2}"
     "--combine" "sum_weighted" "--normf")
 PARLIST="normg,dropout_lin,dropout_conv,lr_lin,lr_conv,wd_lin,wd_conv"
     # FiGURe
-    python run_param.py --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv --param $PARLIST "${ARGS_P[@]}"
-    python run_single.py  --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
+    python run_param.py  --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv --param $PARLIST "${ARGS_P[@]}"
+    python run_single.py --data $data --model PrecomputedVarCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
 
 PARLIST="$PARLIST,beta"
     # FAGNN
-    python run_param.py --data $data --model PrecomputedFixedCompose --conv AdjSkipConv,AdjSkipConv --param $PARLIST "${ARGS_P[@]}" \
+    python run_param.py  --data $data --model PrecomputedFixedCompose --conv AdjSkipConv,AdjSkipConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme ones,ones --theta_param 1,1 --alpha 1.0,-1.0
-    python run_single.py  --data $data --model PrecomputedFixedCompose --conv AdjSkipConv,AdjSkipConv "${ARGS_S[@]}" \
+    python run_single.py --data $data --model PrecomputedFixedCompose --conv AdjSkipConv,AdjSkipConv "${ARGS_S[@]}" \
         --theta_scheme ones,ones --theta_param 1,1 --alpha 1.0,-1.0
 
 PARLIST="$PARLIST,theta_param"
     # G2CN
-    python run_param.py --data $data --model PrecomputedFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv --param $PARLIST "${ARGS_P[@]}" \
+    python run_param.py  --data $data --model PrecomputedFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme gaussian,gaussian --alpha="-1.0,-1.0"
-    python run_single.py  --data $data --model PrecomputedFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv "${ARGS_S[@]}" \
+    python run_single.py --data $data --model PrecomputedFixedCompose --conv AdjSkip2Conv,AdjSkip2Conv "${ARGS_S[@]}" \
         --theta_scheme gaussian,gaussian --alpha="-1.0,-1.0"
 
     # GNN-LF/HF
-    python run_param.py --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv --param $PARLIST "${ARGS_P[@]}" \
+    python run_param.py  --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme appr,appr --beta 1.0,1.0
-    python run_single.py  --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv "${ARGS_S[@]}" \
+    python run_single.py --data $data --model PrecomputedFixedCompose --conv AdjDiffConv,AdjDiffConv "${ARGS_S[@]}" \
         --theta_scheme appr,appr --beta 1.0,1.0
 
 # ========== var
@@ -117,8 +117,8 @@ ARGS_S=("${ARGS_S[@]}"
             PARLIST="$PARLIST,alpha,beta"
         fi
 
-        python run_param.py --data $data --model $model --conv $conv --param $PARLIST "${ARGS_P[@]}"
-        python run_single.py  --data $data --model $model --conv $conv "${ARGS_S[@]}"
+        python run_param.py  --data $data --model $model --conv $conv --param $PARLIST "${ARGS_P[@]}"
+        python run_single.py --data $data --model $model --conv $conv "${ARGS_S[@]}"
     done
 
 done

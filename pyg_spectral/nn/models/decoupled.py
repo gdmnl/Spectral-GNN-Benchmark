@@ -43,8 +43,8 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
             - 'log': Logarithmic, :math:`\theta_k = log(p / (k+1) + 1)`.
             - 'chebyshev': Chebyshev polynomial.
             - 'uniform': Random uniform distribution.
-            - 'normal_std': Standard random Gaussian distribution N(0, p).
-            - 'normal': Random Gaussian distribution N(p0, p1).
+            - 'normal_one': Gaussian distribution N(0, p) with sum normalized to 1.
+            - 'normal': Gaussian distribution N(0, p).
             - 'custom': Custom list of hop parameters.
         param (float, optional): Hyperparameter for the scheme.
             - `zeros`: NA.
@@ -59,8 +59,8 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
             - 'log': Decay factor, :math:`p > 0`.
             - 'chebyshev': NA.
             - 'uniform': Distribution bound.
-            - 'normal_std': Distribution variance.
-            - 'normal': Distribution mean and variance.
+            - 'normal_one': Distribution variance.
+            - 'normal': Distribution variance.
             - 'custom': Float list of hop parameters.
 
     Returns:
@@ -112,17 +112,13 @@ def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = Non
         param = param if param is not None else np.sqrt(3/(num_hops+1))
         theta = torch.rand(num_hops+1) * 2 * param - param
         return theta/torch.norm(theta, p=1)
-    elif scheme == 'normal_std':
+    elif scheme == 'normal_one':
         param = param if param is not None else 1.0
         theta = torch.randn(num_hops+1) * param
         return theta/torch.norm(theta, p=1)
     elif scheme == 'normal':
-        param = param if param is not None else [0.0, 1.0]
-        if isinstance(param, float):
-            param = [param, 1.0]
-        elif len(param) == 1:
-            param.append(1.0)
-        return torch.normal(param[0], param[1], size=(num_hops+1,))
+        param = param if param is not None else 1.0
+        return torch.normal(0.0, param, size=(num_hops+1,))
     elif scheme == 'custom':
         return torch.tensor(param, dtype=torch.float)
     else:
@@ -152,7 +148,6 @@ class DecoupledFixed(BaseNN):
     conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
     pargs = ['theta_scheme', 'theta_param']
     param = {'theta_param': lambda x: theta_param.get(x, None)}
-    # TODO: if iscallable(param[key])
 
     def init_conv(self,
         conv: str,

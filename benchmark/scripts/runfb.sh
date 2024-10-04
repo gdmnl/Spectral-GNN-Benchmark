@@ -70,9 +70,9 @@ PARLIST="normg,dropout_lin,dropout_conv,lr_lin,lr_conv,wd_lin,wd_conv"
     # AdaGNN
     for conv in "LapiConv"; do
         python run_param.py  --data $data --model AdaGNN --conv $conv --param $PARLIST "${ARGS_P[@]}" \
-            --theta_scheme normal --theta_param 0,1e-7
+            --theta_scheme normal --theta_param 1e-7
         python run_single.py --data $data --model AdaGNN --conv $conv "${ARGS_S[@]}" \
-            --theta_scheme normal --theta_param 0,1e-7
+            --theta_scheme normal --theta_param 1e-7
     done
 
     # FiGURe

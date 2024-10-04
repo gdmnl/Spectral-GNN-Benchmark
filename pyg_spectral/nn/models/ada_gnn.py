@@ -23,6 +23,7 @@ class AdaGNN(BaseNN):
             args for :class:`torch_geometric.nn.models.MLP`.
         **kwargs: Additional arguments of :class:`pyg_spectral.nn.conv`.
     """
+    # FEATURE: separate arch
     name = 'DecoupledVar'
     pargs = ['theta_scheme', 'theta_param']
     param = {'theta_param': lambda x: theta_param.get(x, None)}
