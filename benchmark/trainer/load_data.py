@@ -32,6 +32,11 @@ class SingleGraphLoader(object):
             * args.data_split (str): Index of dataset split.
         res_logger: Logger for results.
     """
+    args_out = ['in_channels', 'out_channels', 'multi', 'metric']
+    param = {
+        'normg': ('float', (0.0, 1.0), {'step': 0.05}, lambda x: round(x, 2)),
+    }
+
     def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
         # Assigning dataset identity.
         self.seed = args.seed

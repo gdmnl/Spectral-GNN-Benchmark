@@ -1,8 +1,7 @@
-from functools import wraps
-
 from .conv.base_mp import BaseMP
 from .models.base_nn import BaseNN
 from .models_pyg import model_regi_pyg, conv_regi_pyg
+from pyg_spectral.utils import CallableDict
 
 
 def update_regi(regi, new_regi):
@@ -16,6 +15,23 @@ conv_regi = update_regi(conv_regi, conv_regi_pyg)
 model_regi = BaseNN.register_classes()
 model_regi = update_regi(model_regi, model_regi_pyg)
 
+conv_regi  = CallableDict.to_subcallableVal(conv_regi, ['pargs_default', 'param'])
+r'''Fields:
+    * name (CallableDict[str, str]): Conv class logging path name.
+    * pargs (CallableDict[str, List[str]]): Conv arguments from argparse.
+    * pargs_default (Dict[str, CallableDict[str, Any]]): Default values for model arguments. Not recommended.
+    * param (Dict[str, CallableDict[str, ParamTuple]]): Conv parameters to tune.
+'''
+model_regi = CallableDict.to_subcallableVal(model_regi, ['pargs_default', 'param'])
+r'''Fields:
+    name (CallableDict[str, str]): Model class logging path name.
+    conv_name (CallableDict[str, Callable[[str, Any], str]]): Wrap conv logging path name.
+    module (CallableDict[str, str]): Module for importing the model.
+    pargs (CallableDict[str, List[str]]): Model arguments from argparse.
+    pargs_default (Dict[str, CallableDict[str, Any]]): Default values for model arguments. Not recommended.
+    param (Dict[str, CallableDict[str, ParamTuple]]): Model parameters to tune.
+'''
+
 full_pargs = set(v for pargs in conv_regi['pargs'].values() for v in pargs)
 full_pargs.update(v for pargs in model_regi['pargs'].values() for v in pargs)
 
@@ -28,50 +44,34 @@ compose_name = {
     'DecoupledFixedCompose': {
         'AdjiConv,AdjiConv-ones,ones': 'FAGNN',
         'Adji2Conv,Adji2Conv-gaussian,gaussian': 'G2CN',
-        'AdjDiffConv,AdjDiffConv-appr,appr': 'GNN-LFHF',},
+        'AdjDiffConv,AdjDiffConv-appr,appr': 'GNN_LFHF',},
     'DecoupledVarCompose': {
         'AdjConv,ChebConv,BernConv': 'FiGURe',},
     'PrecomputedFixedCompose': {
         'AdjSkipConv,AdjSkipConv-ones,ones': 'FAGNN',
         'AdjSkip2Conv,AdjSkip2Conv-gaussian,gaussian': 'G2CN',
-        'AdjDiffConv,AdjDiffConv-appr,appr': 'GNN-LFHF',},
+        'AdjDiffConv,AdjDiffConv-appr,appr': 'GNN_LFHF',},
     'PrecomputedVarCompose': {
         'AdjConv,ChebConv,BernConv': 'FiGURe',}
 }
-
-
-def resolve_func(nargs=1):
-    """Enable calling the return function with additional arguments.
-
-    Args:
-        nargs: The number of arguments to pass to the decorated function. Arguments
-        beyond this number will be passed to the return function.
-    Examples:
-        ```python
-        @resolve_func(1)
-        def foo(bar):
-            return bar
-        foo(1)  # 1
-        foo(lambda x: x+1, 2)  # 3
-        ```
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*inputs):
-            if len(inputs) <= nargs:
-                return func(*inputs[:nargs])
-            else:
-                ret = func(*inputs[:nargs])
-                if callable(ret):
-                    return ret(*inputs[nargs:])
-                return ret
-        return wrapper
-    return decorator
-
-
-@resolve_func(2)
-def get_dct(dct: dict, k: str) -> str:
-    return dct[k]
+compose_param = {
+    'DecoupledFixedCompose': {
+        'G2CN': CallableDict({
+            'beta':  [('float', (1.00, 2.00), {'step': 0.01}, lambda x: round(x, 2)),
+                      ('float', (0.01, 1.00), {'step': 0.01}, lambda x: round(x, 2))],}),
+        'GNN_LFHF': CallableDict({
+            'beta':  [('float', ( 0.01,  1.00), {'step': 0.01}, lambda x: round(x, 2)),
+                      ('float', (-1.00, -0.01), {'step': 0.01}, lambda x: round(x, 2))],}),
+    },
+    'PrecomputedFixedCompose': {
+        'G2CN': CallableDict({
+            'beta':  [('float', (1.00, 2.00), {'step': 0.01}, lambda x: round(x, 2)),
+                      ('float', (0.01, 1.00), {'step': 0.01}, lambda x: round(x, 2))],}),
+        'GNN_LFHF': CallableDict({
+            'beta':  [('float', ( 0.01,  1.00), {'step': 0.01}, lambda x: round(x, 2)),
+                      ('float', (-1.00, -0.01), {'step': 0.01}, lambda x: round(x, 2))],}),
+    },
+}
 
 
 def get_model_regi(model: str, k: str, args=None) -> str:
@@ -84,7 +84,9 @@ def get_model_regi(model: str, k: str, args=None) -> str:
     Returns:
         value (str): The value of the model registry.
     """
-    return get_dct(model_regi[k], model, args)
+    if not model in model_regi[k]:
+        return None
+    return model_regi[k](model, args) if args else model_regi[k][model]
 
 
 def get_conv_regi(conv: str, k: str, args=None) -> str:
@@ -97,7 +99,9 @@ def get_conv_regi(conv: str, k: str, args=None) -> str:
     Returns:
         value (str): The value of the convolution registry.
     """
-    return get_dct(conv_regi[k], conv, args)
+    if not conv in conv_regi[k]:
+        return None
+    return conv_regi[k](conv, args) if args else conv_regi[k][conv]
 
 
 def get_nn_name(model: str, conv: str, args) -> str:
@@ -110,13 +114,12 @@ def get_nn_name(model: str, conv: str, args) -> str:
     Returns:
         nn_name (Tuple[str]): Name strings ``(model_name, conv_name)``.
     """
-    model_name = get_dct(model_regi['name'], model, args)
-    conv_name = [get_dct(conv_regi['name'], channel, args) for channel in conv.split(',')]
+    model_name = model_regi['name'](model, args)
+    conv_name = [conv_regi['name'](channel, args) for channel in conv.split(',')]
     conv_name = ','.join(conv_name)
-    conv_name = get_dct(model_regi['conv_name'], model, conv_name, args)
-    if model in compose_name:
-        if conv_name in compose_name[model]:
-            conv_name = compose_name[model][conv_name]
+    conv_name = model_regi['conv_name'](model, conv_name, args)
+    if model in compose_name and conv_name in compose_name[model]:
+        conv_name = compose_name[model][conv_name]
     return (model_name, conv_name)
 
 
@@ -132,36 +135,22 @@ def set_pargs(model: str, conv: str, args):
         kwargs (dict): Arguments for importing the model.
     """
     valid_pargs = model_regi['pargs'][model]
-    valid_pargs.extend(conv_regi['pargs'][channel] for channel in conv.split(','))
+    for channel in conv.split(','):
+        valid_pargs.extend(conv_regi['pargs'][channel])
 
     kwargs = {}
     for parg in full_pargs:
-        if parg in valid_pargs and hasattr(args, parg):
-            kwargs[parg] = getattr(args, parg)
-        else:
-            delattr(args, parg)
+        if hasattr(args, parg):
+            if parg in valid_pargs:
+                kwargs[parg] = getattr(args, parg)
+            else:
+                delattr(args, parg)
 
     if model in model_regi['pargs_default']:
         for parg in model_regi['pargs_default'][model]:
-            kwargs.setdefault(parg, get_dct(model_regi['pargs_default'][model], parg, kwargs))
+            kwargs.setdefault(parg, model_regi['pargs_default'][model](parg, kwargs))
     for channel in conv.split(','):
         if channel in conv_regi['pargs_default']:
             for parg in conv_regi['pargs_default'][channel]:
-                kwargs.setdefault(parg, get_dct(conv_regi['pargs_default'][channel], parg, kwargs))
+                kwargs.setdefault(parg, conv_regi['pargs_default'][channel](parg, kwargs))
     return kwargs
-
-
-def get_param(model: str, conv: str, parg: str, args) -> tuple:
-    r"""Query parameter settings for model+conv.
-
-    Args:
-        model: The name of the model.
-        conv: The type of convolution.
-        parg: The name key of the parameter.
-        args: Configuration arguments.
-    Returns:
-        tune_tuple (dict): Configurations for tuning the model.
-    """
-    if parg in model_regi['param'][model]:
-        return get_dct(model_regi['param'][model], parg, args)
-    return get_dct(conv_regi['param'][conv], parg, args)

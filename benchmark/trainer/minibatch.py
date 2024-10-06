@@ -272,3 +272,4 @@ class TrnMinibatch_Trial(TrnMinibatch, TrnBase_Trial):
         if not hasattr(self, 'signature') or self.signature != signature:
             self.signature = signature
             self.embed = None
+        return self

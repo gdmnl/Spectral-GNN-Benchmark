@@ -50,6 +50,12 @@ class TrnBase(object):
         run: Run the training process.
     """
     name: str
+    param = {
+        'lr_lin':   ('float', (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
+        'lr_conv':  ('float', (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
+        'wd_lin':   ('float', (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
+        'wd_conv':  ('float', (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
+    }
 
     def __init__(self,
                  model: nn.Module,

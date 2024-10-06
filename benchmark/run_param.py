@@ -8,6 +8,10 @@ import optuna
 import uuid
 from copy import deepcopy
 
+from pyg_spectral.nn import get_model_regi, get_conv_regi
+from pyg_spectral.nn.parse_args import compose_param
+from pyg_spectral.utils import CallableDict
+
 from trainer import (
     SingleGraphLoader_Trial,
     ModelLoader_Trial,
@@ -34,75 +38,34 @@ class TrnWrapper(object):
         self.fmt_logger = {}
         self.metric = None
 
-        self.data, self.model, self.trn_cls, self.trn = None, None, None, None
+        self.data, self.model, self.trn = None, None, None
+        self.trn_cls = {
+            TrnFullbatch: TrnFullbatch_Trial,
+            TrnMinibatch: TrnMinibatch_Trial,
+        }[self.model_loader.get_trn(args)]
 
     def _get_suggest(self, trial, key):
-        list2str = lambda x: ','.join(map(str, x))
-        nofmt = lambda x: x
-        # >>>>>>>>>>
-        theta_dct = {
-            # "impulse": (lambda x, _: x[0], (self.args.num_hops,), {}),
-            "ones":     (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
-            "impulse":  (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
-            "appr":     (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
-            "nappr":    (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
-            "mono":     (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
-            "hk":       (trial.suggest_float, (1e-2, 10), {'log': True}, lambda x: float(f'{x:.3e}')),
-            "gaussian": (trial.suggest_float, (1e-2, 10), {'log': True}, lambda x: float(f'{x:.3e}')),
-        }
-        suggest_dct = {
-            # critical
-            'num_hops':         (trial.suggest_int, (2, 30), {'step': 2}, nofmt),
-            'in_layers':        (trial.suggest_int, (1, 3), {}, nofmt),
-            'out_layers':       (trial.suggest_int, (1, 3), {}, nofmt),
-            'hidden_channels':  (trial.suggest_categorical, ([16, 32, 64, 128, 256],), {}, nofmt),
-            'combine':          (trial.suggest_categorical, (["sum", "sum_weighted", "cat"],), {}, nofmt),
-            # secondary
-            'theta_param': theta_dct.get(self.args.theta_scheme, None),
-            'normg':            (trial.suggest_float, (0.0, 1.0), {'step': 0.05}, lambda x: round(x, 2)),
-            'dropout_lin':      (trial.suggest_float, (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
-            'dropout_conv':     (trial.suggest_float, (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
-            'lr_lin':           (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
-            'lr_conv':          (trial.suggest_float, (1e-5, 5e-1), {'log': True}, lambda x: float(f'{x:.3e}')),
-            'wd_lin':           (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
-            'wd_conv':          (trial.suggest_float, (1e-7, 1e-3), {'log': True}, lambda x: float(f'{x:.3e}')),
-            'alpha':            (trial.suggest_float, (0.01, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
-            'beta':             (trial.suggest_float, (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
-        }
+        def parse_param(val):
+            if isinstance(val, list):
+                fmt = val[0][-1]
+                val = [getattr(trial, 'suggest_'+func)(key+'-'+str(i), *fargs, **fkwargs) for i, (func, fargs, fkwargs, _) in enumerate(val)]
+                return val, fmt
+            func, fargs, fkwargs, fmt = val
+            return getattr(trial, 'suggest_'+func)(key, *fargs, **fkwargs), fmt
 
-        # Model/conv-specific
-        # if self.args.model in ['Iterative']:
-        #     suggest_dct['in_layers'][1] = (1, 3)
-        #     suggest_dct['out_layers'][1] = (1, 3)
-        # <<<<<<<<<<
+        # Alias compose models
+        if (self.args.model in compose_param and
+            self.model_loader.conv_repr in compose_param[self.args.model] and
+            key in compose_param[self.args.model][self.model_loader.conv_repr]):
+            return parse_param(compose_param[self.args.model][self.model_loader.conv_repr](key, self.args))
 
-        if 'Compose' in self.args.model:
-            convs = self.args.conv.split(',')
-            if key == 'theta_param':
-                schemes = self.args.theta_scheme.split(',')
-                lst = []
-                for i,c in enumerate(convs):
-                    func, fargs, fkwargs, fmt = theta_dct.get(schemes[i], None)
-                    lst.append(func(key+'-'+str(i), *fargs, **fkwargs))
-                return lst, fmt
-            elif key == 'beta':
-                func, fargs, fkwargs, fmt = suggest_dct[key]
-                beta_c = {
-                    'AdjiConv':     [(0.0, 1.0), (0.0, 1.0)],   # FAGNN
-                    'AdjSkipConv':  [(0.0, 1.0), (0.0, 1.0)],   # FAGNN
-                    'Adji2Conv':    [(1.0, 2.0), (0.0, 1.0)],   # G2CN
-                    'AdjSkip2Conv': [(1.0, 2.0), (0.0, 1.0)],   # G2CN
-                    'AdjDiffConv':  [(0.0, 1.0), (-1.0, 0.0)],  # GNN-LF/HF
-                }
-                lst = [func(key+'-'+str(i), *beta_i, **fkwargs) for i,beta_i in enumerate(beta_c[convs[0]])]
-                # return list2str(lst), str
-                return lst, fmt
-            else:
-                func, fargs, fkwargs, fmt = suggest_dct[key]
-                return func(key, *fargs, **fkwargs), fmt
-        else:
-            func, fargs, fkwargs, fmt = suggest_dct[key]
-            return func(key, *fargs, **fkwargs), fmt
+        single_param = SingleGraphLoader_Trial.param | ModelLoader_Trial.param | self.trn_cls.param
+        single_param = CallableDict(single_param)
+        single_param |= get_model_regi(self.args.model, 'param')
+        if key in single_param:
+            return parse_param(single_param(key, self.args))
+
+        return parse_param(get_conv_regi(self.args.conv, 'param')(key, self.args))
 
     def __call__(self, trial):
         args = deepcopy(self.args)
@@ -115,18 +78,15 @@ class TrnWrapper(object):
 
         if self.data is None:
             self.data = self.data_loader.get(args)
-            self.model, trn_cls = self.model_loader.get(args)
-            self.trn_cls = {
-                TrnFullbatch: TrnFullbatch_Trial,
-                TrnMinibatch: TrnMinibatch_Trial,
-            }[trn_cls]
+            self.model, _ = self.model_loader.get(args)
 
-            for key in ['in_channels', 'out_channels', 'metric', 'multi', 'criterion']:
+            for key in SingleGraphLoader_Trial.args_out + ModelLoader_Trial.args_out:
                 self.args.__dict__[key] = args.__dict__[key]
             self.metric = args.metric
         else:
             self.data = self.data_loader.update(args, self.data)
             self.model = self.model_loader.update(args, self.model)
+
         res_logger = deepcopy(self.res_logger)
         for key in self.args.param:
             val = args.__dict__[key]
@@ -220,7 +180,7 @@ def main(args):
         best_params = {k: trn.fmt_logger[k](v) for k, v in study.best_params.items()}
     save_args(args.logpath, best_params)
     axes = optuna.visualization.matplotlib.plot_parallel_coordinate(
-        study, params=best_params.keys())
+        study, params=study.best_params.keys())
     axes.get_figure().savefig(args.logpath.joinpath('parallel_coordinate.png'))
     clear_logger(logger)
 

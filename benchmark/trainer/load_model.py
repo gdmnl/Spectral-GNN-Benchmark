@@ -26,6 +26,9 @@ class ModelLoader(object):
             * args.conv (str): Convolution layer name.
         res_logger: Logger for results.
     """
+    args_out = ['criterion']
+    param = {}
+
     def __init__(self, args: Namespace, res_logger: ResLogger = None) -> None:
         r"""Assigning model identity.
         """
@@ -52,11 +55,17 @@ class ModelLoader(object):
         """
         return get_nn_name(args.model, args.conv, args)
 
-    def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict, TrnBase]:
-        class_name = self.model
-        module_name = get_model_regi(self.model, 'module', args)
-        kwargs = set_pargs(self.model, self.conv, args)
-        trn = {
+    @staticmethod
+    def get_trn(args: Namespace) -> TrnBase:
+        r"""Get trainer class from model name.
+
+        Args:
+            args: Configuration arguments.
+        Returns:
+            trn (TrnBase): Trainer class.
+        """
+        model_repr, _ = get_nn_name(args.model, args.conv, args)
+        return {
             'DecoupledFixed':   TrnFullbatch,
             'DecoupledVar':     TrnFullbatch,
             'Iterative':        TrnFullbatch,
@@ -64,12 +73,18 @@ class ModelLoader(object):
             'PrecomputedVar':   TrnMinibatch,
             'PrecomputedFixed': TrnMinibatch,
             'CppPrecFixed':     TrnMinibatch,
-        }[self.model_repr]
+        }[model_repr]
+
+    def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
+        class_name = self.model
+        module_name = get_model_regi(self.model, 'module', args)
+        kwargs = set_pargs(self.model, self.conv, args)
 
         # >>>>>>>>>>
         if module_name == 'torch_geometric.nn.models':
             args.criterion = 'BCEWithLogitsLoss' if args.out_channels == 1 else 'CrossEntropyLoss'
 
+            del kwargs['conv']
             kwargs.setdefault('num_layers', kwargs.pop('num_hops'))
             kwargs.setdefault('dropout', kwargs.pop('dropout_lin'))
 
@@ -86,7 +101,7 @@ class ModelLoader(object):
                     kwargs['num_hops'] = int(kwargs['num_hops'] / 2)
             # Parse model args
         # <<<<<<<<<<
-        return class_name, module_name, kwargs, trn
+        return class_name, module_name, kwargs
 
     def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
         r"""Load model with specified arguments.
@@ -99,10 +114,13 @@ class ModelLoader(object):
             args.out_channels (int): Number of output classes.
             args.hidden_channels (int): Number of hidden units.
             args.dropout_[lin/conv] (float): Dropout rate for linear/conv.
+        Updates:
+            args.criterion (str): Loss function name.
         """
         self.logger.debug('-'*20 + f" Loading model: {self} " + '-'*20)
 
-        class_name, module_name, kwargs, trn = self._resolve_import(args)
+        trn = self.get_trn(args)
+        class_name, module_name, kwargs = self._resolve_import(args)
         model = load_import(class_name, module_name)(**kwargs)
         if hasattr(model, 'reset_parameters'):
             model.reset_parameters()
@@ -129,7 +147,8 @@ class ModelLoader_Trial(ModelLoader):
         self.signature_lst = ['num_hops', 'in_layers', 'out_layers', 'hidden_channels', 'dropout_lin', 'dropout_conv']
         self.signature = {key: getattr(args, key) for key in self.signature_lst}
 
-        class_name, module_name, kwargs, trn = self._resolve_import(args)
+        trn = self.get_trn(args)
+        class_name, module_name, kwargs = self._resolve_import(args)
         model = load_import(class_name, module_name)(**kwargs)
         if hasattr(model, 'reset_parameters'):
             model.reset_parameters()

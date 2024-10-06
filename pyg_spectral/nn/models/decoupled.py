@@ -9,11 +9,11 @@ from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.inits import reset
 
 from pyg_spectral.nn.models.base_nn import BaseNN, BaseNNCompose
-from pyg_spectral.utils import load_import
+from pyg_spectral.utils import load_import, CallableDict
 
 
-theta_param = {
-    # "impulse": (lambda x, _: x[0], (self.args.num_hops,), {}),
+theta_param = CallableDict({
+    "impulse":  ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
     "ones":     ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
     "impulse":  ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
     "appr":     ('float', (0.0, 1.0), {'step': 0.01}, lambda x: round(x, 2)),
@@ -22,7 +22,7 @@ theta_param = {
     "hk":       ('float', (1e-2, 10), {'log': True}, lambda x: float(f'{x:.2e}')),
     "gaussian": ('float', (1e-2, 10), {'log': True}, lambda x: float(f'{x:.2e}')),
     "log":      ('float', (1e-2, 10), {'log': True}, lambda x: float(f'{x:.2e}')),
-}
+})
 
 
 def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = None) -> Tensor:
@@ -147,7 +147,7 @@ class DecoupledFixed(BaseNN):
     name = 'DecoupledFixed'
     conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
     pargs = ['theta_scheme', 'theta_param']
-    param = {'theta_param': lambda x: theta_param.get(x, None)}
+    param = {'theta_param': lambda args: theta_param(args.theta_scheme)}
 
     def init_conv(self,
         conv: str,
@@ -192,7 +192,7 @@ class DecoupledVar(BaseNN):
     """
     name = 'DecoupledVar'
     pargs = ['theta_scheme', 'theta_param']
-    param = {'theta_param': lambda x: theta_param.get(x, None)}
+    param = {'theta_param': lambda args: theta_param(args.theta_scheme)}
 
     def init_conv(self,
         conv: str,
@@ -246,7 +246,7 @@ class DecoupledFixedCompose(BaseNNCompose):
     name = 'DecoupledFixed'
     conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
     pargs = ['theta_scheme', 'theta_param']
-    param = {'theta_param': lambda x: theta_param.get(x, None)}
+    param = {'theta_param': lambda args: theta_param(args.theta_scheme)}
 
     def init_conv(self,
         conv: str,
@@ -305,7 +305,7 @@ class DecoupledVarCompose(BaseNNCompose):
     """
     name = 'DecoupledVar'
     pargs = ['theta_scheme', 'theta_param']
-    param = {'theta_param': lambda x: theta_param.get(x, None)}
+    param = {'theta_param': lambda args: theta_param(args.theta_scheme)}
 
     def init_conv(self,
         conv: str,

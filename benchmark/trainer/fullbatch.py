@@ -194,3 +194,4 @@ class TrnFullbatch_Trial(TrnFullbatch, TrnBase_Trial):
 
     def update(self, *args, **kwargs):
         self.__init__(*args, **kwargs)
+        return self
