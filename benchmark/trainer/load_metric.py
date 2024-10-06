@@ -3,7 +3,7 @@
 Author: nyLiao
 File Created: 2024-03-03
 """
-from typing import Tuple, List, Callable, Any
+from typing import Callable, Any
 from argparse import Namespace
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
@@ -15,7 +15,7 @@ from torchmetrics.classification import (
 
 
 class ResCollection(MetricCollection):
-    def compute(self) -> List[Tuple[str, Any, Callable]]:
+    def compute(self) -> list[tuple[str, Any, Callable]]:
         r"""Wrap compute output to :class:`ResLogger` style."""
         dct = self._compute_and_reduce("compute")
         return [(k, v.cpu().numpy(), (lambda x: format(x*100, '.3f'))) for k, v in dct.items()]

@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import torch
 from torch import Tensor
 
@@ -9,7 +7,7 @@ import torch_geometric.utils as pyg_utils
 
 def dropout_edge(edge_index: Tensor, p: float = 0.5,
                  force_undirected: bool = False,
-                 training: bool = True) -> Tuple[Tensor, Tensor]:
+                 training: bool = True) -> tuple[Tensor, Tensor]:
     r"""Random inplace edge dropout for the adjacency matrix
     :obj:`edge_index` with probability :obj:`p` using samples from
     a Bernoulli distribution.

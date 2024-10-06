@@ -1,4 +1,3 @@
-from typing import Tuple
 from argparse import Namespace
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -107,7 +106,7 @@ def split_crossval(label: torch.Tensor,
                    r_val: float,
                    seed: int = None,
                    ignore_neg: bool =True,
-                   stratify: bool =False) -> Tuple[torch.Tensor]:
+                   stratify: bool =False) -> tuple[torch.Tensor]:
     r"""Split index by cross-validation"""
     node_labeled = torch.where(label >= 0)[0] if ignore_neg else np.arange(label.shape[0])
 

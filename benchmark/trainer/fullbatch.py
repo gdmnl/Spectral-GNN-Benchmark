@@ -3,7 +3,6 @@
 Author: nyLiao
 File Created: 2024-02-26
 """
-from typing import Tuple
 from argparse import Namespace
 
 import torch
@@ -57,7 +56,7 @@ class TrnFullbatch(TrnBase):
         del self.mask, self.data
         return super().clear()
 
-    def _fetch_data(self) -> Tuple[Data, dict]:
+    def _fetch_data(self) -> tuple[Data, dict]:
         r"""Process the single graph data."""
         t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t', 'edge_index'] + [f'{k}_mask' for k in self.splits])
         self.data = t_to_device(self.data)

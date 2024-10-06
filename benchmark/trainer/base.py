@@ -3,7 +3,6 @@
 Author: nyLiao
 File Created: 2024-03-03
 """
-from typing import List
 import logging
 from argparse import Namespace
 
@@ -145,8 +144,8 @@ class TrnBase(object):
     # ===== Run block
     @_log_memory(split='train')
     def train_val(self,
-                  split_train: List[str] = ['train'],
-                  split_val: List[str] = ['val']) -> ResLogger:
+                  split_train: list[str] = ['train'],
+                  split_val: list[str] = ['val']) -> ResLogger:
         r"""Pipeline for iterative training.
 
         Args:
@@ -187,7 +186,7 @@ class TrnBase(object):
 
     @_log_memory(split='eval')
     def test(self,
-             split_test: List[str] = ['train', 'val', 'test']) -> ResLogger:
+             split_test: list[str] = ['train', 'val', 'test']) -> ResLogger:
         r"""Pipeline for testing.
         Args:
             split_test (list): Testing splits.
@@ -206,11 +205,11 @@ class TrnBase(object):
         r"""Process each sample of model input and label."""
         raise NotImplementedError
 
-    def _learn_split(self, split: List[str] = ['train']) -> ResLogger:
+    def _learn_split(self, split: list[str] = ['train']) -> ResLogger:
         r"""Actual train iteration on the given splits."""
         raise NotImplementedError
 
-    def _eval_split(self, split: List[str]) -> ResLogger:
+    def _eval_split(self, split: list[str]) -> ResLogger:
         r"""Actual test on the given splits."""
         raise NotImplementedError
 
@@ -258,8 +257,8 @@ class TrnBase_Trial(TrnBase):
         if self.optimizer: del self.optimizer
 
     def train_val(self,
-                  split_train: List[str] = ['train'],
-                  split_val: List[str] = ['val']) -> ResLogger:
+                  split_train: list[str] = ['train'],
+                  split_val: list[str] = ['val']) -> ResLogger:
         import optuna
 
         time_learn = profile.Accumulator()

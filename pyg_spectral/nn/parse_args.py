@@ -15,21 +15,21 @@ conv_regi = update_regi(conv_regi, conv_regi_pyg)
 model_regi = BaseNN.register_classes()
 model_regi = update_regi(model_regi, model_regi_pyg)
 
-conv_regi  = CallableDict.to_subcallableVal(conv_regi, ['pargs_default', 'param'])
+conv_regi  = CallableDict.to_callableVal(conv_regi, ['pargs_default', 'param'])
 r'''Fields:
     * name (CallableDict[str, str]): Conv class logging path name.
-    * pargs (CallableDict[str, List[str]]): Conv arguments from argparse.
-    * pargs_default (Dict[str, CallableDict[str, Any]]): Default values for model arguments. Not recommended.
-    * param (Dict[str, CallableDict[str, ParamTuple]]): Conv parameters to tune.
+    * pargs (CallableDict[str, list[str]]): Conv arguments from argparse.
+    * pargs_default (dict[str, CallableDict[str, Any]]): Default values for model arguments. Not recommended.
+    * param (dict[str, CallableDict[str, ParamTuple]]): Conv parameters to tune.
 '''
-model_regi = CallableDict.to_subcallableVal(model_regi, ['pargs_default', 'param'])
+model_regi = CallableDict.to_callableVal(model_regi, ['pargs_default', 'param'])
 r'''Fields:
     name (CallableDict[str, str]): Model class logging path name.
     conv_name (CallableDict[str, Callable[[str, Any], str]]): Wrap conv logging path name.
     module (CallableDict[str, str]): Module for importing the model.
-    pargs (CallableDict[str, List[str]]): Model arguments from argparse.
-    pargs_default (Dict[str, CallableDict[str, Any]]): Default values for model arguments. Not recommended.
-    param (Dict[str, CallableDict[str, ParamTuple]]): Model parameters to tune.
+    pargs (CallableDict[str, list[str]]): Model arguments from argparse.
+    pargs_default (dict[str, CallableDict[str, Any]]): Default values for model arguments. Not recommended.
+    param (dict[str, CallableDict[str, ParamTuple]]): Model parameters to tune.
 '''
 
 full_pargs = set(v for pargs in conv_regi['pargs'].values() for v in pargs)
@@ -112,7 +112,7 @@ def get_nn_name(model: str, conv: str, args) -> str:
         conv: Input argparse string of conv. Can be composed.
         args: Additional arguments specified in module :attr:`name` functions.
     Returns:
-        nn_name (Tuple[str]): Name strings ``(model_name, conv_name)``.
+        nn_name (tuple[str]): Name strings ``(model_name, conv_name)``.
     """
     model_name = model_regi['name'](model, args)
     conv_name = [conv_regi['name'](channel, args) for channel in conv.split(',')]

@@ -1,5 +1,5 @@
-from typing import Any, Callable, Dict, Final, List, Tuple, Optional, Union
-type ParamTuple = Tuple[str, tuple, Dict[str, Any], Callable[[Any], str]]
+from typing import Any, Callable, Final, NewType
+ParamTuple = NewType('ParamTuple', tuple[str, tuple, dict[str, Any], Callable[[Any], str]])
 
 import torch
 import torch.nn as nn
@@ -45,35 +45,38 @@ class BaseNN(nn.Module):
     supports_batch: bool
     name: str
     conv_name: Callable[[str, Any], str] = lambda x, args: x
-    pargs: List[str] = ['conv', 'num_hops', 'in_layers', 'out_layers',
+    pargs: list[str] = ['conv', 'num_hops', 'in_layers', 'out_layers',
                         'in_channels', 'hidden_channels', 'out_channels',
                         'dropout_lin', 'dropout_conv',]
-    param: Dict[str, ParamTuple] = {
+    param: dict[str, ParamTuple] = {
             'num_hops':     ('int', (2, 30), {'step': 2}, lambda x: x),
             'in_layers':    ('int', (1, 3), {}, lambda x: x),
             'out_layers':   ('int', (1, 3), {}, lambda x: x),
             'hidden_channels':  ('categorical', ([16, 32, 64, 128, 256],), {}, lambda x: x),
-            'dropout_lin':  ('float', (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
-            'dropout_conv': ('float', (0.0, 1.0), {'step': 0.1}, lambda x: round(x, 2)),
+            'dropout_lin':  ('float', (0.0, 0.9), {'step': 0.1}, lambda x: round(x, 2)),
+            'dropout_conv': ('float', (0.0, 0.9), {'step': 0.1}, lambda x: round(x, 2)),
     }
 
     @classmethod
-    def register_classes(cls, registry: Dict[str, Dict[str, Any]] = MODEL_REGI_INIT):
+    def register_classes(cls, registry: dict[str, dict[str, Any]] = None) -> dict:
         r"""Register args for all subclass.
 
         Args:
-            name (Dict[str, str]): Model class logging path name.
-            conv_name (Dict[str, Callable[[str, Any], str]]): Wrap conv logging path name.
-            module (Dict[str, str]): Module for importing the model.
-            pargs (Dict[str, List[str]]): Model arguments from argparse.
-            pargs_default (Dict[str, Dict[str, Any]]): Default values for model arguments. Not recommended.
-            param (Dict[str, Dict[str, ParamTuple]]): Model parameters to tune.
+            name (dict[str, str]): Model class logging path name.
+            conv_name (dict[str, Callable[[str, Any], str]]): Wrap conv logging path name.
+            module (dict[str, str]): Module for importing the model.
+            pargs (dict[str, list[str]]): Model arguments from argparse.
+            pargs_default (dict[str, dict[str, Any]]): Default values for model arguments. Not recommended.
+            param (dict[str, dict[str, ParamTuple]]): Model parameters to tune.
 
                 * (str) parameter type,
                 * (tuple) args for :func:`optuna.trial.suggest_<type>`,
                 * (dict) kwargs for :func:`optuna.trial.suggest_<type>`,
                 * (callable) format function to str.
         """
+        if registry is None:
+            registry = MODEL_REGI_INIT
+
         for subcls in cls.__subclasses__():
             subname = subcls.__name__
             # Traverse the MRO and accumulate args from parent classes
@@ -97,20 +100,20 @@ class BaseNN(nn.Module):
     def __init__(self,
             conv: str,
             num_hops: int = 0,
-            in_channels: Optional[int] = None,
-            hidden_channels: Optional[int] = None,
-            out_channels: Optional[int] = None,
-            in_layers: Optional[int] = None,
-            out_layers: Optional[int] = None,
-            dropout_lin: Union[float, List[float]] = 0.,
+            in_channels: int | None = None,
+            hidden_channels: int | None = None,
+            out_channels: int | None = None,
+            in_layers: int | None = None,
+            out_layers: int | None = None,
+            dropout_lin: float | list[float] = 0.,
             dropout_conv: float = 0.,
-            act: Union[str, Callable, None] = "relu",
+            act: str | Callable | None = "relu",
             act_first: bool = False,
-            act_kwargs: Optional[Dict[str, Any]] = None,
-            norm: Union[str, Callable, None] = "batch_norm",
-            norm_kwargs: Optional[Dict[str, Any]] = None,
+            act_kwargs: dict[str, Any | None] = None,
+            norm: str | Callable | None = "batch_norm",
+            norm_kwargs: dict[str, Any | None] = None,
             plain_last: bool = False,
-            bias: Union[bool, List[bool]] = True,
+            bias: bool | list[bool] = True,
             **kwargs):
         super(BaseNN, self).__init__()
 
@@ -165,7 +168,7 @@ class BaseNN(nn.Module):
 
         self.reset_parameters()
 
-    def init_channel_list(self, conv: str, in_channels: int, hidden_channels: int, out_channels: int, **kwargs) -> List[int]:
+    def init_channel_list(self, conv: str, in_channels: int, hidden_channels: int, out_channels: int, **kwargs) -> list[int]:
         # assert (self.in_layers+self.out_layers > 0) or (self.in_channels == self.out_channels)
         total_layers = self.in_layers + self.conv_layers + self.out_layers
         channel_list = [in_channels] + [None] * (total_layers - 1) + [out_channels]
@@ -230,7 +233,7 @@ class BaseNN(nn.Module):
         x: Tensor,
         edge_index: Adj,
         batch: OptTensor = None,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> Tensor:
         r"""Decoupled propagation step for calling the convolutional module.
         """
@@ -248,7 +251,7 @@ class BaseNN(nn.Module):
         x: Tensor,
         edge_index: Adj,
         batch: OptTensor = None,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> Tensor:
         r"""
         Args:
@@ -297,7 +300,7 @@ class BaseNNCompose(BaseNN):
     pargs = ['combine']
     param = {'combine': ('categorical', ['sum', 'sum_weighted', 'cat'], {}, lambda x: x)}
 
-    def init_channel_list(self, conv: str, in_channels: int, hidden_channels: int, out_channels: int, **kwargs) -> List[int]:
+    def init_channel_list(self, conv: str, in_channels: int, hidden_channels: int, out_channels: int, **kwargs) -> list[int]:
         """
         Attributes:
             channel_list: width for each conv channel
@@ -330,7 +333,7 @@ class BaseNNCompose(BaseNN):
             self.gamma = nn.Parameter(torch.ones(n_conv, channel_list[self.in_layers + self.conv_layers]))
         return channel_list
 
-    def _set_conv_attr(self, key: str) -> List[Callable]:
+    def _set_conv_attr(self, key: str) -> list[Callable]:
         # NOTE: return a list, not callable
         if hasattr(self.convs[0][0], key):
             lst = [getattr(channel[0], key) for channel in self.convs]
@@ -380,7 +383,7 @@ class BaseNNCompose(BaseNN):
         x: Tensor,
         edge_index: Adj,
         batch: OptTensor = None,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> Tensor:
         r"""Decoupled propagation step for calling the convolutional module.
         """

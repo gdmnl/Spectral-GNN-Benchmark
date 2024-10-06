@@ -10,11 +10,11 @@ class Iterative(BaseNN):
     r"""Iterative structure with matrix transformation each hop of propagation.
 
     Args:
-        bias (Optional[bool]): whether learn an additive bias in conv.
-        weight_initializer (Optional[str]): The initializer for the weight
+        bias (bool | None): whether learn an additive bias in conv.
+        weight_initializer (str | None): The initializer for the weight
             matrix (:obj:`"glorot"`, :obj:`"uniform"`, :obj:`"kaiming_uniform"`,
             or :obj:`None`).
-        bias_initializer (Optional[str]): The initializer for the bias vector
+        bias_initializer (str | None): The initializer for the bias vector
             (:obj:`"zeros"` or :obj:`None`).
         conv, num_hops, in_channels, hidden_channels, out_channels:
             args for :class:`BaseNN`
@@ -59,11 +59,11 @@ class IterativeCompose(BaseNNCompose):
     r"""Iterative structure with matrix transformation each hop of propagation.
 
     Args:
-        bias (Optional[bool]): whether learn an additive bias in conv.
-        weight_initializer (Optional[str]): The initializer for the weight
+        bias (bool | None): whether learn an additive bias in conv.
+        weight_initializer (str | None): The initializer for the weight
             matrix (:obj:`"glorot"`, :obj:`"uniform"`, :obj:`"kaiming_uniform"`,
             or :obj:`None`).
-        bias_initializer (Optional[str]): The initializer for the bias vector
+        bias_initializer (str | None): The initializer for the bias vector
             (:obj:`"zeros"` or :obj:`None`).
         combine: How to combine different channels of convs. (:obj:`sum`,
             :obj:`sum_weighted`, or :obj:`cat`).

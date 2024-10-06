@@ -3,7 +3,7 @@ from functools import wraps
 
 
 def load_import(class_name, module_name):
-    r"""Simple dynamic import for 'module.class'"""
+    r"""Simple dynamic import for ``module.class``"""
     module = importlib.import_module(module_name)
     class_obj = getattr(module, class_name)
     if isinstance(class_obj, type):
@@ -16,14 +16,16 @@ def resolve_func(nargs=1):
     Args:
         nargs: The number of arguments to pass to the decorated function. Arguments
         beyond this number will be passed to the return function.
-    Examples:
-        ```python
+    Examples::
+
         @resolve_func(1)
         def foo(bar):
             return bar
-        foo(1)  # 1
-        foo(lambda x: x+1, 2)  # 3
-        ```
+
+        >>> foo(1)
+        1
+        >>> foo(lambda x: x+1, 2)
+        3
     """
     def decorator(func):
         @wraps(func)
@@ -40,7 +42,20 @@ def resolve_func(nargs=1):
 
 
 class CallableDict(dict):
+    """
+    A dictionary subclass that allows its values to be called as functions.
+    """
+
     def __call__(self, key, *args):
+        r"""Get key value and call it with args if it is callable.
+
+        Args:
+            key: The key to get the value from.
+            *args: Arguments to pass to the indexed value if it is callable.
+        Returns:
+            ret (Any | list): If the value is callable, returns the result of
+            calling it with args. Otherwise, returns the value.
+        """
         def _get_callable(key):
             ret = self.get(key, None)
             if callable(ret):
@@ -54,19 +69,28 @@ class CallableDict(dict):
         return _get_callable(key)
 
     @classmethod
-    def to_callableVal(cls, dct, keys=None):
-        keys = keys or dct.keys()
-        for key in keys:
-            if isinstance(dct[key], dict):
-                dct[key] = cls(dct[key])
-        return dct
+    def to_callableVal(cls, dct, keys:list=None, reckeys:list=[]):
+        r"""Converts the sub-dictionaries of the specified keys in the
+        dictionary to :class:`CallableDict`.
 
-    @classmethod
-    def to_subcallableVal(cls, dct, keys=[]):
+        Args:
+            dct (dict): The dictionary to convert.
+            keys (list[str]): The keys to convert. If None, converts all sub-dictionaries.
+            reckeys (list[str]): The keys to recursively convert sub-sub-dictionaries.
+        Returns:
+            dct (dict): The dictionary with the specified keys converted to :class:`CallableDict`.
+        Examples::
+
+            dct = {'key0': Dict0, 'key1': Dict1, 'key2': Dict2}
+            dct = CallableDict.to_callableVal(dct, keys=['key1'], reckeys=['key2'])
+            # dct = {'key0': Dict0, 'key1': CallableDict1, 'key2': Dict2},
+            # and each sub-dictionary in 'key2' is converted to CallableDict.
+        """
+        keys = keys or dct.keys()
         for key in dct:
-            if key in keys:
+            if key in reckeys:
                 dct[key] = cls.to_callableVal(dct[key])
-            else:
+            elif key in keys:
                 if isinstance(dct[key], dict):
                     dct[key] = cls(dct[key])
         return dct

@@ -3,7 +3,6 @@
 Author: nyLiao
 File Created: 2024-02-26
 """
-from typing import Tuple
 from argparse import Namespace
 import logging
 import torch.nn as nn
@@ -40,7 +39,7 @@ class ModelLoader(object):
         self.res_logger = res_logger or ResLogger()
 
     @staticmethod
-    def get_name(args: Namespace) -> Tuple[str]:
+    def get_name(args: Namespace) -> tuple[str]:
         """Get model+conv name for logging path from argparse input without instantiation.
         Wrapper for :func:`pyg_spectral.nn.get_nn_name()`.
 
@@ -51,7 +50,7 @@ class ModelLoader(object):
                 * args.conv (str): Convolution layer name.
                 * other args specified in module :attr:`name` function.
         Returns:
-            nn_name (Tuple[str]): Name strings ``(model_name, conv_name)``.
+            nn_name (tuple[str]): Name strings ``(model_name, conv_name)``.
         """
         return get_nn_name(args.model, args.conv, args)
 
@@ -75,7 +74,7 @@ class ModelLoader(object):
             'CppPrecFixed':     TrnMinibatch,
         }[model_repr]
 
-    def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
+    def _resolve_import(self, args: Namespace) -> tuple[str, str, dict]:
         class_name = self.model
         module_name = get_model_regi(self.model, 'module', args)
         kwargs = set_pargs(self.model, self.conv, args)
@@ -103,7 +102,7 @@ class ModelLoader(object):
         # <<<<<<<<<<
         return class_name, module_name, kwargs
 
-    def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
+    def get(self, args: Namespace) -> tuple[nn.Module, TrnBase]:
         r"""Load model with specified arguments.
 
         Args:
@@ -143,7 +142,7 @@ class ModelLoader(object):
 class ModelLoader_Trial(ModelLoader):
     r"""Reuse necessary data for multiple runs.
     """
-    def get(self, args: Namespace) -> Tuple[nn.Module, TrnBase]:
+    def get(self, args: Namespace) -> tuple[nn.Module, TrnBase]:
         self.signature_lst = ['num_hops', 'in_layers', 'out_layers', 'hidden_channels', 'dropout_lin', 'dropout_conv']
         self.signature = {key: getattr(args, key) for key in self.signature_lst}
 

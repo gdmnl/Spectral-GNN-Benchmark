@@ -1,5 +1,5 @@
 import os.path as osp
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 from argparse import Namespace
 
 import numpy as np
@@ -46,8 +46,8 @@ class LINKX(InMemoryDataset):
         self,
         root: str,
         name: str,
-        transform: Optional[Callable] = None,
-        pre_transform: Optional[Callable] = None,
+        transform: Callable | None = None,
+        pre_transform: Callable | None = None,
         force_reload: bool = False,
     ) -> None:
         self.name = name.lower()
@@ -156,8 +156,8 @@ class FB100(InMemoryDataset):
         self,
         root: str,
         name: str,
-        transform: Optional[Callable] = None,
-        pre_transform: Optional[Callable] = None,
+        transform: Callable | None = None,
+        pre_transform: Callable | None = None,
         force_reload: bool = False,
     ) -> None:
         self.name = name.lower()

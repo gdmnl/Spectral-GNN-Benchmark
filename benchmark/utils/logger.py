@@ -3,7 +3,7 @@
 Author: nyLiao
 File Created: 2023-03-20
 """
-from typing import Tuple, List, Dict, Callable, Union, Any
+from typing import Callable, Any
 from pathlib import Path
 
 import os
@@ -28,7 +28,7 @@ warnings.filterwarnings('ignore', '.*is( an)? experimental.*')
 warnings.filterwarnings('ignore', '.*Attempting to set identical low and high ylims.*')
 
 
-def setup_logger(logpath: Union[Path, str] = LOGPATH,
+def setup_logger(logpath: Path | str = LOGPATH,
                  level_console: int = logging.DEBUG,
                  level_file: int = 15,
                  quiet: bool = True,
@@ -71,8 +71,8 @@ def clear_logger(logger: logging.Logger):
     logger.info(f"[time]: {datetime.now()}")
 
 
-def setup_logpath(dir: Union[Path, str] = LOGPATH,
-                  folder_args: Tuple=None,
+def setup_logpath(dir: Path | str = LOGPATH,
+                  folder_args: tuple=None,
                   quiet: bool = True):
     r"""Resolve log path for saving.
 
@@ -103,7 +103,7 @@ class ResLogger(object):
         quiet: Quiet run without saving file.
     """
     def __init__(self,
-                 logpath: Union[Path, str] = LOGPATH,
+                 logpath: Path | str = LOGPATH,
                  prefix: str = 'summary',
                  suffix: str = None,
                  quiet: bool = True):
@@ -163,7 +163,7 @@ class ResLogger(object):
         self.fmt = self.fmt.combine_first(fmt)
 
     def concat(self,
-               vals: Union[List[Tuple[str, Any, Callable]], Dict],
+               vals: list[tuple[str, Any, Callable]] | dict,
                row: int = 0,
                suffix: str = None):
         r"""Concatenate data entries of a single row to data.
@@ -203,7 +203,7 @@ class ResLogger(object):
 
     def merge(self,
               logger: 'ResLogger',
-              rows: List[int] = None,
+              rows: list[int] = None,
               suffix: str = None):
         r"""Merge from another logger.
 
@@ -222,7 +222,7 @@ class ResLogger(object):
         self._set(logger.data, logger.fmt)
         return self
 
-    def del_col(self, col: Union[List, str]) -> 'ResLogger':
+    def del_col(self, col: list | str) -> 'ResLogger':
         r"""Delete columns from data.
 
         Args:
@@ -234,8 +234,8 @@ class ResLogger(object):
 
     # ===== Output
     def _get(self,
-             col: Union[List, str]=None,
-             row: Union[List, str]=None) -> Union[DataFrame, Series, str]:
+             col: list | str=None,
+             row: list | str=None) -> DataFrame | Series | str:
         r"""Retrieve one or sliced data and apply string format.
 
         Args:
@@ -289,8 +289,8 @@ class ResLogger(object):
                              mode='a', header=f.tell()==0)
 
     def get_str(self,
-                col: Union[List, str] = None,
-                row: Union[List, int] = None,
+                col: list | str = None,
+                row: list | int = None,
                 maxlen: int = -1) -> str:
         r"""Get formatted long string for printing of the specified columns
         and rows.

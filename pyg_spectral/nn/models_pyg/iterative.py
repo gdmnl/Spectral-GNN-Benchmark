@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable
 
 import torch.nn as nn
 import torch.nn.functional as F
@@ -20,16 +20,16 @@ class ChebNet(nn.Module):
     def __init__(self,
             conv: str,
             num_hops: int = 0,
-            in_channels: Optional[int] = None,
-            hidden_channels: Optional[int] = None,
-            out_channels: Optional[int] = None,
+            in_channels: int | None = None,
+            hidden_channels: int | None = None,
+            out_channels: int | None = None,
             dropout_lin: float = 0.,
-            act: Union[str, Callable, None] = "relu",
+            act: str | Callable | None = "relu",
             act_first: bool = False,
-            act_kwargs: Optional[Dict[str, Any]] = None,
-            norm: Union[str, Callable, None] = "batch_norm",
-            norm_kwargs: Optional[Dict[str, Any]] = None,
-            bias: Union[bool, List[bool]] = True,
+            act_kwargs: dict[str, Any | None] = None,
+            norm: str | Callable | None = "batch_norm",
+            norm_kwargs: dict[str, Any | None] = None,
+            bias: bool | list[bool] = True,
             **kwargs):
         super().__init__()
         self.conv1 = ChebConv(

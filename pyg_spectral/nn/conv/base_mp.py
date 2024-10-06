@@ -1,5 +1,5 @@
-from typing import Any, Callable, Dict, List, Tuple, Optional
-type ParamTuple = Tuple[str, tuple, Dict[str, Any], Callable[[Any], str]]
+from typing import Any, Callable, NewType
+ParamTuple = NewType('ParamTuple', tuple[str, tuple, dict[str, Any], Callable[[Any], str]])
 import re
 
 import torch
@@ -27,25 +27,28 @@ class BaseMP(MessagePassing):
     supports_batch: bool = True
     supports_norm_batch: bool = True
     name: Callable[[Any], str]  # args -> str
-    pargs: List[str] = []
-    param: Dict[str, ParamTuple] = {}
-    _cache: Optional[Any]
+    pargs: list[str] = []
+    param: dict[str, ParamTuple] = {}
+    _cache: Any | None
 
     @classmethod
-    def register_classes(cls, registry: Dict[str, Dict[str, Any]] = CONV_REGI_INIT):
+    def register_classes(cls, registry: dict[str, dict[str, Any]] = None) -> dict:
         r"""Register args for all subclass.
 
         Args:
-            name (Dict[str, str]): Conv class logging path name.
-            pargs (Dict[str, List[str]]): Conv arguments from argparse.
-            pargs_default (Dict[str, Dict[str, Any]]): Default values for model arguments. Not recommended.
-            param (Dict[str, Dict[str, ParamTuple]]): Conv parameters to tune.
+            name (dict[str, str]): Conv class logging path name.
+            pargs (dict[str, list[str]]): Conv arguments from argparse.
+            pargs_default (dict[str, dict[str, Any]]): Default values for model arguments. Not recommended.
+            param (dict[str, dict[str, ParamTuple]]): Conv parameters to tune.
 
                 * (str) parameter type,
                 * (tuple) args for :func:`optuna.trial.suggest_<type>`,
                 * (dict) kwargs for :func:`optuna.trial.suggest_<type>`,
                 * (callable) format function to str.
         """
+        if registry is None:
+            registry = CONV_REGI_INIT
+
         for subcls in cls.__subclasses__():
             subname = subcls.__name__
             # Traverse the MRO and accumulate args from parent classes
@@ -186,7 +189,7 @@ class BaseMP(MessagePassing):
     def get_forward_mat(self,
         x: Tensor,
         edge_index: Adj,
-        comp_scheme: Optional[str] = None
+        comp_scheme: str | None = None
     ) -> dict:
         r"""Get matrices for :meth:`forward()`. Called during :meth:`forward()`.
 

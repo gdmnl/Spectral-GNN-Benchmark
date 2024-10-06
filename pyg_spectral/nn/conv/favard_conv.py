@@ -1,4 +1,3 @@
-from typing import Union
 import copy
 import torch
 import torch.nn as nn
@@ -83,7 +82,7 @@ class FavardConv(BaseMP):
         x: Tensor,
         x_1: Tensor,
         prop: Adj,
-        alpha_1: Union[nn.Parameter, nn.Module]
+        alpha_1: nn.Parameter | nn.Module
     ) -> dict:
         r"""
         Returns:

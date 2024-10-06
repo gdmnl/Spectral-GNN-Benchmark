@@ -3,7 +3,7 @@
 Author: nyLiao
 File Created: 2023-03-20
 """
-from typing import Union, Callable
+from typing import Callable
 from pathlib import Path
 
 import copy
@@ -26,12 +26,12 @@ class CkptLogger(object):
         metric_cmp: Comparison function for the metric. Can be 'max' or 'min'.
     """
     def __init__(self,
-                 logpath: Union[Path, str],
+                 logpath: Path | str,
                  patience: int = -1,
                  period: int = 0,
                  prefix: str = 'model',
                  storage: str = 'state_gpu',
-                 metric_cmp: Union[Callable[[float, float], bool], str]='max'):
+                 metric_cmp: Callable[[float, float], bool] | str='max'):
         self.logpath = Path(logpath)
         self.prefix = prefix
         self.filetype = 'pth'

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch
 from torch import Tensor
 from torch_geometric.typing import Adj, OptTensor
@@ -16,7 +14,7 @@ class PrecomputedFixed(DecoupledFixed):
 
     Args:
         theta_scheme (str): Method to generate decoupled parameters.
-        theta_param (Optional[float]): Hyperparameter for the scheme.
+        theta_param (float | None): Hyperparameter for the scheme.
         conv, num_hops, in_channels, hidden_channels, out_channels:
             args for :class:`BaseNN`
         in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
@@ -28,7 +26,7 @@ class PrecomputedFixed(DecoupledFixed):
     name = 'PrecomputedFixed'
     param = {'in_layers': ('int', (0, 0), {}, lambda x: x),}
 
-    def __init__(self, in_layers: Optional[int] = None, **kwargs):
+    def __init__(self, in_layers: int | None = None, **kwargs):
         assert in_layers is None or in_layers == 0, "PrecomputedFixed does not support in_layers."
         super(PrecomputedFixed, self).__init__(in_layers=in_layers, **kwargs)
 
@@ -50,7 +48,7 @@ class PrecomputedFixed(DecoupledFixed):
     def forward(self,
         x: Tensor,
         batch: OptTensor = None,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> Tensor:
         r"""
         Args:
@@ -75,7 +73,7 @@ class PrecomputedVar(DecoupledVar):
 
     Args:
         theta_scheme (str): Method to generate decoupled parameters.
-        theta_param (Optional[float]): Hyperparameter for the scheme.
+        theta_param (float | None): Hyperparameter for the scheme.
         conv, num_hops, in_channels, hidden_channels, out_channels:
             args for :class:`BaseNN`
         in_layers, out_layers, dropout_lin, dropout_conv, lib_conv:
@@ -87,7 +85,7 @@ class PrecomputedVar(DecoupledVar):
     name = 'PrecomputedVar'
     param = {'in_layers': ('int', (0, 0), {}, lambda x: x),}
 
-    def __init__(self, in_layers: Optional[int] = None, **kwargs):
+    def __init__(self, in_layers: int | None = None, **kwargs):
         assert in_layers is None or in_layers == 0, "PrecomputedVar does not support in_layers."
         super(PrecomputedVar, self).__init__(in_layers=in_layers, **kwargs)
 
@@ -117,7 +115,7 @@ class PrecomputedVar(DecoupledVar):
     def forward(self,
         xs: Tensor,
         batch: OptTensor = None,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> Tensor:
         r"""
         Args:
@@ -145,8 +143,8 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
     Fixed scalar propagation parameters and accumulating precompute results.
 
     Args:
-        theta_scheme (List[str]): Method to generate decoupled parameters.
-        theta_param (List[float], optional): Hyperparameter for the scheme.
+        theta_scheme (list[str]): Method to generate decoupled parameters.
+        theta_param (list[float], optional): Hyperparameter for the scheme.
         combine: How to combine different channels of convs. (:obj:`sum`,
             :obj:`sum_weighted`, or :obj:`cat`).
         conv, num_hops, in_channels, hidden_channels, out_channels:
@@ -182,7 +180,7 @@ class PrecomputedFixedCompose(DecoupledFixedCompose):
     def forward(self,
         x: Tensor,
         batch: OptTensor = None,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> Tensor:
         r"""
         Args:
@@ -214,8 +212,8 @@ class PrecomputedVarCompose(DecoupledVarCompose):
     Learnable scalar propagation parameters and storing all intermediate precompute results.
 
     Args:
-        theta_scheme (List[str]): Method to generate decoupled parameters.
-        theta_param (List[float], optional): Hyperparameter for the scheme.
+        theta_scheme (list[str]): Method to generate decoupled parameters.
+        theta_param (list[float], optional): Hyperparameter for the scheme.
         combine: How to combine different channels of convs. (:obj:`sum`,
             :obj:`sum_weighted`, or :obj:`cat`).
         conv, num_hops, in_channels, hidden_channels, out_channels:
@@ -259,7 +257,7 @@ class PrecomputedVarCompose(DecoupledVarCompose):
     def forward(self,
         xs: Tensor,
         batch: OptTensor = None,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
     ) -> Tensor:
         r"""
         Args:

@@ -1,5 +1,3 @@
-from typing import Optional, Tuple, Union
-
 import torch
 from torch import Tensor
 
@@ -11,11 +9,11 @@ from torch_geometric.utils.num_nodes import maybe_num_nodes
 def get_laplacian(
     edge_index: Adj,
     edge_weight: OptTensor = None,
-    normalization: Optional[bool] = None,
+    normalization: bool | None = None,
     diag: float = 1.0,
-    dtype: Optional[torch.dtype] = None,
-    num_nodes: Optional[int] = None,
-) -> Union[Tuple[Tensor, Tensor], SparseTensor]:
+    dtype: torch.dtype | None = None,
+    num_nodes: int | None = None,
+) -> tuple[Tensor, Tensor] | SparseTensor:
     r"""Computes the graph Laplacian of the graph given by :obj:`edge_index`
     and optional :obj:`edge_weight`.
     Remove the normalization of graph adjacency matrix in

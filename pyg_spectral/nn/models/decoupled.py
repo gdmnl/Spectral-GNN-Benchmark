@@ -1,5 +1,3 @@
-from typing import List, Union
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -25,7 +23,7 @@ theta_param = CallableDict({
 })
 
 
-def gen_theta(num_hops: int, scheme: str, param: Union[float, List[float]] = None) -> Tensor:
+def gen_theta(num_hops: int, scheme: str, param: float | list[float] = None) -> Tensor:
     r"""Generate list of hop parameters based on given scheme.
 
     Args:
@@ -231,8 +229,8 @@ class DecoupledFixedCompose(BaseNNCompose):
     Fixed scalar propagation parameters.
 
     Args:
-        theta_scheme (List[str]): Method to generate decoupled parameters.
-        theta_param (List[float], optional): Hyperparameter for the scheme.
+        theta_scheme (list[str]): Method to generate decoupled parameters.
+        theta_param (list[float], optional): Hyperparameter for the scheme.
         combine: How to combine different channels of convs. (:obj:`sum`,
             :obj:`sum_weighted`, or :obj:`cat`).
         conv, num_hops, in_channels, hidden_channels, out_channels:
@@ -291,8 +289,8 @@ class DecoupledVarCompose(BaseNNCompose):
     Learnable scalar propagation parameters.
 
     Args:
-        theta_scheme (List[str]): Method to generate decoupled parameters.
-        theta_param (List[float], optional): Hyperparameter for the scheme.
+        theta_scheme (list[str]): Method to generate decoupled parameters.
+        theta_param (list[float], optional): Hyperparameter for the scheme.
         combine: How to combine different channels of convs. (:obj:`sum`,
             :obj:`sum_weighted`, or :obj:`cat`).
         conv, num_hops, in_channels, hidden_channels, out_channels:

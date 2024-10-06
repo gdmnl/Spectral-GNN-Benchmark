@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import torch
 import torch.nn as nn
 
@@ -17,7 +15,7 @@ class TensorStandardScaler(nn.Module):
         self.mean, self.std = None, None
 
     @torch.no_grad()
-    def fit(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def fit(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Compute the mean and std to be used for later scaling.
 

@@ -1,4 +1,3 @@
-from typing import Tuple
 from argparse import Namespace
 import logging
 
@@ -63,7 +62,7 @@ class RegressionLoader(object):
         ])
 
     # ===== Data acquisition
-    def _resolve_import(self, args: Namespace) -> Tuple[str, str, dict]:
+    def _resolve_import(self, args: Namespace) -> tuple[str, str, dict]:
         assert self.data in ['2dgrid']
         module_name = 'dataset'
         class_name = 'Grid2D'

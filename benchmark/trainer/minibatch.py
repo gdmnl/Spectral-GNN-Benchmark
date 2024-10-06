@@ -3,7 +3,7 @@
 Author: nyLiao
 File Created: 2024-03-03
 """
-from typing import Tuple, Generator
+from typing import Generator
 import logging
 from argparse import Namespace
 

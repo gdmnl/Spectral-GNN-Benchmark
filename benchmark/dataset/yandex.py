@@ -1,5 +1,5 @@
 import os.path as osp
-from typing import Callable, Optional
+from typing import Callable
 from argparse import Namespace
 
 import numpy as np
@@ -26,8 +26,8 @@ class Yandex(InMemoryDataset):
         self,
         root: str,
         name: str,
-        transform: Optional[Callable] = None,
-        pre_transform: Optional[Callable] = None,
+        transform: Callable | None = None,
+        pre_transform: Callable | None = None,
         force_reload: bool = False,
     ) -> None:
         self.name = name.lower()
