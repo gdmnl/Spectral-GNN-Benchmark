@@ -45,16 +45,14 @@ PARLIST="dropout_lin,lr_lin,wd_lin"
 PARLIST="normg,dropout_conv,$PARLIST"
     # Linear
     python run_param.py  --data $data --model $model --conv AdjiConv --param $PARLIST "${ARGS_P[@]}" \
-        --theta_scheme ones --beta 1.0
+        --beta 1.0
     python run_single.py --data $data --model $model --conv AdjiConv "${ARGS_S[@]}" \
-        --theta_scheme ones --beta 1.0
+        --beta 1.0
 
 PARLIST="beta,$PARLIST"
     # PPR
-    python run_param.py  --data $data --model $model --conv AdjResConv --param $PARLIST "${ARGS_P[@]}" \
-        --theta_scheme appr
-    python run_single.py --data $data --model $model --conv AdjResConv "${ARGS_S[@]}" \
-        --theta_scheme appr
+    python run_param.py  --data $data --model $model --conv AdjResConv --param $PARLIST "${ARGS_P[@]}"
+    python run_single.py --data $data --model $model --conv AdjResConv "${ARGS_S[@]}"
 
 : '
 # ========== PyG

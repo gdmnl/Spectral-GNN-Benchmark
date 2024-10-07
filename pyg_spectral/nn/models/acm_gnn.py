@@ -31,6 +31,7 @@ class ACMGNN(BaseNN):
     # FEATURE: separate arch
     name = 'Iterative'
     conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
+    pargs = ['theta_scheme']
 
     def init_conv(self,
         conv: str,
@@ -83,6 +84,7 @@ class ACMGNNDec(BaseNN):
     # FEATURE: separate arch
     name = 'DecoupledVar'
     conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
+    pargs = ['theta_scheme']
 
     def init_conv(self,
         conv: str,

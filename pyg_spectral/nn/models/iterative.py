@@ -124,9 +124,7 @@ class IterativeCompose(BaseNNCompose):
 
 class IterativeFixed(Iterative):
     name = 'IterativeFixed'
-    conv_name = lambda x, args: '-'.join([x, args.theta_scheme])
 
 
 class IterativeFixedCompose(IterativeCompose):
     name = 'IterativeFixed'
-    conv_name = lambda x, args: '-'.join([x, args.theta_scheme])

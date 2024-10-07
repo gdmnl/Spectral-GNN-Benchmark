@@ -15,14 +15,14 @@ conv_regi = update_regi(conv_regi, conv_regi_pyg)
 model_regi = BaseNN.register_classes()
 model_regi = update_regi(model_regi, model_regi_pyg)
 
-conv_regi  = CallableDict.to_callableVal(conv_regi, ['pargs_default', 'param'])
+conv_regi  = CallableDict.to_callableVal(conv_regi, reckeys=['pargs_default', 'param'])
 r'''Fields:
     * name (CallableDict[str, str]): Conv class logging path name.
     * pargs (CallableDict[str, list[str]]): Conv arguments from argparse.
     * pargs_default (dict[str, CallableDict[str, Any]]): Default values for model arguments. Not recommended.
     * param (dict[str, CallableDict[str, ParamTuple]]): Conv parameters to tune.
 '''
-model_regi = CallableDict.to_callableVal(model_regi, ['pargs_default', 'param'])
+model_regi = CallableDict.to_callableVal(model_regi, reckeys=['pargs_default', 'param'])
 r'''Fields:
     name (CallableDict[str, str]): Model class logging path name.
     conv_name (CallableDict[str, Callable[[str, Any], str]]): Wrap conv logging path name.
@@ -37,6 +37,11 @@ full_pargs.update(v for pargs in model_regi['pargs'].values() for v in pargs)
 
 compose_name = {
     'ACMGNN': {
+        'ACMConv-1-low-high':     'FBGNNI',
+        'ACMConv-2-low-high':     'FBGNNII',
+        'ACMConv-1-low-high-id':  'ACMGNNI',
+        'ACMConv-2-low-high-id':  'ACMGNNII',},
+    'ACMGNNDec': {
         'ACMConv-1-low-high':     'FBGNNI',
         'ACMConv-2-low-high':     'FBGNNII',
         'ACMConv-1-low-high-id':  'ACMGNNI',
@@ -102,6 +107,22 @@ def get_conv_regi(conv: str, k: str, args=None) -> str:
     if not conv in conv_regi[k]:
         return None
     return conv_regi[k](conv, args) if args else conv_regi[k][conv]
+
+
+def get_conv_subregi(conv: str, k: str, pargs: str, args=None) -> str:
+    r"""Getter for calling a sub-CallableDict in :attr:`conv_regi`.
+
+    Args:
+        conv: The name of the convolution.
+        k: The key in :attr:`conv_regi`.
+        pargs: The key in the sub-CallableDict.
+        args: Configuration arguments.
+    Returns:
+        value (str): The value of the sub-CallableDict.
+    """
+    if ',' in conv:
+        return [conv_regi[k][channel](pargs, args) for channel in conv.split(',')]
+    return conv_regi[k][conv](pargs, args) if args else conv_regi[k][conv][pargs]
 
 
 def get_nn_name(model: str, conv: str, args) -> str:

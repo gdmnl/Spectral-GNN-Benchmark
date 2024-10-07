@@ -8,7 +8,7 @@ import optuna
 import uuid
 from copy import deepcopy
 
-from pyg_spectral.nn import get_model_regi, get_conv_regi
+from pyg_spectral.nn import get_model_regi, get_conv_subregi
 from pyg_spectral.nn.parse_args import compose_param
 from pyg_spectral.utils import CallableDict
 
@@ -45,7 +45,23 @@ class TrnWrapper(object):
         }[self.model_loader.get_trn(args)]
 
     def _get_suggest(self, trial, key):
+        r"""Get the suggested value and format of the hyperparameter.
+
+        Args:
+            trial (optuna.Trial): The trial object.
+            key (str): The hyperparameter key in :obj:`args.param`.
+        Returns:
+            val (Any | list[Any]): The suggested value.
+            fmt (Callable): The format of the suggested value.
+        """
         def parse_param(val):
+            r"""From :class:`ParamTuple` to suggest trial value and format.
+            Args:
+                val (ParamTuple | list[ParamTuple]): registry entry.
+            Returns:
+                val (Any | list[Any]): The suggested value.
+                fmt (Callable): The format of the suggested value
+            """
             if isinstance(val, list):
                 fmt = val[0][-1]
                 val = [getattr(trial, 'suggest_'+func)(key+'-'+str(i), *fargs, **fkwargs) for i, (func, fargs, fkwargs, _) in enumerate(val)]
@@ -53,19 +69,21 @@ class TrnWrapper(object):
             func, fargs, fkwargs, fmt = val
             return getattr(trial, 'suggest_'+func)(key, *fargs, **fkwargs), fmt
 
-        # Alias compose models
+        # Alias param for compose models
         if (self.args.model in compose_param and
             self.model_loader.conv_repr in compose_param[self.args.model] and
             key in compose_param[self.args.model][self.model_loader.conv_repr]):
             return parse_param(compose_param[self.args.model][self.model_loader.conv_repr](key, self.args))
 
+        # Param of trainer and model level
         single_param = SingleGraphLoader_Trial.param | ModelLoader_Trial.param | self.trn_cls.param
         single_param = CallableDict(single_param)
         single_param |= get_model_regi(self.args.model, 'param')
         if key in single_param:
             return parse_param(single_param(key, self.args))
 
-        return parse_param(get_conv_regi(self.args.conv, 'param')(key, self.args))
+        # Param of conv level
+        return parse_param(get_conv_subregi(self.args.conv, 'param', key, self.args))
 
     def __call__(self, trial):
         args = deepcopy(self.args)
