@@ -1,22 +1,22 @@
 # search param + best, fullbatch+Decoupled
 DEV=${1:-0}
-SEED_P=1
-SEED_S="20,21,22,23,24"
+SEED_P="1,2"
+SEED_S="20,21,22,23,24,25,26,27,28,29"
 ARGS_ALL=(
     "--dev" "$DEV"
     "--num_hops" "10"
     "--in_layers" "1"
     "--out_layers" "1"
     "--hidden_channels" "128"
+    "--suffix" "fbdc"
 )
 # run_param args
 ARGS_P=(${ARGS_ALL[@]}
     "--seed" "$SEED_P"
-    "--n_trials" "50"
+    "--n_trials" "100"
     "--loglevel" "30"
     "--epoch" "200"
     "--patience" "50"
-    "--suffix" "fb"
 )
 # run_single args
 ARGS_S=(${ARGS_ALL[@]}
@@ -24,13 +24,12 @@ ARGS_S=(${ARGS_ALL[@]}
     "--loglevel" "25"
     "--epoch" "500"
     "--patience" "-1"
-    "--suffix" "summary"
     "--param"
 )
 
-DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire" \
-       "amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94" "ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" \
-       "ogbn-mag" "pokec")
+DATAS=("cora" "citeseer" "pubmed" "minesweeper" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire" \
+       "questions" "tolokers" "amazon_ratings" "flickr" "penn94" "ogbn-arxiv" "arxiv-year" "genius" \
+       "reddit" "twitch-gamer" "ogbn-mag" "pokec")
 
 for data in ${DATAS[@]}; do
 # ========== fix

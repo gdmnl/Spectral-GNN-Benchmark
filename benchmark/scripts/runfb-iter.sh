@@ -1,22 +1,22 @@
 # search param + best, fullbatch+Iterative
 DEV=${1:-0}
-SEED_P=1
-SEED_S="20,21,22,23,24"
+SEED_P="1,2"
+SEED_S="20,21,22,23,24,25,26,27,28,29"
 ARGS_ALL=(
     "--dev" "$DEV"
-    "--num_hops" "2"
+    "--num_hops" "8"
     "--in_layers" "1"
     "--out_layers" "1"
     "--hidden_channels" "128"
+    "--suffix" "fbit"
 )
 # run_param args
 ARGS_P=(${ARGS_ALL[@]}
     "--seed" "$SEED_P"
-    "--n_trials" "50"
+    "--n_trials" "100"
     "--loglevel" "30"
     "--epoch" "200"
     "--patience" "50"
-    "--suffix" "fb"
 )
 # run_single args
 ARGS_S=(${ARGS_ALL[@]}
@@ -24,13 +24,12 @@ ARGS_S=(${ARGS_ALL[@]}
     "--loglevel" "25"
     "--epoch" "500"
     "--patience" "-1"
-    "--suffix" "summary"
     "--param"
 )
 
 DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire" \
-       "amazon_ratings" "minesweeper" "tolokers" "questions" "reddit" "penn94" "ogbn-arxiv" "arxiv-year" "genius" "twitch-gamer" \
-       "ogbn-mag" "pokec")
+       "amazon_ratings" "minesweeper" "tolokers" "questions" "penn94" "ogbn-arxiv" "arxiv-year" "genius" \
+       "reddit" "twitch-gamer" "ogbn-mag" "pokec")
 
 for data in ${DATAS[@]}; do
 # ========== fix
@@ -71,8 +70,8 @@ ARGS_S=("${ARGS_S[@]}"
     "--combine" "sum_weighted")
 PARLIST="normg,dropout_lin,dropout_conv,lr_lin,lr_conv,wd_lin,wd_conv"
     # FiGURe
-    python run_param.py  --data $data --model IterativeVarCompose --conv AdjConv,ChebConv,BernConv --param $PARLIST "${ARGS_P[@]}"
-    python run_single.py --data $data --model IterativeVarCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
+    python run_param.py  --data $data --model IterativeCompose --conv AdjConv,ChebConv,BernConv --param $PARLIST "${ARGS_P[@]}"
+    python run_single.py --data $data --model IterativeCompose --conv AdjConv,ChebConv,BernConv "${ARGS_S[@]}"
 
     # ACMGNN/FBGNN-I/II
     for alpha in 1 2; do
@@ -91,7 +90,7 @@ ARGS_P=("${ARGS_P[@]}"
 ARGS_S=("${ARGS_S[@]}"
     "--theta_scheme" "ones"
     "--theta_param" "1.0")
-    model="IterativeVar"
+    model="Iterative"
     CONVS=("AdjiConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" \
            "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
     for conv in ${CONVS[@]}; do

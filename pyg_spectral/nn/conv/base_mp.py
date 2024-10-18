@@ -36,7 +36,7 @@ class BaseMP(MessagePassing):
         r"""Register args for all subclass.
 
         Args:
-            name (dict[str, str]): Conv class logging path name.
+            name (dict[str, Callable[[Any], str]]): Conv class logging path name.
             pargs (dict[str, list[str]]): Conv arguments from argparse.
             pargs_default (dict[str, dict[str, Any]]): Default values for model arguments. Not recommended.
             param (dict[str, dict[str, ParamTuple]]): Conv parameters to tune.

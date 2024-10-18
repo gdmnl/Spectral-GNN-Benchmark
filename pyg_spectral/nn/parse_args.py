@@ -36,6 +36,8 @@ full_pargs = set(v for pargs in conv_regi['pargs'].values() for v in pargs)
 full_pargs.update(v for pargs in model_regi['pargs'].values() for v in pargs)
 
 compose_name = {
+    'AdaGNN': {
+        'LapiConv': 'AdaGNN',},
     'ACMGNN': {
         'ACMConv-1-low-high':     'FBGNNI',
         'ACMConv-2-low-high':     'FBGNNII',
@@ -46,6 +48,8 @@ compose_name = {
         'ACMConv-2-low-high':     'FBGNNII',
         'ACMConv-1-low-high-id':  'ACMGNNI',
         'ACMConv-2-low-high-id':  'ACMGNNII',},
+    'IterativeCompose': {
+        'AdjConv,ChebConv,BernConv': 'FiGURe',},
     'DecoupledFixedCompose': {
         'AdjiConv,AdjiConv-ones,ones': 'FAGNN',
         'Adji2Conv,Adji2Conv-gaussian,gaussian': 'G2CN',

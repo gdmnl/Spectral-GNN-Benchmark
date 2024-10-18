@@ -39,6 +39,16 @@ class ModelLoader(object):
         self.res_logger = res_logger or ResLogger()
 
     @staticmethod
+    def available_models() -> list[str]:
+        from pyg_spectral.nn.parse_args import model_regi
+        return model_regi['name'].keys()
+
+    @staticmethod
+    def available_convs() -> list[str]:
+        from pyg_spectral.nn.parse_args import conv_regi
+        return conv_regi['name'].keys()
+
+    @staticmethod
     def get_name(args: Namespace) -> tuple[str]:
         """Get model+conv name for logging path from argparse input without instantiation.
         Wrapper for :func:`pyg_spectral.nn.get_nn_name()`.
@@ -129,14 +139,14 @@ class ModelLoader(object):
         self.logger.log(logging.LTRN, f"[model]: {str(self)}")
         self.logger.log(logging.LTRN, str(model))
         self.logger.info(f"[trainer]: {trn.__name__}")
-        self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
+        self.res_logger.concat([('model', self.model_repr), ('conv', self.conv_repr)])
         return model, trn
 
     def __call__(self, *args, **kwargs):
         return self.get(*args, **kwargs)
 
     def __str__(self) -> str:
-        return f"{self.model}:{self.conv_repr}"
+        return f"{self.model_repr}:{self.conv_repr}"
 
 
 class ModelLoader_Trial(ModelLoader):
@@ -154,7 +164,7 @@ class ModelLoader_Trial(ModelLoader):
         if hasattr(model, 'reset_cache'):
             model.reset_cache()
 
-        self.res_logger.concat([('model', self.model), ('conv', self.conv_repr)])
+        self.res_logger.concat([('model', self.model_repr), ('conv', self.conv_repr)])
         return model, trn
 
     def update(self, args: Namespace, model: nn.Module) -> nn.Module:

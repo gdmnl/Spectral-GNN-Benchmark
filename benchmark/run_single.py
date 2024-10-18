@@ -38,7 +38,7 @@ def reverse_parse(parser, key, val):
 def main(args):
     # ========== Run configuration
     logger = setup_logger(args.logpath, level_console=args.loglevel, quiet=args.quiet)
-    res_logger = ResLogger(prefix=args.suffix, quiet=(args.suffix is None))
+    res_logger = ResLogger(suffix=args.suffix, quiet=(args.suffix is None))
     res_logger.concat([('seed', args.seed),])
     if args.param is not None and args.param != ['']:
         res_logger.concat([(key, getattr(args, key)) for key in args.param])
@@ -50,7 +50,6 @@ def main(args):
     # ========== Load model
     model_loader = ModelLoader(args, res_logger)
     model, trn = model_loader(args)
-    res_logger.suffix = trn.name
 
     # ========== Run trainer
     trn = trn(

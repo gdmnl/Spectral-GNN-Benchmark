@@ -58,7 +58,7 @@ class TrnMinibatch(TrnBase):
             assert isinstance(args.normf, int)
             self.norm_prop = TensorStandardScaler(dim=args.normf)
 
-        self.shuffle = {'train': True, 'val': False, 'test': False}
+        self.shuffle = {'train': True, 'val': False, 'hyperval': False, 'test': False}
         self.embed = None
 
     def clear(self):
@@ -268,7 +268,7 @@ class TrnMinibatch_Trial(TrnMinibatch, TrnBase_Trial):
             storage=self.storage)
 
         self.signature_lst = ['normg', 'alpha', 'beta', 'theta_param']
-        signature = {key: getattr(args, key) for key in self.signature_lst}
+        signature = {key: getattr(args, key) for key in self.signature_lst if hasattr(args, key)}
         if not hasattr(self, 'signature') or self.signature != signature:
             self.signature = signature
             self.embed = None

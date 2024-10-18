@@ -58,6 +58,10 @@ class SingleGraphLoader(object):
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()
 
+    @staticmethod
+    def available_datasets() -> dict:
+        return dataset_map
+
     def get(self, args: Namespace) -> Data:
         r"""Load data based on parameters.
 

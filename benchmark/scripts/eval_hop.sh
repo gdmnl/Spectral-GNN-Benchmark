@@ -2,7 +2,7 @@
 DEV=${1:--1}
 SEED_S="70,71,72"
 
-DATAS=("cora" "citeseer" "pubmed" "flickr" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire")
+DATAS=("cora" "actor" "citeseer" "pubmed" "minesweeper" "chameleon_filtered" "squirrel_filtered" "actor" "roman_empire" "questions" "tolokers" "amazon_ratings" "flickr")
 PARKEY="num_hops"
 PARVALS=(2 4 6 8 10 12 14 16 18 20)
 
@@ -23,16 +23,16 @@ for data in ${DATAS[@]}; do
         )
 
         # MLP
-        python run_single.py --data $data --model MLP \
+        python run_single.py --data $data --model MLP --conv PrecomputedFixed \
             --"$PARKEY" $parval --param $PARKEY "${ARGS_S[@]}" \
             --theta_scheme ones
 
         # Linear
+        model=DecoupledFixed
         python run_single.py --data $data --model $model --conv AdjiConv \
             --"$PARKEY" $parval --param $PARKEY "${ARGS_S[@]}" \
             --theta_scheme ones --beta 1.0
 
-        model=DecoupledFixed
         conv=AdjConv
         SCHEMES=("impulse" "mono" "appr" "hk" "gaussian")
         for scheme in ${SCHEMES[@]}; do
