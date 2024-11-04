@@ -1,0 +1,9 @@
+{
+    "normg": 0.5,
+    "dropout_lin": 0.3,
+    "dropout_conv": 0.8,
+    "lr_lin": 0.0001592,
+    "lr_conv": 0.0002048,
+    "wd_lin": 1.097e-05,
+    "wd_conv": 1.263e-07
+}

@@ -1,0 +1,8 @@
+{
+    "beta": 0.23,
+    "normg": 0.5,
+    "dropout_conv": 0.3,
+    "dropout_lin": 0.1,
+    "lr_lin": 0.009974,
+    "wd_lin": 2.248e-05
+}

@@ -1,0 +1,11 @@
+{
+    "normg": 0.85,
+    "dropout_lin": 0.6,
+    "dropout_conv": 0.2,
+    "lr_lin": 0.0005404,
+    "lr_conv": 0.07495,
+    "wd_lin": 5.179e-07,
+    "wd_conv": 6.321e-06,
+    "beta": "0.95,-0.17",
+    "theta_param": "0.28,0.48"
+}

@@ -1,0 +1,8 @@
+{
+    "theta_param": 0.91,
+    "normg": 0.9,
+    "dropout_conv": 0.7,
+    "dropout_lin": 0.3,
+    "lr_lin": 0.2593,
+    "wd_lin": 4.244e-05
+}
