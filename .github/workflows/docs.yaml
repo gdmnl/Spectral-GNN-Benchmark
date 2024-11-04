@@ -34,6 +34,7 @@ jobs:
           files: |
             benchmark/**
             examples/**
+            config/**
             README.md
             CHANGELOG.md
             requirements.txt

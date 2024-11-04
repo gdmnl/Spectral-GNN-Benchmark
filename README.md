@@ -10,7 +10,7 @@
   <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html"><img src="https://img.shields.io/badge/PyTorch->=2.0-FF6F00?logo=pytorch" alt="PyTorch"></a>
 </div>
 
-`pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations. Our preliminary paper is available on [arXiv](https://arxiv.org/abs/2406.09675).
+`pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations. Our preliminary paper is available on [arXiv](https://arxiv.org/abs/2406.09675). **Artifact** and additional results can be found in the [Appendix](Appendix.pdf).
 
 > [!IMPORTANT]
 > ***Why this project?***  
@@ -65,33 +65,33 @@ For additional installation of the C++ backend, please refer to [propagations/RE
 Acquire results on the effectiveness and efficiency of spectral GNNs.
 Datasets will be automatically downloaded and processed by the code.
 
-#### Run full-batch models (*Table 2, 8, 9*):
+#### Run full-batch models:
 ```bash
 cd benchmark
 bash scripts/runfb.sh
 ```
 
-#### Run mini-batch models (*Table 3, 10, 11*):
+#### Run mini-batch models:
 ```bash
 bash scripts/runmb.sh
 ```
 
 ### Additional Experiments
-#### Effect of graph normalization (*Figure 3, 9*):
+#### Effect of graph normalization:
 ```bash
-bash scripts/eval_degree.sh
+bash scripts/eval_degng.sh
 ```
 
 Figures can be plotted by: [`benchmark/notebook/fig_degng.ipynb`](benchmark/notebook/fig_degng.ipynb).
 
-#### Effect of propagation hops (*Figure 7, 8*):
+#### Effect of propagation hops:
 ```bash
 bash scripts/eval_hop.sh
 ```
 
 Figures can be plotted by: [`benchmark/notebook/fig_hop.ipynb`](benchmark/notebook/fig_hop.ipynb).
 
-#### Frequency response (*Table 12*):
+#### Frequency response:
 ```bash
 bash scripts/exp_regression.sh
 ```
@@ -247,5 +247,5 @@ out = model(x, edge_index)
 
 ## Misc
 - This project is licensed under the [MIT LICENSE](LICENSE).
-- Please export [CITATION](docs/CITATION.cff) by using "Cite this repository" in the right sidebar.
+- Please export [CITATION](CITATION.cff) by using "Cite this repository" in the right sidebar.
 <!-- - Please refer to the [CONTRIBUTING](docs/CONTRIBUTING.md) guide for contributing to this project. -->
