@@ -9,7 +9,7 @@ build-backend="setuptools.build_meta"
 name="pyg_spectral"
 version="1.0.0"
 authors=[
-    {name="Ningyi Liao", email="liao0090@e.ntu.edu.sg"},
+    {name="Anonymous", email="example@email.org"},
 ]
 description="Spectral GNN benchmark based on PyG"
 readme="README.md"

@@ -1,18 +1,7 @@
 # Benchmarking Spectral Graph Neural Networks
 
-<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css">
-<div align="center">
-  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/"><img src="https://github.com/gdmnl/Spectral-GNN-Benchmark/actions/workflows/docs.yaml/badge.svg" alt="Docs"></a>
-  <a href="https://arxiv.org/abs/2406.09675"><img src="https://img.shields.io/badge/arXiv-2406.09675-b31b1b.svg?logo=arxiv" alt="arXiv"></a>
-  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark?tab=MIT-1-ov-file"><img src="https://img.shields.io/github/license/gdmnl/Spectral-GNN-Benchmark?logo=data:image/svg%2bxml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgb25jbGljaz0ibGltcGlhcl9jYW1wb3MoKTtzaG93cHJlc3VwdWVzdG8oZmFsc2UsdHJ1ZSwzKTsiIHN0eWxlPSJjdXJzb3I6cG9pbnRlciI+PGcgZmlsbD0iI2Y1ZjVmNSI+CgkJCTxwYXRoIGQ9Im0yMy45IDkuNy0zLjU0LTcuODktLjAwNS0uMDFhLjU0Mi41NDIgMCAwIDAtLjA0MS0uMDc2bC0uMDE0LS4wMThhLjUzMy41MzMgMCAwIDAtLjEyMi0uMTIybC0uMDE1LS4wMTFhLjUyOC41MjggMCAwIDAtLjA4LS4wNDRsLS4wMjQtLjAwOWEuNTI3LjUyNyAwIDAgMC0uMDY3LS4wMmwtLjAyOC0uMDA3YS41MjQuNTI0IDAgMCAwLS4wOTYtLjAxaC02Ljg1Yy0xLjAyLTEuNTItMS4wMi0xLjU0LTIgMGgtNi44NmEuNTQzLjU0MyAwIDAgMC0uMDk2LjAxbC0uMDI4LjAwN2EuNTE2LjUxNiAwIDAgMC0uMDY3LjAybC0uMDI0LjAxYS41MzcuNTM3IDAgMCAwLS4wOC4wNDNsLS4wMTUuMDExYS41MS41MSAwIDAgMC0uMDU3LjA0N2wtLjAyLjAyYS41NDMuNTQzIDAgMCAwLS4wNDUuMDU1bC0uMDE0LjAxOGEuNTIyLjUyMiAwIDAgMC0uMDQxLjA3NWwtLjAwNS4wMXYuMDAxTC4xMTYgOS43MmEuNTMxLjUzMSAwIDAgMC0uMDk2LjMwNGMwIDIuMjggMS44NiA0LjE0IDQuMTQgNC4xNHM0LjE0LTEuODYgNC4xNC00LjE0YS41My41MyAwIDAgMC0uMDk2LS4zMDRsLTMuMjUtNi4zNyA2LjA3LS4wMjN2MTguMmMtMi41NS4yOTQtNy4wMS4zODEtNyAyLjVoMTZjMC0yLjAzLTQuNDgtMi4yNy03LTIuNXYtMTguMWw1LjY5LS4wMi0yLjkyIDYuNDljMCAuMDAyIDAgLjAwMy0uMDAyLjAwNWwtLjAwNi4wMThhLjU0NS41NDUgMCAwIDAtLjAyMy4wNzVsLS4wMDUuMDJhLjUyNC41MjQgMCAwIDAtLjAxLjA5MnYuMDA4YzAgMi4yOCAxLjg2IDQuMTQgNC4xNCA0LjE0IDIuMjggMCA0LjE0LTEuODYgNC4xNC00LjE0YS41MjguNTI4IDAgMCAwLS4xMi0uMzMyeiI+PC9wYXRoPgo8L2c+PC9zdmc+" alt="License"></a>
-  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark/releases/latest"><img src="https://img.shields.io/github/v/release/gdmnl/Spectral-GNN-Benchmark?include_prereleases&logo=data:image/svg%2bxml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTYgMTYiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0iI2Y1ZjVmNSI+CgkJCTxwYXRoIGQ9Ik0xIDcuNzc1VjIuNzVDMSAxLjc4NCAxLjc4NCAxIDIuNzUgMWg1LjAyNWMuNDY0IDAgLjkxLjE4NCAxLjIzOC41MTNsNi4yNSA2LjI1YTEuNzUgMS43NSAwIDAgMSAwIDIuNDc0bC01LjAyNiA1LjAyNmExLjc1IDEuNzUgMCAwIDEtMi40NzQgMGwtNi4yNS02LjI1QTEuNzUyIDEuNzUyIDAgMCAxIDEgNy43NzVabTEuNSAwYzAgLjA2Ni4wMjYuMTMuMDczLjE3N2w2LjI1IDYuMjVhLjI1LjI1IDAgMCAwIC4zNTQgMGw1LjAyNS01LjAyNWEuMjUuMjUgMCAwIDAgMC0uMzU0bC02LjI1LTYuMjVhLjI1LjI1IDAgMCAwLS4xNzctLjA3M0gyLjc1YS4yNS4yNSAwIDAgMC0uMjUuMjVaTTYgNWExIDEgMCAxIDEgMCAyIDEgMSAwIDAgMSAwLTJaIj48L3BhdGg+CjwvZz48L3N2Zz4=" alt="Contrib"></a>
-  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html"><img src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fgdmnl%2FSpectral-GNN-Benchmark%2Fmain%2Fpyproject.toml&logo=python&label=Python" alt="Python"></a>
-  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html"><img src="https://img.shields.io/badge/PyTorch->=2.0-FF6F00?logo=pytorch" alt="PyTorch"></a>
-</div>
+`pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations. 
 
-`pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations. Our preliminary paper is available on [arXiv](https://arxiv.org/abs/2406.09675). **Artifact** and additional results can be found in the [Appendix](Appendix.pdf).
-
-> [!IMPORTANT]
 > ***Why this project?***  
 > We list the following highlights of our framework compared to PyG and similar works:
 > - **Unified Framework**: We offer a plug-and-play collection for spectral models and filters in unified and efficient implementations, rather than a model-specific design. Our rich collection greatly extends the PyG model zoo.
@@ -20,13 +9,6 @@
 > - **High scalability**: As spectral GNNs are inherently suitable for large-scale learning, our framework is feasible to common scalable learning schemes and acceleration techniques. Several spectral-oriented approximation algorithms are also supported.
 
 ---
-
-<div align="center">
-  <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/">🔍 <b>Documentation</b></a> |
-  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark/">👾 <b>GitHub</b></a> |
-  <a href="https://arxiv.org/abs/2406.09675">📄 <b>Paper</b></a> |
-  <a href="https://github.com/gdmnl/Spectral-GNN-Benchmark#misc">📎 <b>Cite</b></a>
-</div>
 
 - [Installation](#installation)
 - [Reproduce Experiments](#reproduce-experiments)
@@ -244,8 +226,3 @@ out = model(x, edge_index)
 - [ ] Support iterative eigen-decomposition for full-spectrum spectral filters.
   - [ ] Jacobi method
   - [ ] Lanczos method
-
-## Misc
-- This project is licensed under the [MIT LICENSE](LICENSE).
-- Please export [CITATION](CITATION.cff) by using "Cite this repository" in the right sidebar.
-<!-- - Please refer to the [CONTRIBUTING](docs/CONTRIBUTING.md) guide for contributing to this project. -->

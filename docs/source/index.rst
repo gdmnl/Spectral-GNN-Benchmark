@@ -5,12 +5,6 @@
 
 pyg_spectral
 ========================================
-.. sidebar:: Project links
-
-   | 🔍 `Documentation <https://gdmnl.github.io/Spectral-GNN-Benchmark/>`__
-   | 👾 `GitHub <https://github.com/gdmnl/Spectral-GNN-Benchmark/>`__ |gh-bn|
-   | 📄 `Paper <https://arxiv.org/abs/2406.09675>`__
-   | 📎 `Citation <https://github.com/gdmnl/Spectral-GNN-Benchmark#misc>`__
 
 ``pyg_spectral`` is a `PyG <https://pyg.org>`_-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations.
 
@@ -61,8 +55,3 @@ For advanced options, please refer to `Installation Options <_tutorial/installat
    _include/benchmark.dataset
 
 .. [1] Please refer to the `official guide <https://pytorch.org/get-started/locally/>`__ if a specific CUDA version is required for PyTorch.
-
-.. |gh-bn| raw:: html
-
-   <script async defer src="https://buttons.github.io/buttons.js"></script>
-   <a class="github-button" href="https://github.com/gdmnl/Spectral-GNN-Benchmark" vertical-align="middle" data-show-count="true" aria-label="Star gdmnl/Spectral-GNN-Benchmark on GitHub">Star</a>

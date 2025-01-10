@@ -20,7 +20,6 @@ sys.path.insert(1, osp.join(proot, 'benchmark'))
 # sys.path.append(osp.join(osp.dirname(pyg_sphinx_theme.__file__), 'extension'))
 
 project = 'pyg_spectral'
-author = 'Ningyi Liao'
 copyright = f'{datetime.now().year}, NTU'
 version = pyg_spectral.__version__
 
@@ -100,7 +99,7 @@ html_sidebars = { '**': ['globaltoc.html', 'relations.html', 'sourcelink.html', 
 
 html_context = {
     "display_github": True,
-    "github_user": "gdmnl",
+    "github_user": "Anonymous",
     "github_repo": "Spectral-GNN-Benchmark",
     "github_version": "main",
     "conf_py_path": "/docs/source/",
@@ -123,7 +122,7 @@ intersphinx_mapping = {
     'torchmetrics': ('https://lightning.ai/docs/torchmetrics/stable/', None),
 }
 
-code_url = f"https://github.com/gdmnl/Spectral-GNN-Benchmark/blob/main"
+code_url = f"https://anonymous.4open.science/r/Spectral-GNN-053C/blob/main"
 
 def linkcode_resolve(domain, info):
     def _resolve_python(info):

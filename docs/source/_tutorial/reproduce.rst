@@ -28,7 +28,7 @@ Additional Experiments
 
    $ bash scripts/eval_degree.sh
 
-Figures can be plotted by: `benchmark/notebook/fig_degng.ipynb <https://github.com/gdmnl/Spectral-GNN-Benchmark/blob/main/benchmark/notebook/fig_degng.ipynb>`_.
+Figures can be plotted by: `benchmark/notebook/fig_degng.ipynb <https://anonymous.4open.science/r/Spectral-GNN-053C/blob/main/benchmark/notebook/fig_degng.ipynb>`_.
 
 **Effect of propagation hops** (*Figure 7, 8*):
 
@@ -36,7 +36,7 @@ Figures can be plotted by: `benchmark/notebook/fig_degng.ipynb <https://github.c
 
    $ bash scripts/eval_hop.sh
 
-Figures can be plotted by: `benchmark/notebook/fig_hop.ipynb <https://github.com/gdmnl/Spectral-GNN-Benchmark/blob/main/benchmark/notebook/fig_hop.ipynb>`_.
+Figures can be plotted by: `benchmark/notebook/fig_hop.ipynb <https://anonymous.4open.science/r/Spectral-GNN-053C/blob/main/benchmark/notebook/fig_hop.ipynb>`_.
 
 **Frequency response** (*Table 12*):
 
