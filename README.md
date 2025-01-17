@@ -150,7 +150,7 @@ options:
 ```
 
 ### Add New Experiment Dataset
-In `benchmark/trainer/load_data.py`, append the `SingleGraphLoader._resolve_import()` method to include new datasets under respective protocols.
+In `benchmark/trainer/load_data.py`, append the `SingleGraphLoader._resolve_import()` method to include new datasets under respective protocols. `benchmark/dataset/` manages the import of datasets from other frameworks. 
 
 ### Add New Spectral Filter
 New spectral filters to `pyg_spectral/nn/conv/` can be easily implemented by **only three steps**, then enjoys a range of model architectures, analysis utilities, and training schemes.
@@ -215,10 +215,12 @@ out = model(x, edge_index)
 
 ### Covered Datasets
 
+The following datasets are evaluated in the paper and are automatically available in the framework.
+
 | **Source** | **Graph** |
 |:------------:|:----------|
-| [PyG](https://pytorch-geometric.readthedocs.io/en/stable/modules/datasets.html) | cora, citeseer, pubmed, flickr, actor |
-| [OGB](https://ogb.stanford.edu/docs/nodeprop/) | ogbn-arxiv, ogbn-mag, ogbn-products |
+| [PyG](https://pytorch-geometric.readthedocs.io/en/stable/modules/datasets.html) | cora, citeseer, pubmed, flickr, actor, ... |
+| [OGB](https://ogb.stanford.edu/docs/nodeprop/) | ogbn-arxiv, ogbn-mag, ogbn-products, ... |
 | [LINKX](https://github.com/CUAI/Non-Homophily-Large-Scale) | penn94, arxiv-year, genius, twitch-gamer, snap-patients, pokec, wiki |
 | [Yandex](https://github.com/yandex-research/heterophilous-graphs) | chameleon, squirrel, roman-empire, minesweeper, amazon-ratings, questions, tolokers |
 
@@ -238,9 +240,10 @@ out = model(x, edge_index)
 - [ ] Support C++ propagation backend with efficient algorithms.
   - [x] Unifews
   - [ ] SGC
-  - [ ] GBP, AGP
+  - [ ] GBP/AGP
 - [ ] Support more transformation operations.
   - [ ] Generalize ACMGNN
+  - [ ] LD2 
 - [ ] Support iterative eigen-decomposition for full-spectrum spectral filters.
   - [ ] Jacobi method
   - [ ] Lanczos method

@@ -222,6 +222,9 @@ class T_arxiv_year(T.BaseTransform):
 def get_data(datapath, transform, args: Namespace):
     r"""Load data based on parameters and configurations.
 
+    :paper: Large Scale Learning on Non-Homophilous Graphs: New Benchmarks and Strong Simple Methods
+    :ref: https://github.com/CUAI/Non-Homophily-Large-Scale
+
     Args:
         datapath: Path to the root data directory.
         transform: Data transformation pipeline.
