@@ -78,6 +78,9 @@ class Yandex(InMemoryDataset):
 def get_data(datapath, transform, args: Namespace):
     r"""Load data based on parameters and configurations.
 
+    :paper: A critical look at the evaluation of GNNs under heterophily: are we really making progress?
+    :ref: https://github.com/yandex-research/heterophilous-graphs
+
     Args:
         datapath: Path to the root data directory.
         transform: Data transformation pipeline.

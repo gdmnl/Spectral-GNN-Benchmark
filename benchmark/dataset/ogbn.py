@@ -26,6 +26,9 @@ class T_ogbn_mag(T.BaseTransform):
 def get_data(datapath, transform, args: Namespace):
     r"""Load data based on parameters and configurations.
 
+    :paper: Open Graph Benchmark: Datasets for Machine Learning on Graphs.
+    :ref: https://ogb.stanford.edu/docs/nodeprop/
+
     Args:
         datapath: Path to the root data directory.
         transform: Data transformation pipeline.

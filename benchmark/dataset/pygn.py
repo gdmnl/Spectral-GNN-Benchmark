@@ -32,6 +32,9 @@ DATA_LIST = ["flickr", "reddit", "actor"] + list(pyg_mapping.keys())
 def get_data(datapath, transform, args: Namespace):
     r"""Load data based on parameters and configurations.
 
+    :paper:  Fast Graph Representation Learning with PyTorch Geometric
+    :ref: https://pytorch-geometric.readthedocs.io/en/stable/modules/datasets.html
+
     Args:
         datapath: Path to the root data directory.
         transform: Data transformation pipeline.
