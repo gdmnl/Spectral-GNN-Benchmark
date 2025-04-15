@@ -172,6 +172,88 @@ class TrnFullbatch(TrnBase):
         return self.res_logger.merge(res_run)
 
 
+class TrnLPFullbatch(TrnFullbatch):
+    name: str = 'lpfb'
+
+    def _fetch_data(self) -> tuple[Data, dict]:
+        r"""Process the single graph data."""
+        t_to_device = T.ToDevice(self.device, attrs=['x', 'y', 'adj_t']
+                                 + [f'{k}_mask' for k in self.splits] + [f'{k}_mask_neg' for k in self.splits])
+        self.data = t_to_device(self.data)
+        self.data.adj_t = self.data.adj_t.float()
+
+        self.mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
+        self.mask_neg = {k: getattr(self.data, f'{k}_mask_neg') for k in self.splits}
+        return self.data, self.mask, self.mask_neg
+
+    def _fetch_input(self, split: list, train: bool=False) -> tuple:
+        r"""Process each sample of model input and label."""
+        assert hasattr(self.data, 'adj_t')
+
+        edge_label, label = {}, {}
+        for k in split:
+            pos_edge_label = getattr(self.data, f'{k}_mask')
+            neg_edge_label = getattr(self.data, f'{k}_mask_neg')
+            if neg_edge_label.size(1) < 2 and train:
+                # neg_edge_label = pyg_utils.negative_sampling(
+                #     edge_index=self.data.edge_index,
+                #     num_nodes=self.data.num_nodes,
+                #     num_neg_samples=pos_edge_label.size(1), method='sparse').to(self.device)
+                neg_edge_label = torch.randint(0, self.data.num_nodes, size=pos_edge_label.size(),
+                                            dtype=torch.long, device=self.device)
+
+            edge_label[k] = torch.cat([pos_edge_label, neg_edge_label], dim=1)
+            label[k] = torch.cat([torch.ones(pos_edge_label.size(1), dtype=torch.float, device=self.device),
+                                  torch.zeros(neg_edge_label.size(1), dtype=torch.float, device=self.device)], dim=0)
+
+        input = (self.data.x, self.data.adj_t)
+
+        if hasattr(self.model, 'preprocess'):
+            self.model.preprocess(*input)
+        return input, edge_label, label
+
+    # ===== Epoch run
+    def _learn_split(self, split: list = ['train']) -> ResLogger:
+        r"""Actual train iteration on the given splits."""
+        assert len(split) == 1
+        self.model.train()
+
+        input, edge_label, label = self._fetch_input(split, train=True)
+        with Stopwatch() as stopwatch:
+            self.optimizer.zero_grad()
+            output = self.model(*input)
+            output = self.model.decode(output, edge_label[split[0]])
+
+            loss = self.criterion(output, label[split[0]])
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.desc_mlp.parameters(), 1.0)
+            self.optimizer.step()
+
+        return ResLogger()(
+            [('time_learn', stopwatch.data),
+             (f'loss_{split[0]}', loss.item())])
+
+    @torch.no_grad()
+    def _eval_split(self, split: list = ['test']) -> ResLogger:
+        r"""Actual test on the given splits."""
+        self.model.eval()
+        res = ResLogger()
+
+        input, edge_label, label = self._fetch_input(split, train=False)
+        with Stopwatch() as stopwatch:
+            output = self.model(*input)
+
+        for k in split:
+            output_k = self.model.decode(output, edge_label[k])
+            self.evaluator[k](output_k, label[k])
+
+            res.concat(self.evaluator[k].compute())
+            self.evaluator[k].reset()
+
+        return res.concat(
+            [('time_eval', stopwatch.data)])
+
+
 class TrnFullbatch_Trial(TrnFullbatch, TrnBase_Trial):
     r"""Trainer supporting optuna.pruners in training.
     """

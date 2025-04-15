@@ -235,15 +235,27 @@ class TrnBase_Trial(TrnBase):
         self.evaluator = {k: metric.clone(postfix='_'+k) for k in self.splits}
 
     def split_hyperval(self, data: Data) -> Data:
-        attr_to_index = lambda k: pyg_utils.mask_to_index(data[f'{k}_mask']) if hasattr(data, f'{k}_mask') else torch.tensor([])
-        idx = {k: attr_to_index(k) for k in ['train', 'val', 'hyperval']}
-        r_train = 1.0 * len(idx['train']) / (len(idx['train']) + len(idx['val']) + len(idx['hyperval']))
-        r_val = r_hyperval = (1.0 - r_train) / 2
+        if hasattr(data, 'val_mask_neg'):
+            # Actually index not mask
+            label = torch.ones(data.val_mask.size(1), dtype=int)
+            _, val_, hyperval_ = split_crossval(label, 1, data.val_mask.size(1)//2, ignore_neg=True, stratify=False, return_mask=False)
+            data.hyperval_mask = data.val_mask[:, hyperval_]
+            data.val_mask = data.val_mask[:, val_]
 
-        label = data.y.detach().clone()
-        label[data.test_mask] = -1
-        data.train_mask, data.val_mask, data.hyperval_mask = split_crossval(label, r_train, r_val, ignore_neg=True, stratify=True)
+            label = torch.zeros(data.val_mask_neg.size(1), dtype=int)
+            _, val_, hyperval_ = split_crossval(label, 1, data.val_mask_neg.size(1)//2, ignore_neg=True, stratify=False, return_mask=False)
+            data.hyperval_mask_neg = data.val_mask_neg[:, hyperval_]
+            data.val_mask_neg = data.val_mask_neg[:, val_]
 
+        else:
+            attr_to_index = lambda k: pyg_utils.mask_to_index(data[f'{k}_mask']) if hasattr(data, f'{k}_mask') else torch.tensor([])
+            idx = {k: attr_to_index(k) for k in ['train', 'val', 'hyperval']}
+            r_train = 1.0 * len(idx['train']) / (len(idx['train']) + len(idx['val']) + len(idx['hyperval']))
+            r_val = r_hyperval = (1.0 - r_train) / 2
+
+            label = data.y.detach().clone()
+            label[data.test_mask] = -1
+            data.train_mask, data.val_mask, data.hyperval_mask = split_crossval(label, r_train, r_val, ignore_neg=True, stratify=True)
         return data
 
     def clear(self):

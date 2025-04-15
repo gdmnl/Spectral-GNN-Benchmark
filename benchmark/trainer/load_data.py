@@ -45,15 +45,25 @@ class SingleGraphLoader(object):
         # Prevent using `edge_index` for more [Memory-Efficient Computation](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html)
         # assert torch_geometric.typing.WITH_TORCH_SPARSE
         # FIXME: check NormalizeFeatures
-        self.transform = T.Compose([
-            T.RemoveIsolatedNodes(),
-            T.RemoveDuplicatedEdges(reduce='mean'),
-            # T.LargestConnectedComponents(),
-            T.AddRemainingSelfLoops(fill_value=1.0),
-            T.NormalizeFeatures(),
-            # T.ToSparseTensor(remove_edge_index=True),                         # torch_sparse.SparseTensor
-            T.ToSparseTensor(remove_edge_index=True, layout=torch.sparse_csr),  # torch.sparse.Tensor
-        ])
+        if self.data in ['ogbl-collab', ]:
+            self.transform = T.Compose([
+                T.RemoveIsolatedNodes(),
+                T.RemoveDuplicatedEdges(reduce='mean'),
+                T.ToUndirected(),
+                # T.AddRemainingSelfLoops(fill_value=1.0),
+                Tspec.RemoveSelfLoops(),
+                T.ToSparseTensor(remove_edge_index=True, layout=torch.sparse_csr),  # torch.sparse.Tensor
+            ])
+        else:
+            self.transform = T.Compose([
+                T.RemoveIsolatedNodes(),
+                T.RemoveDuplicatedEdges(reduce='mean'),
+                # T.LargestConnectedComponents(),
+                T.AddRemainingSelfLoops(fill_value=1.0),
+                T.NormalizeFeatures(),
+                # T.ToSparseTensor(remove_edge_index=True),                         # torch_sparse.SparseTensor
+                T.ToSparseTensor(remove_edge_index=True, layout=torch.sparse_csr),  # torch.sparse.Tensor
+            ])
 
         self.logger = logging.getLogger('log')
         self.res_logger = res_logger or ResLogger()

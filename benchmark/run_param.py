@@ -16,6 +16,7 @@ from trainer import (
     SingleGraphLoader_Trial,
     ModelLoader_Trial,
     TrnFullbatch, TrnFullbatch_Trial,
+    TrnLPFullbatch,
     TrnMinibatch, TrnMinibatch_Trial)
 from utils import (
     force_list_str,
@@ -41,6 +42,7 @@ class TrnWrapper(object):
         self.data, self.model, self.trn = None, None, None
         self.trn_cls = {
             TrnFullbatch: TrnFullbatch_Trial,
+            TrnLPFullbatch: type('TrnLPFullbatch_Trial', (TrnLPFullbatch, TrnFullbatch_Trial), {}),
             TrnMinibatch: TrnMinibatch_Trial,
         }[self.model_loader.get_trn(args)]
 

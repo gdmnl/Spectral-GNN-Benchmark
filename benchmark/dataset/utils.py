@@ -106,7 +106,9 @@ def split_crossval(label: torch.Tensor,
                    r_val: float,
                    seed: int = None,
                    ignore_neg: bool =True,
-                   stratify: bool =False) -> tuple[torch.Tensor]:
+                   stratify: bool =False,
+                   return_mask: bool =True,
+    ) -> tuple[torch.Tensor]:
     r"""Split index by cross-validation"""
     node_labeled = torch.where(label >= 0)[0] if ignore_neg else np.arange(label.shape[0])
 
@@ -118,9 +120,14 @@ def split_crossval(label: torch.Tensor,
     used_idx = np.concatenate((train_idx, val_idx))
     test_idx = np.setdiff1d(node_labeled, used_idx, assume_unique=True)
 
-    return (index_to_mask(torch.as_tensor(train_idx), size=label.shape[0]),
-            index_to_mask(torch.as_tensor(val_idx), size=label.shape[0]),
-            index_to_mask(torch.as_tensor(test_idx), size=label.shape[0]))
+    if return_mask:
+        return (index_to_mask(torch.as_tensor(train_idx), size=label.shape[0]),
+                index_to_mask(torch.as_tensor(val_idx), size=label.shape[0]),
+                index_to_mask(torch.as_tensor(test_idx), size=label.shape[0]))
+    else:
+        return (torch.as_tensor(train_idx),
+                torch.as_tensor(val_idx),
+                torch.as_tensor(test_idx))
 
 
 def even_quantile_labels(vals: np.ndarray, nclasses: int):

@@ -1,3 +1,4 @@
+import re
 from .conv.base_mp import BaseMP
 from .models.base_nn import BaseNN
 from .models_pyg import model_regi_pyg, conv_regi_pyg
@@ -93,6 +94,7 @@ def get_model_regi(model: str, k: str, args=None) -> str:
     Returns:
         value (str): The value of the model registry.
     """
+    model = re.sub(r'LP$', '', model)
     if not model in model_regi[k]:
         return None
     return model_regi[k](model, args) if args else model_regi[k][model]
@@ -139,7 +141,13 @@ def get_nn_name(model: str, conv: str, args) -> str:
     Returns:
         nn_name (tuple[str]): Name strings ``(model_name, conv_name)``.
     """
+    is_lp = model.endswith('LP')
+    if is_lp:
+        model = model[:-2]
+
     model_name = model_regi['name'](model, args)
+    if is_lp:
+        model_name = model_name + 'LP'
     conv_name = [conv_regi['name'](channel, args) for channel in conv.split(',')]
     conv_name = ','.join(conv_name)
     conv_name = model_regi['conv_name'](model, conv_name, args)
@@ -159,6 +167,7 @@ def set_pargs(model: str, conv: str, args):
     Returns:
         kwargs (dict): Arguments for importing the model.
     """
+    model = re.sub(r'LP$', '', model)
     valid_pargs = model_regi['pargs'][model]
     for channel in conv.split(','):
         valid_pargs.extend(conv_regi['pargs'][channel])

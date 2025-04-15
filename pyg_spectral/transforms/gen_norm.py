@@ -1,11 +1,12 @@
+from typing import Union
 import torch
 from torch import Tensor
 
 from torch_geometric.typing import SparseTensor
-from torch_geometric.data import Data
+from torch_geometric.data import Data, HeteroData
 from torch_geometric.data.datapipes import functional_transform
 from torch_geometric.transforms import BaseTransform
-from torch_geometric.utils import scatter
+from torch_geometric.utils import scatter, remove_self_loops
 
 
 def pow_with_pinv(x: Tensor, p: float) -> Tensor:
@@ -72,7 +73,8 @@ class GenNorm(BaseTransform):
             else:
                 edge_weight = data.edge_attr if data.edge_weight is None else data.edge_weight
                 key = 'edge_attr' if data.edge_weight is None else 'edge_weight'
-                assert edge_weight.dim() == 1, "Multi-dimension edge attribute not supported."
+                edge_weight = edge_weight.view(-1).to(self.dtype)
+                assert len(edge_weight) == edge_index.size(1), f"Multi-dimension edge attribute not supported: {edge_weight.size()} vs {edge_index.size()}"
 
             row, col = edge_index
 
@@ -91,3 +93,33 @@ class GenNorm(BaseTransform):
     def __repr__(self) -> str:
         return (f'{self.__class__.__name__}('
                 f'D^(-{self.left}) A D^(-{self.right})')
+
+
+@functional_transform('remove_self_loops')
+class RemoveSelfLoops(BaseTransform):
+    r"""Removes all self-loops in the given homogeneous or heterogeneous
+    graph (functional name: :obj:`remove_self_loops`).
+
+    Args:
+        attr (str, optional): The name of the attribute of edge weights
+            or multi-dimensional edge features to pass to
+            :meth:`torch_geometric.utils.remove_self_loops`.
+            (default: :obj:`"edge_weight"`)
+    """
+    def __init__(self, attr: str = 'edge_weight') -> None:
+        self.attr = attr
+
+    def forward(
+        self,
+        data: Union[Data, HeteroData],
+    ) -> Union[Data, HeteroData]:
+        for store in data.edge_stores:
+            if store.is_bipartite() or 'edge_index' not in store:
+                continue
+
+            store.edge_index, store[self.attr] = remove_self_loops(
+                store.edge_index,
+                edge_attr=store.get(self.attr, None),
+            )
+
+        return data

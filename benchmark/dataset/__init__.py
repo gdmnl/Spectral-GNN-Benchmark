@@ -9,7 +9,7 @@ from .utils import (
 
 import importlib
 dataset_map, f_get_data = {}, {}
-for classi in ['yandex', 'linkx', 'ogbn', 'pygn']:
+for classi in ['yandex', 'linkx', 'ogbl', 'ogbn', 'pygn']:
     module = importlib.import_module(f".{classi}", __name__)
     f_get_data[classi] = module.get_data
     for datai in module.DATA_LIST:

@@ -14,16 +14,19 @@ class Stopwatch(object):
         self.reset()
 
     def start(self):
+        # torch.cuda.synchronize()
         self.start_time = time.perf_counter()
 
     def pause(self) -> float:
         """Pause clocking and return elapsed time"""
+        # torch.cuda.synchronize()
         self.elapsed_sec += time.perf_counter() - self.start_time
         self.start_time = None
         return self.elapsed_sec
 
     def lap(self) -> float:
         """No pausing, return elapsed time"""
+        # torch.cuda.synchronize()
         return time.perf_counter() - self.start_time + self.elapsed_sec
 
     def reset(self):

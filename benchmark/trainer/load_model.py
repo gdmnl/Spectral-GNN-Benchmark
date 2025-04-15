@@ -10,7 +10,7 @@ from pyg_spectral.nn import get_model_regi, get_nn_name, set_pargs
 from pyg_spectral.utils import load_import
 
 from .base import TrnBase
-from .fullbatch import TrnFullbatch
+from .fullbatch import TrnFullbatch, TrnLPFullbatch
 from .minibatch import TrnMinibatch
 from utils import ResLogger
 
@@ -77,6 +77,8 @@ class ModelLoader(object):
         return {
             'DecoupledFixed':   TrnFullbatch,
             'DecoupledVar':     TrnFullbatch,
+            'DecoupledFixedLP': TrnLPFullbatch,
+            'DecoupledVarLP':   TrnLPFullbatch,
             'Iterative':        TrnFullbatch,
             'IterativeFixed':   TrnFullbatch,
             'PrecomputedVar':   TrnMinibatch,
@@ -112,6 +114,13 @@ class ModelLoader(object):
         # <<<<<<<<<<
         return class_name, module_name, kwargs
 
+    @staticmethod
+    def _load_import_LP(class_name, module_name, **kwargs):
+        actual_class = load_import(class_name[:-2], module_name)
+        lp_class = load_import('BaseLPNN', 'pyg_spectral.nn.models')
+        cmb_class = type(class_name, (actual_class, lp_class), {})
+        return cmb_class(**kwargs)
+
     def get(self, args: Namespace) -> tuple[nn.Module, TrnBase]:
         r"""Load model with specified arguments.
 
@@ -130,7 +139,11 @@ class ModelLoader(object):
 
         trn = self.get_trn(args)
         class_name, module_name, kwargs = self._resolve_import(args)
-        model = load_import(class_name, module_name)(**kwargs)
+        if class_name.endswith('LP'):
+            model = self._load_import_LP(class_name, module_name, **kwargs)
+        else:
+            model = load_import(class_name, module_name)(**kwargs)
+
         if hasattr(model, 'reset_parameters'):
             model.reset_parameters()
         if hasattr(model, 'reset_cache'):
@@ -158,7 +171,11 @@ class ModelLoader_Trial(ModelLoader):
 
         trn = self.get_trn(args)
         class_name, module_name, kwargs = self._resolve_import(args)
-        model = load_import(class_name, module_name)(**kwargs)
+        if class_name.endswith('LP'):
+            model = self._load_import_LP(class_name, module_name, **kwargs)
+        else:
+            model = load_import(class_name, module_name)(**kwargs)
+
         if hasattr(model, 'reset_parameters'):
             model.reset_parameters()
         if hasattr(model, 'reset_cache'):
