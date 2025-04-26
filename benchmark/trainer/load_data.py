@@ -45,11 +45,10 @@ class SingleGraphLoader(object):
         # Prevent using `edge_index` for more [Memory-Efficient Computation](https://pytorch-geometric.readthedocs.io/en/latest/notes/sparse_tensor.html)
         # assert torch_geometric.typing.WITH_TORCH_SPARSE
         # FIXME: check NormalizeFeatures
-        if self.data in ['ogbl-collab', ]:
+        if self.data.startswith('ogbl-'):
             self.transform = T.Compose([
                 T.RemoveIsolatedNodes(),
                 T.RemoveDuplicatedEdges(reduce='mean'),
-                T.ToUndirected(),
                 # T.AddRemainingSelfLoops(fill_value=1.0),
                 Tspec.RemoveSelfLoops(),
                 T.ToSparseTensor(remove_edge_index=True, layout=torch.sparse_csr),  # torch.sparse.Tensor
@@ -87,7 +86,6 @@ class SingleGraphLoader(object):
         self.logger.debug('-'*20 + f" Loading data: {self} " + '-'*20)
 
         T_insert(self.transform, Tspec.GenNorm(left=args.normg), index=-2)
-        # get_data(datapath, transform, args)
         data = f_get_data[dataset_map[self.data]](DATAPATH, self.transform, args)
 
         self.logger.info(f"[dataset]: {self.data} (features={args.in_channels}, classes={args.out_channels}, metric={args.metric})")

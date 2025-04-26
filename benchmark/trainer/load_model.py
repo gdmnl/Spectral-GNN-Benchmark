@@ -92,20 +92,17 @@ class ModelLoader(object):
         kwargs = set_pargs(self.model, self.conv, args)
 
         # >>>>>>>>>>
+        args.criterion = 'BCEWithLogitsLoss' if args.out_channels == 1 else 'CrossEntropyLoss'
         if module_name == 'torch_geometric.nn.models':
-            args.criterion = 'BCEWithLogitsLoss' if args.out_channels == 1 else 'CrossEntropyLoss'
-
             del kwargs['conv']
             kwargs.setdefault('num_layers', kwargs.pop('num_hops'))
             kwargs.setdefault('dropout', kwargs.pop('dropout_lin'))
 
         elif module_name == 'pyg_spectral.nn.models_pyg':
-            args.criterion = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
+            pass
 
         # Default to load from `pyg_spectral.nn.models`
         else:
-            args.criterion = 'BCELoss' if args.out_channels == 1 else 'NLLLoss'
-
             # Parse conv args
             for conv in self.conv.split(','):
                 if conv in ['Adji2Conv', 'AdjSkip2Conv']:

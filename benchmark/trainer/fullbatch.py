@@ -108,6 +108,7 @@ class TrnFullbatch(TrnBase):
         input, label = self._fetch_input()
         with Stopwatch() as stopwatch:
             output = self.model(*input)
+            output = torch.sigmoid(output) if self.out_channels == 1 else torch.log_softmax(output, dim=-1)
 
         for k in split:
             mask_split = self.mask[k]
@@ -200,7 +201,9 @@ class TrnLPFullbatch(TrnFullbatch):
                 #     num_nodes=self.data.num_nodes,
                 #     num_neg_samples=pos_edge_label.size(1), method='sparse').to(self.device)
                 neg_edge_label = torch.randint(0, self.data.num_nodes, size=pos_edge_label.size(),
-                                            dtype=torch.long, device=self.device)
+                                               dtype=torch.long, device=self.device)
+            elif neg_edge_label.size(1) < 2:
+                neg_edge_label = torch.empty((2, 0), dtype=torch.long, device=self.device)
 
             edge_label[k] = torch.cat([pos_edge_label, neg_edge_label], dim=1)
             label[k] = torch.cat([torch.ones(pos_edge_label.size(1), dtype=torch.float, device=self.device),
@@ -244,7 +247,9 @@ class TrnLPFullbatch(TrnFullbatch):
             output = self.model(*input)
 
         for k in split:
-            output_k = self.model.decode(output, edge_label[k])
+            with stopwatch:
+                output_k = self.model.decode(output, edge_label[k])
+                output_k = torch.sigmoid(output_k)
             self.evaluator[k](output_k, label[k])
 
             res.concat(self.evaluator[k].compute())

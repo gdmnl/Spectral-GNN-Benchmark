@@ -271,10 +271,7 @@ class BaseNN(nn.Module):
         x = self.convolute(x, edge_index, batch=batch, batch_size=batch_size)
         if self.out_layers > 0:
             x = self.out_mlp(x, batch=batch, batch_size=batch_size)
-        if self.out_channels == 1:
-            return torch.sigmoid(x)
-        else:
-            return torch.log_softmax(x, dim=-1)
+        return x
 
 
 class BaseLPNN(BaseNN):
@@ -312,9 +309,10 @@ class BaseLPNN(BaseNN):
             norm=norm,
             norm_kwargs=norm_kwargs,
             plain_last=True,
-            bias=bias,)
+            bias=bias,
+            **kwargs)
         self.out_channels = out_channels
-        self.desc_layers = 2
+        self.desc_layers = 1
 
         if self.desc_layers > 0:
             self.desc_mlp = myMLP(
@@ -328,9 +326,12 @@ class BaseLPNN(BaseNN):
                 norm_kwargs=norm_kwargs,
                 plain_last=plain_last,
                 bias=bias,)
-
-        if self.desc_layers > 0:
             self.desc_mlp.reset_parameters()
+
+    def reset_parameters(self):
+        if hasattr(self, 'desc_layers') and self.desc_layers > 0:
+            self.desc_mlp.reset_parameters()
+        super(BaseLPNN, self).reset_parameters()
 
     def get_optimizer(self, dct):
         res = []
@@ -343,32 +344,6 @@ class BaseLPNN(BaseNN):
         res.append({'params': self.convs.parameters(), **dct['conv']})
         return res
 
-    def forward(self,
-        x: Tensor,
-        edge_index: Adj,
-        batch: OptTensor = None,
-        batch_size: int | None = None,
-    ) -> Tensor:
-        r"""
-        Args:
-            x, edge_index: from :class:`torch_geometric.data.Data`
-            batch: The batch vector
-                :math:`\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N`, which assigns
-                each element to a specific example.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-            batch_size: The number of examples :math:`B`.
-                Automatically calculated if not given.
-                Only needs to be passed in case the underlying normalization
-                layers require the :obj:`batch` information.
-        """
-        if self.in_layers > 0:
-            x = self.in_mlp(x, batch=batch, batch_size=batch_size)
-        x = self.convolute(x, edge_index, batch=batch, batch_size=batch_size)
-        if self.out_layers > 0:
-            x = self.out_mlp(x, batch=batch, batch_size=batch_size)
-        return x
-
     def decode(self,
         z: Tensor,
         edge_label_index: Adj,
@@ -377,7 +352,7 @@ class BaseLPNN(BaseNN):
     ) -> Tensor:
         x = z[edge_label_index[0]] * z[edge_label_index[1]]
         x = self.desc_mlp(x, batch=batch, batch_size=batch_size)
-        return torch.sigmoid(x).flatten()
+        return x.flatten()
 
 
 class BaseNNCompose(BaseNN):

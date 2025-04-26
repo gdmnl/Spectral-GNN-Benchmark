@@ -47,6 +47,7 @@ def resolve_data(args: Namespace, dataset: Dataset) -> Data:
     args.out_channels = dataset._infer_num_classes(data.y)
 
     # Remaining resolvers
+    data.x = data.x.float()
     if not args.multi and data.y.dim() > 1 and data.y.size(1) == 1:
         data.y = data.y.flatten()
     # if not args.multi and self.out_channels == 2:

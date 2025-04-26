@@ -6,7 +6,7 @@ ARGS_ALL=(
     "--dev" "$DEV"
     "--num_hops" "10"
     "--in_layers" "1"
-    "--out_layers" "0"
+    "--out_layers" "1"
     "--hidden_channels" "128"
     "--suffix" "lpfbdc"
 )

@@ -5,7 +5,7 @@ File Created: 2024-03-03
 """
 from typing import Callable, Any
 from argparse import Namespace
-from ogb.linkproppred import Evaluator
+from ogb.linkproppred import Evaluator as LEvaluator
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
     MulticlassAccuracy, MultilabelAccuracy, BinaryAccuracy,
@@ -22,7 +22,7 @@ class ResCollection(MetricCollection):
         return [(k, v.cpu().numpy(), (lambda x: format(x*100, '.3f'))) for k, v in dct.items()]
 
 
-class OGBLEvaluator(Evaluator):
+class OGBLEvaluator(LEvaluator):
     def __call__(self, output, label) -> Any:
         import numpy as np
 
@@ -70,7 +70,7 @@ def metric_loader(args: Namespace) -> MetricCollection:
             * args.multi (bool): True for multi-label classification.
             * args.out_channels (int): Number of output classes/labels.
     """
-    if args.data in ['ogbl-collab', 'ogbl-ddi', 'ogbl-ppa', 'ogbl-citation2']:
+    if args.data.startswith('ogbl-'):
         return OGBLEvaluator(args.data)
 
     # FEATURE: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)

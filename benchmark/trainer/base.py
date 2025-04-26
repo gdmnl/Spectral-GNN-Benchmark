@@ -109,6 +109,7 @@ class TrnBase(object):
         self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             self.optimizer, mode='max', factor=0.5,
             threshold=1e-4, patience=15)
+        self.logger.info(f"[trainer]: Loss: {self.criterion.__class__.__name__}, Optimizer: {self.optimizer.__class__.__name__}")
 
     def clear(self):
         if self.evaluator:

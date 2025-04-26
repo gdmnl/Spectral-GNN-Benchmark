@@ -143,6 +143,7 @@ class TrnMinibatch(TrnBase):
             for it, (input, label) in enumerate(self._fetch_input(k)):
                 with stopwatch:
                     output = self.model(input)
+                    output = torch.sigmoid(output) if self.out_channels == 1 else torch.log_softmax(output, dim=-1)
 
                 self.evaluator[k](output, label)
 
