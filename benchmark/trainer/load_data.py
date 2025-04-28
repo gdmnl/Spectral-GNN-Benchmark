@@ -47,7 +47,9 @@ class SingleGraphLoader(object):
         # FIXME: check NormalizeFeatures
         if self.data.startswith('ogbl-'):
             self.transform = T.Compose([
-                T.RemoveIsolatedNodes(),
+                Tspec.RemoveIsolatedNodesEdges([
+                    'train_mask', 'val_mask', 'test_mask',
+                    'train_mask_neg', 'val_mask_neg', 'test_mask_neg']),
                 T.RemoveDuplicatedEdges(reduce='mean'),
                 # T.AddRemainingSelfLoops(fill_value=1.0),
                 Tspec.RemoveSelfLoops(),
@@ -90,7 +92,7 @@ class SingleGraphLoader(object):
 
         self.logger.info(f"[dataset]: {self.data} (features={args.in_channels}, classes={args.out_channels}, metric={args.metric})")
         self.logger.info(f"[data]: {data}")
-        split_dict = {k[:-5]: v.sum().item() for k, v in data.items() if k.endswith('_mask')}
+        split_dict = {k[:-5]: v.count_nonzero().item() for k, v in data.items() if k.endswith('_mask')}
         self.logger.info(f"[split]: {args.data_split} {split_dict}")
         self.res_logger.concat([('data', self.data, str), ('metric', args.metric, str)])
         return data

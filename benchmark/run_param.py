@@ -6,6 +6,7 @@ File Created: 2024-04-29
 from typing import Iterable
 import optuna
 import uuid
+import re
 from copy import deepcopy
 
 from pyg_spectral.nn import get_model_regi, get_conv_subregi
@@ -16,7 +17,7 @@ from trainer import (
     SingleGraphLoader_Trial,
     ModelLoader_Trial,
     TrnFullbatch, TrnFullbatch_Trial,
-    TrnLPFullbatch,
+    TrnLPFullbatch, TrnLPMinibatch, TrnLPMinibatch_Trial,
     TrnMinibatch, TrnMinibatch_Trial)
 from utils import (
     force_list_str,
@@ -42,8 +43,9 @@ class TrnWrapper(object):
         self.data, self.model, self.trn = None, None, None
         self.trn_cls = {
             TrnFullbatch: TrnFullbatch_Trial,
-            TrnLPFullbatch: type('TrnLPFullbatch_Trial', (TrnLPFullbatch, TrnFullbatch_Trial), {}),
             TrnMinibatch: TrnMinibatch_Trial,
+            TrnLPFullbatch: type('TrnLPFullbatch_Trial', (TrnLPFullbatch, TrnFullbatch_Trial), {}),
+            TrnLPMinibatch: TrnLPMinibatch_Trial,
         }[self.model_loader.get_trn(args)]
 
     def _get_suggest(self, trial, key):
@@ -93,7 +95,7 @@ class TrnWrapper(object):
         fmt_logger = {}
         for key in self.args.param:
             args.__dict__[key], fmt_logger[key] = self._get_suggest(trial, key)
-        if args.in_layers == 0 and args.out_layers == 0:
+        if (args.in_layers == 0) and (args.out_layers == 0) and (re.match(args.model, r'^Pre.*LP$')):
             raise optuna.TrialPruned()
 
         if self.data is None:

@@ -308,11 +308,11 @@ class BaseLPNN(BaseNN):
             act_kwargs=act_kwargs,
             norm=norm,
             norm_kwargs=norm_kwargs,
-            plain_last=True,
+            plain_last=plain_last,
             bias=bias,
             **kwargs)
         self.out_channels = out_channels
-        self.desc_layers = 1
+        self.desc_layers = 2
 
         if self.desc_layers > 0:
             self.desc_mlp = myMLP(
@@ -324,7 +324,7 @@ class BaseLPNN(BaseNN):
                 act_kwargs=act_kwargs,
                 norm=None,
                 norm_kwargs=norm_kwargs,
-                plain_last=plain_last,
+                plain_last=True,
                 bias=bias,)
             self.desc_mlp.reset_parameters()
 
@@ -334,14 +334,18 @@ class BaseLPNN(BaseNN):
         super(BaseLPNN, self).reset_parameters()
 
     def get_optimizer(self, dct):
-        res = []
+        lin_lst = []
         if self.in_layers > 0:
-            res.append({'params': self.in_mlp.parameters(), **dct['lin']})
+            lin_lst += self.in_mlp.parameters()
         if self.out_layers > 0:
-            res.append({'params': self.out_mlp.parameters(), **dct['lin']})
+            lin_lst += self.out_mlp.parameters()
         if self.desc_layers > 0:
-            res.append({'params': self.desc_mlp.parameters(), **dct['lin']})
-        res.append({'params': self.convs.parameters(), **dct['conv']})
+            lin_lst += self.desc_mlp.parameters()
+        res = []
+        if len(lin_lst) > 0:
+            res.append({'params': lin_lst, **dct['lin']})
+        if len(list(self.convs.parameters())) > 0:
+            res.append({'params': self.convs.parameters(), **dct['conv']})
         return res
 
     def decode(self,

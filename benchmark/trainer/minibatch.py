@@ -199,6 +199,158 @@ class TrnMinibatch(TrnBase):
         return self.res_logger.merge(res_run)
 
 
+class TrnLPMinibatch(TrnMinibatch):
+    name: str = 'lpmb'
+
+    def _fetch_data(self) -> tuple:
+        r"""Process the single graph data."""
+        mask = {k: getattr(self.data, f'{k}_mask') for k in self.splits}
+        mask_neg = {k: getattr(self.data, f'{k}_mask_neg') for k in self.splits}
+        self.num_nodes = self.data.num_nodes
+        self.neg_mul = 2      # (n_pos + n_neg) / n_pos
+
+        if hasattr(self.data, 'adj_t'):
+            input = (self.data.x, self.data.adj_t)
+        else:
+            input = (self.data.x, self.data.edge_index)
+        if hasattr(self.model, 'preprocess'):
+            self.model.preprocess(*input)
+        del self.data
+        return input, mask, mask_neg
+
+    def _fetch_preprocess(self, embed: torch.Tensor, mask: dict, mask_neg: dict) -> dict:
+        r"""Call model preprocess for precomputation."""
+        # Set a 'train_val' split
+        # TODO: move to ogbl.py file
+        mask_k = mask['train'].clone()[:, :mask['val'].size(1)]
+        edge_label_t = torch.cat([mask_k, mask_neg['val']], dim=1).T.contiguous()
+        label_t = torch.cat([torch.ones(mask_k.size(1), dtype=torch.float),
+                             torch.zeros(mask_neg['val'].size(1), dtype=torch.float)], dim=0).contiguous()
+        self.embed = {
+            'pre': embed.to(self.device),
+            'train_val': TensorDataset(edge_label_t, label_t)
+        }
+
+        for k in self.splits:
+            edge_label_t = torch.cat([mask[k], mask_neg[k]], dim=1).T.contiguous()
+            label_t = torch.cat([torch.ones(mask[k].size(1), dtype=torch.float),
+                                 torch.zeros(mask_neg[k].size(1), dtype=torch.float)], dim=0).contiguous()
+            if mask_neg[k].size(1) < 2:
+                if not hasattr(self, 'neg_gen'):
+                    self.neg_gen = [k]
+                else:
+                    self.neg_gen.append(k)
+
+            dataset = TensorDataset(edge_label_t, label_t)
+            self.embed[k] = dataset
+            self.logger.log(logging.LTRN, f"[{k}]: n_sample={len(dataset)}, n_batch={len(self.embed[k]) // self.batch}")
+
+        return self.embed
+
+    def _fetch_input(self, split: str, train: bool=False) -> Generator:
+        r"""Process each sample of model input and label for training."""
+        if split in self.neg_gen and train:
+            batch = self.batch // self.neg_mul
+        elif split in self.neg_gen and self.metric_ckpt == 's_mrr_val':
+            split = 'train_val'
+            self.shuffle[split] = False
+            batch = self.batch
+        else:
+            batch = self.batch
+        if self.shuffle[split]:
+            idxs = torch.randperm(len(self.embed[split]))
+        else:
+            idxs = torch.arange(len(self.embed[split]))
+
+        for idx in idxs.split(batch):
+            edge_label, label = self.embed[split][idx]
+            edge_label = edge_label.T
+
+            if split in self.neg_gen and train:
+                neg_edge_label = torch.randint(0, self.num_nodes,
+                                               size=edge_label.size()*(self.neg_mul-1), dtype=torch.long)
+                edge_label = torch.cat([edge_label, neg_edge_label], dim=1)
+                label = torch.cat([label, torch.zeros(neg_edge_label.size(1), dtype=torch.float)], dim=0)
+
+            input = self.embed['pre']
+            yield input, edge_label.to(self.device), label.to(self.device)
+
+    # ===== Epoch run
+    def _learn_split(self, split: list = ['train']) -> ResLogger:
+        r"""Actual train iteration on the given splits."""
+        assert len(split) == 1
+        self.model.train()
+        loss_epoch = Accumulator()
+        stopwatch = Stopwatch()
+
+        for it, (input, edge_label, label) in enumerate(self._fetch_input(split[0], train=True)):
+            with stopwatch:
+                self.optimizer.zero_grad()
+                # Full-batch forward every iteration
+                output = self.model(input)
+                # Mini-batch decode
+                output = self.model.decode(output, edge_label)
+
+                loss = self.criterion(output, label)
+                loss.backward()
+                # torch.nn.utils.clip_grad_norm_(self.model.out_mlp.parameters(), 1.0)
+                # torch.nn.utils.clip_grad_norm_(self.model.desc_mlp.parameters(), 1.0)
+                self.optimizer.step()
+
+            loss_epoch.update(loss.item(), count=label.size(0))
+
+        return ResLogger()(
+            [('time_learn', stopwatch.data),
+             (f'loss_{split[0]}', loss_epoch.mean)])
+
+    @torch.no_grad()
+    def _eval_split(self, split: list = ['test']) -> ResLogger:
+        r"""Actual test on the given splits."""
+        self.model.eval()
+        stopwatch = Stopwatch()
+        res = ResLogger()
+
+        for k in split:
+            output = None
+            for it, (input, edge_label, label) in enumerate(self._fetch_input(k)):
+                with stopwatch:
+                    if output is None:
+                        output = self.model(input)
+                    output_k = self.model.decode(output, edge_label)
+                    output_k = torch.sigmoid(output_k)
+
+                self.evaluator[k](output_k, label)
+
+            res.concat(self.evaluator[k].compute())
+            res.concat([('time', stopwatch.data)], suffix=k)
+            self.evaluator[k].reset()
+            stopwatch.reset()
+
+        return res
+
+    # ===== Run block
+    @TrnBase._log_memory(split='pre')
+    def preprocess(self) -> ResLogger:
+        r"""Pipeline for precomputation on CPU."""
+        self.logger.debug('-'*20 + f" Start propagation: pre " + '-'*20)
+
+        input, mask, mask_neg = self._fetch_data()
+        stopwatch = Stopwatch()
+        if hasattr(self.model, 'convolute'):
+            with stopwatch:
+                embed = self.model.convolute(*input)
+        else:
+            embed = input[0]
+
+        if hasattr(self, 'norm_prop'):
+            self.norm_prop.fit(embed)
+            embed = self.norm_prop(embed)
+
+        self._fetch_preprocess(embed, mask, mask_neg)
+        return ResLogger()(
+            [('time_pre', stopwatch.data)])
+
+
 class TrnMinibatch_Trial(TrnMinibatch, TrnBase_Trial):
     r"""Trainer supporting optuna.pruners in training.
     Lazy calling precomputation.
@@ -274,3 +426,27 @@ class TrnMinibatch_Trial(TrnMinibatch, TrnBase_Trial):
             self.signature = signature
             self.embed = None
         return self
+
+
+class TrnLPMinibatch_Trial(TrnLPMinibatch, TrnMinibatch_Trial):
+    @TrnBase._log_memory(split='pre')
+    def preprocess(self) -> ResLogger:
+        r"""Pipeline for precomputation on CPU."""
+        self.logger.debug('-'*20 + f" Start propagation: pre " + '-'*20)
+
+        self.data = self.split_hyperval(self.data)
+        input, mask, mask_neg = self._fetch_data()
+        stopwatch = Stopwatch()
+        if hasattr(self.model, 'convolute'):
+            with stopwatch:
+                self.raw_embed = self.model.convolute(*input)
+        else:
+            self.raw_embed = input[0]
+
+        if hasattr(self, 'norm_prop'):
+            self.norm_prop.fit(self.raw_embed)
+            self.raw_embed = self.norm_prop(self.raw_embed)
+
+        self._fetch_preprocess(self.raw_embed, mask, mask_neg)
+        return ResLogger()(
+            [('time_pre', stopwatch.data)])

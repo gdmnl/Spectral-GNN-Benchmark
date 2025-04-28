@@ -4,16 +4,15 @@ from argparse import Namespace
 import torch
 from torch_geometric.data import Data
 import torch_geometric.transforms as T
-from torch_geometric.utils import index_to_mask
 from pyg_spectral.utils import load_import
 from ogb.linkproppred import Evaluator
 
 
-from .utils import resolve_split, resolve_data, T_insert, get_iso_nodes_mapping
-
-
 CLASS_NAME = 'OGB'
 DATA_LIST = ['ogbl-collab', 'ogbl-ddi', 'ogbl-citation2', 'ogbl-ppa',]
+SPLIT_NAME = {'train': 'train',
+              'valid': 'val',
+              'test': 'test'}
 
 
 def run_node2vec(path, data: Data) -> None:
@@ -88,40 +87,41 @@ def get_data(datapath, transform, args: Namespace):
         root=datapath.joinpath(CLASS_NAME).resolve().absolute(),
         name=args.data,
         pre_transform=None,
-        transform=T_insert(transform, T.ToUndirected(), index=0))
-
-    if args.data in ['ogbl-ddi', 'ogbl-biokg', 'ogbl-wikikg2']:
-        kwargs2 = dict(
-            root=datapath.joinpath(CLASS_NAME).resolve().absolute(),
-            name=args.data,
-            pre_transform=None,
-            transform=T.ToUndirected())
-        dataset2 = load_import('PygLinkPropPredDataset', 'ogb.linkproppred')(**kwargs2)
-        edge_index = dataset2[0].edge_index
+        transform=T.ToUndirected())
 
     dataset = load_import('PygLinkPropPredDataset', 'ogb.linkproppred')(**kwargs)
+    split_edge = dataset.get_edge_split()
+    if args.data in ['ogbl-citation2']:
+        for split in ['train', 'valid', 'test']:
+            split_edge[split]['edge'] = torch.stack([split_edge[split]['source_node'], split_edge[split]['target_node']], dim=0).T
+            if 'target_node_neg' in split_edge[split]:
+                split_edge[split]['edge_neg'] = torch.stack([split_edge[split]['source_node'].view(-1, 1).repeat(1, 1000).view(-1),
+                                                             split_edge[split]['target_node_neg'].view(-1)], dim=0).T
+                del split_edge[split]['target_node_neg']
+            del split_edge[split]['source_node'], split_edge[split]['target_node']
+
     data = dataset[0]
+    # Resolve feature
     if data.x is None:
         path = datapath.joinpath(CLASS_NAME, args.data.replace('-', '_')).resolve().absolute()
-        data.edge_index = edge_index
         data.x = run_node2vec(path, data)
     else:
         data.x = data.x.float()
+    # Resolve split
+    for split in ['train', 'valid', 'test']:
+        setattr(data, f"{SPLIT_NAME[split]}_mask", split_edge[split]['edge'].T)
+    for split in ['valid', 'test']:
+        setattr(data, f"{SPLIT_NAME[split]}_mask_neg", split_edge[split]['edge_neg'].T)
+    # data.train_mask_neg = torch.Tensor([[0], [0]]).long()
+    data.train_mask_neg = torch.empty((2, 0), dtype=torch.long)
+
+    # Apply graph transformation at the end
+    data = transform(data)
     del data.edge_index
     del data.edge_weight
     del data.edge_year
     args.in_channels = data.num_node_features
     args.out_channels = 1
-
-    split_edge = dataset.get_edge_split()
-    split_name = {'train': 'train',
-                  'valid': 'val',
-                  'test': 'test'}
-    for split in ['train', 'valid', 'test']:
-        setattr(data, f"{split_name[split]}_mask", split_edge[split]['edge'].T)
-    for split in ['valid', 'test']:
-        setattr(data, f"{split_name[split]}_mask_neg", split_edge[split]['edge_neg'].T)
-    data.train_mask_neg = torch.Tensor([[0], [0]]).long()
 
     return data
     # data_test = data.clone()

@@ -11,7 +11,7 @@ from pyg_spectral.utils import load_import
 
 from .base import TrnBase
 from .fullbatch import TrnFullbatch, TrnLPFullbatch
-from .minibatch import TrnMinibatch
+from .minibatch import TrnMinibatch, TrnLPMinibatch
 from utils import ResLogger
 
 
@@ -77,12 +77,14 @@ class ModelLoader(object):
         return {
             'DecoupledFixed':   TrnFullbatch,
             'DecoupledVar':     TrnFullbatch,
-            'DecoupledFixedLP': TrnLPFullbatch,
-            'DecoupledVarLP':   TrnLPFullbatch,
+            'DecoupledFixedLP':     TrnLPFullbatch,
+            'DecoupledVarLP':       TrnLPFullbatch,
             'Iterative':        TrnFullbatch,
             'IterativeFixed':   TrnFullbatch,
-            'PrecomputedVar':   TrnMinibatch,
             'PrecomputedFixed': TrnMinibatch,
+            'PrecomputedVar':   TrnMinibatch,
+            'PrecomputedFixedLP':   TrnLPMinibatch,
+            'PrecomputedVarLP':     TrnLPMinibatch,
             'CppPrecFixed':     TrnMinibatch,
         }[model_repr]
 

@@ -7,6 +7,8 @@ import re
 from typing import Callable, Any
 from argparse import Namespace
 import numpy as np
+import torch
+
 from ogb.linkproppred import Evaluator as LEvaluator
 from torchmetrics import MetricCollection
 from torchmetrics.classification import (
@@ -75,6 +77,54 @@ class OGBLEvaluatorNp(LEvaluator):
         return ins
 
 
+class OGBLEvaluator(OGBLEvaluatorNp):
+    # torch + on GPU
+    def __call__(self, output, label) -> Any:
+        output, label = output.detach(), label.detach()
+        if not hasattr(self, 'output'):
+            self.output = torch.empty((0,), dtype=output.dtype, device=output.device)
+            self.label = torch.empty((0,), dtype=label.dtype, device=label.device)
+        self.output = torch.cat((self.output, output), dim=0)
+        self.label = torch.cat((self.label, label), dim=0)
+
+    def to(self, *args: Any, **kwargs: Any) -> 'OGBLEvaluator':
+        r"""Move the evaluator to the specified device."""
+        self.device = args[0]
+        if hasattr(self, 'output'):
+            self.output = self.output.to(self.device)
+            self.label = self.label.to(self.device)
+        return self
+
+    def reset(self, *args: Any, **kwargs: Any) -> 'OGBLEvaluator':
+        r"""Reset the evaluator."""
+        device = self.output.device if hasattr(self, 'output') else self.device
+        self.output = torch.empty((0,), dtype=torch.float32, device=device)
+        self.label = torch.empty((0,), dtype=torch.int, device=device)
+        return self
+
+    def compute(self, *args: Any, **kwargs: Any) -> 'OGBLEvaluator':
+        r"""Override to() to avoid copying the evaluator."""
+        input_dict = {
+            'y_pred_pos': self.output[self.label == 1],
+            'y_pred_neg': self.output[self.label == 0],
+        }
+        if self.eval_metric == 'mrr':
+            dim1 = int(len(input_dict['y_pred_neg']) / len(input_dict['y_pred_pos']))
+            input_dict['y_pred_neg'] = input_dict['y_pred_neg'].view(-1, dim1)
+        dct = super().eval(input_dict)
+
+        res_lst = []
+        for k, v in dct.items():
+            k = re.sub(r'_list$', '', k)
+            if isinstance(v, list):
+                v = torch.tensor(v).mean().item()
+            elif isinstance(v, torch.Tensor):
+                v = v.mean().item()
+            res_lst.append((f"s_{k}{self.postfix}", v, (lambda x: format(x*100, '.3f'))))
+        self.data = res_lst
+        return res_lst
+
+
 def metric_loader(args: Namespace) -> MetricCollection:
     r"""Loader for :class:`torchmetrics.Metric` object.
 
@@ -85,7 +135,7 @@ def metric_loader(args: Namespace) -> MetricCollection:
             * args.out_channels (int): Number of output classes/labels.
     """
     if args.data.startswith('ogbl-'):
-        return OGBLEvaluatorNp(args.data)
+        return OGBLEvaluator(args.data)
 
     # FEATURE: more metrics [glemos1](https://github.com/facebookresearch/glemos/blob/main/src/performances/node_classification.py), [glemos2](https://github.com/facebookresearch/glemos/blob/main/src/utils/eval_utils.py)
     if args.multi:

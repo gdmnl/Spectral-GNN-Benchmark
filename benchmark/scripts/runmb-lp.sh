@@ -1,14 +1,23 @@
-# search param + best, fullbatch+Decoupled
+# search param + best, minibatch+Precomputed
 DEV=${1:-0}
 SEED_P="1,2"
-SEED_S="20,21,22"
+
+run_mb() {
+    local lseed_s=$1
+    shift
+    local lbatch=$1
+    shift
+    local ldatas=("$@")
+
+SEED_S=$lseed_s
 ARGS_ALL=(
     "--dev" "$DEV"
     "--num_hops" "10"
-    "--in_layers" "1"
-    "--out_layers" "1"
+    "--in_layers"  "0"
+    "--out_layers" "0"
+    "--batch" "$lbatch"
     "--hidden_channels" "128"
-    "--suffix" "lpfbdc"
+    "--suffix" "mblp"
 )
 # run_param args
 ARGS_P=(${ARGS_ALL[@]}
@@ -27,17 +36,19 @@ ARGS_S=(${ARGS_ALL[@]}
     "--param"
 )
 
-DATAS=("ogbl-ddi" "ogbl-collab")
-
-for data in ${DATAS[@]}; do
+for data in ${ldatas[@]}; do
 # ========== fix
-model=DecoupledFixedLP
+# ARGS_P=(${ARGS_P[@]} "--normf")       # ddi, citation2
+# ARGS_S=(${ARGS_S[@]} "--normf")
+ARGS_P=(${ARGS_P[@]} "--normf" "0")     # collab
+ARGS_S=(${ARGS_S[@]} "--normf" "0")
+model=PrecomputedFixedLP
 PARLIST="dropout_lin,lr_lin,wd_lin"
 PARLIST="normg,dropout_conv,$PARLIST"
     # Linear
-    python run_param.py  --data $data --model $model --conv AdjiConv --param $PARLIST "${ARGS_P[@]}" \
+    python run_param.py  --data $data --model $model --conv AdjSkipConv --param $PARLIST "${ARGS_P[@]}" \
         --theta_scheme ones --beta 1.0
-    python run_single.py --data $data --model $model --conv AdjiConv "${ARGS_S[@]}" \
+    python run_single.py --data $data --model $model --conv AdjSkipConv "${ARGS_S[@]}" \
         --theta_scheme ones --beta 1.0
 
 PARLIST="theta_param,$PARLIST"
@@ -57,9 +68,9 @@ ARGS_P=("${ARGS_P[@]}"
 ARGS_S=("${ARGS_S[@]}"
     "--theta_scheme" "ones"
     "--theta_param" "1.0")
-    model="DecoupledVarLP"
-    CONVS=("AdjiConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" \
-           "BernConv" "LegendreConv" "JacobiConv" "FavardConv" "OptBasisConv")
+    model="PrecomputedVarLP"
+    CONVS=("AdjSkipConv" "AdjConv" "HornerConv" "ChebConv" "ClenshawConv" "ChebIIConv" \
+           "BernConv" "LegendreConv" "JacobiConv" "OptBasisConv")
     for conv in ${CONVS[@]}; do
         PARLIST="normg,dropout_lin,dropout_conv,lr_lin,lr_conv,wd_lin,wd_conv"
         # Add model/conv-specific args/params here
@@ -74,3 +85,14 @@ ARGS_S=("${ARGS_S[@]}"
     done
 
 done
+}
+
+SEED_S="20,21,22,23,24,25,26,27,28,29"
+BATCH=4096
+DATAS=("ogbl-ddi" "ogbl-collab")
+run_mb $SEED_S $BATCH ${DATAS[@]}
+
+SEED_S="20,21,22,23,24"
+BATCH=800000
+DATAS=("ogbl-citation2")
+run_mb $SEED_S $BATCH ${DATAS[@]}
