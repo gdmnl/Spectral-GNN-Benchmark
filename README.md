@@ -244,6 +244,7 @@ The following datasets are evaluated in the paper and are automatically availabl
 - [ ] Support more transformation operations.
   - [ ] Generalize ACMGNN
   - [ ] LD2 
+  - [ ] Var models weight norm
 - [ ] Support iterative eigen-decomposition for full-spectrum spectral filters.
   - [ ] Jacobi method
   - [ ] Lanczos method
