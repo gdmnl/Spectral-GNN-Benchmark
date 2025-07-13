@@ -26,6 +26,7 @@ warnings.filterwarnings('ignore', '.*No positive samples found in target.*')
 warnings.filterwarnings('ignore', '.*No negative samples found in target.*')
 warnings.filterwarnings('ignore', '.*is( an)? experimental.*')
 warnings.filterwarnings('ignore', '.*Attempting to set identical low and high ylims.*')
+warnings.filterwarnings('ignore', '.*Changing the sparsity structure of*')
 
 
 def setup_logger(logpath: Path | str = LOGPATH,

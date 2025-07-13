@@ -94,7 +94,8 @@ def get_model_regi(model: str, k: str, args=None) -> str:
     Returns:
         value (str): The value of the model registry.
     """
-    model = re.sub(r'LP$', '', model)
+    if 'MLP' not in model:
+        model = re.sub(r'LP$', '', model)
     if not model in model_regi[k]:
         return None
     return model_regi[k](model, args) if args else model_regi[k][model]
@@ -141,7 +142,7 @@ def get_nn_name(model: str, conv: str, args) -> str:
     Returns:
         nn_name (tuple[str]): Name strings ``(model_name, conv_name)``.
     """
-    is_lp = model.endswith('LP')
+    is_lp = model.endswith('LP') and ('MLP' not in model)
     if is_lp:
         model = model[:-2]
 
@@ -167,7 +168,8 @@ def set_pargs(model: str, conv: str, args):
     Returns:
         kwargs (dict): Arguments for importing the model.
     """
-    model = re.sub(r'LP$', '', model)
+    if 'MLP' not in model:
+        model = re.sub(r'LP$', '', model)
     valid_pargs = model_regi['pargs'][model]
     for channel in conv.split(','):
         valid_pargs.extend(conv_regi['pargs'][channel])

@@ -314,9 +314,13 @@ class BaseLPNN(BaseNN):
         self.out_channels = out_channels
         self.desc_layers = 2
 
+        channel_list = self.channel_list[-1:]
+        if self.desc_layers > 1:
+            channel_list += [hidden_channels] * (self.desc_layers - 1)
+        channel_list += [out_channels]
         if self.desc_layers > 0:
             self.desc_mlp = myMLP(
-                channel_list=[hidden_channels] * self.desc_layers + [out_channels],
+                channel_list=channel_list,
                 num_layers=self.desc_layers,
                 dropout=0.0,
                 act=act,
@@ -354,7 +358,10 @@ class BaseLPNN(BaseNN):
         batch: OptTensor = None,
         batch_size: int | None = None,
     ) -> Tensor:
-        x = z[edge_label_index[0]] * z[edge_label_index[1]]
+        dev = edge_label_index.device
+        zs = z[edge_label_index[0].to(z.device)].to(dev)
+        zt = z[edge_label_index[1].to(z.device)].to(dev)
+        x = zs * zt
         x = self.desc_mlp(x, batch=batch, batch_size=batch_size)
         return x.flatten()
 
