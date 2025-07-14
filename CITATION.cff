@@ -18,7 +18,7 @@ title: "pyg_spectral"
 version: 1.0.0
 date-released: 2024-05-28
 preferred-citation:
-  type: report
+  type: conference-paper
   authors:
   - family-names: Liao
     given-names: Ningyi
@@ -33,11 +33,11 @@ preferred-citation:
   - family-names: Lakshmanan
     given-names: Laks
     orcid: https://orcid.org/0000-0002-9775-4241
-  journal: "arXiv e-prints"
+  journal: "Proceedings of the ACM SIGMOD 2026 International Conference on Management of Data"
   month: 6
   start: 1
   end: 37
   title: "Benchmarking Spectral Graph Neural Networks: A Comprehensive Study on Effectiveness and Efficiency"
   issue: arXiv:2406.09675
-  year: 2024
+  year: 2026
   eprint: 2406.09675

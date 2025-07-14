@@ -10,7 +10,10 @@
   <a href="https://gdmnl.github.io/Spectral-GNN-Benchmark/_tutorial/installation.html"><img src="https://img.shields.io/badge/PyTorch->=2.0-FF6F00?logo=pytorch" alt="PyTorch"></a>
 </div>
 
-`pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations. Our preliminary paper is available on [arXiv](https://arxiv.org/abs/2406.09675). **Artifact** and additional results can be found in the [Appendix](Appendix.pdf).
+`pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations. 
+
+> [!NOTE]
+> :tada: [2025.05.23] Our paper *"A Comprehensive Benchmark on Spectral GNNs: The Impact on Efficiency, Memory, and Effectiveness"* is accpeted by SIGMOD 2026! The full tech report can be accessed at [arXiv](https://arxiv.org/abs/2406.09675). Welcome to cite our paper by using "Cite this repository" in the right sidebar.
 
 > [!IMPORTANT]
 > ***Why this project?***  
