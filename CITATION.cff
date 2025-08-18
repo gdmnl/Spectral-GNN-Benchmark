@@ -6,8 +6,10 @@ authors:
     orcid: https://orcid.org/0000-0003-3176-4401
   - family-names: Liu
     given-names: Haoyu
+    orcid: https://orcid.org/0000-0002-0839-5460
   - family-names: Zhu
     given-names: Zulun
+    orcid: https://orcid.org/0000-0002-5176-6378
   - family-names: Luo
     given-names: Siqiang
     orcid: https://orcid.org/0000-0001-8197-0903
@@ -25,19 +27,24 @@ preferred-citation:
     orcid: https://orcid.org/0000-0003-3176-4401
   - family-names: Liu
     given-names: Haoyu
+    orcid: https://orcid.org/0000-0002-0839-5460
   - family-names: Zhu
     given-names: Zulun
+    orcid: https://orcid.org/0000-0002-5176-6378
   - family-names: Luo
     given-names: Siqiang
     orcid: https://orcid.org/0000-0001-8197-0903
   - family-names: Lakshmanan
     given-names: Laks
     orcid: https://orcid.org/0000-0002-9775-4241
-  journal: "Proceedings of the ACM SIGMOD 2026 International Conference on Management of Data"
-  month: 6
+  journal: "Proceedings of the ACM on Management of Data (SIGMOD)"
+  publisher: "ACM"
+  month: 9
   start: 1
   end: 37
-  title: "Benchmarking Spectral Graph Neural Networks: A Comprehensive Study on Effectiveness and Efficiency"
-  issue: arXiv:2406.09675
-  year: 2026
+  title: "A Comprehensive Benchmark on Spectral GNNs: The Impact on Efficiency, Memory, and Effectiveness"
+  volume: 3
+  issue: 4
+  year: 2025
+  doi: 10.1145/3749156
   eprint: 2406.09675

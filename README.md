@@ -13,7 +13,12 @@
 `pyg_spectral` is a [PyTorch Geometric](https://pyg.org)-based framework for analyzing, implementing, and benchmarking spectral GNNs with effectiveness and efficiency evaluations. 
 
 > [!NOTE]
-> :tada: [2025.05.23] Our paper *"A Comprehensive Benchmark on Spectral GNNs: The Impact on Efficiency, Memory, and Effectiveness"* is accpeted by SIGMOD 2026! The full tech report can be accessed at [arXiv](https://arxiv.org/abs/2406.09675). Welcome to cite our paper by using "Cite this repository" in the right sidebar.
+> :tada: [2025.05.23] Our paper *"A Comprehensive Benchmark on Spectral GNNs: The Impact on Efficiency, Memory, and Effectiveness"* is accpeted by SIGMOD 2026! The full tech report can be accessed [here](Report.pdf) as well as at [arXiv](https://arxiv.org/abs/2406.09675). Welcome to cite our paper as:  
+> ```
+> Ningyi Liao, Haoyu Liu, Zulun Zhu, Siqiang Luo, and Laks V.S. Lakshmanan.  
+> A Comprehensive Benchmark on Spectral GNNs: The Impact on Efficiency, Memory, and Effectiveness.  
+> Proceedings of the ACM on Management of Data, 3(4), 2025. doi:10.1145/3749156.
+> ```
 
 > [!IMPORTANT]
 > ***Why this project?***  
