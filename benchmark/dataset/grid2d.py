@@ -11,7 +11,7 @@ class Grid2D(InMemoryDataset):
         self.name = name.lower()
         super(Grid2D, self).__init__(root, transform, pre_transform)
         self.load(self.processed_paths[0])
-        self.data, self.slices = torch.load(self.processed_paths[0])
+        self.data, self.slices = torch.load(self.processed_paths[0], weights_only=False)
 
     @property
     def raw_dir(self) -> str:

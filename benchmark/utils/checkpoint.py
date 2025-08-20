@@ -118,14 +118,14 @@ class CkptLogger(object):
         path = self._get_model_path(*suffix)
 
         if self.storage == 'state_file':
-            state_dict = torch.load(path, map_location=map_location)
+            state_dict = torch.load(path, map_location=map_location, weights_only=False)
             model.load_state_dict(state_dict)
         elif self.storage in ['state_ram', 'state_gpu']:
             assert hasattr(self, name)
             model.load_state_dict(getattr(self, name))
             # model.to(map_location)
         elif self.storage == 'model_file':
-            model = torch.load(path, map_location=map_location)
+            model = torch.load(path, map_location=map_location, weights_only=False)
         elif self.storage in ['model_ram', 'model_gpu']:
             assert hasattr(self, name)
             model = copy.deepcopy(getattr(self, name))

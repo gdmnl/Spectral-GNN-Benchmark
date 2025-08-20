@@ -112,10 +112,10 @@ class LINKX(InMemoryDataset):
             edge_index = torch.tensor(edge_index.to_numpy()).t().type(torch.LongTensor).contiguous()
             edge_index = coalesce(edge_index, num_nodes=n)
         elif self.name in ['wiki']:
-            x = torch.load(osp.join(self.raw_dir, f'{self.name}_features.pt'))
-            y = torch.load(osp.join(self.raw_dir, f'{self.name}_views.pt'))
+            x = torch.load(osp.join(self.raw_dir, f'{self.name}_features.pt'), weights_only=False)
+            y = torch.load(osp.join(self.raw_dir, f'{self.name}_views.pt'), weights_only=False)
             n = y.shape[0]
-            edge_index = torch.load(osp.join(self.raw_dir, f'{self.name}_edges.pt')).t().contiguous()
+            edge_index = torch.load(osp.join(self.raw_dir, f'{self.name}_edges.pt'), weights_only=False).t().contiguous()
             edge_index = coalesce(edge_index, num_nodes=n)
         else:
             data = scipy.io.loadmat(osp.join(self.raw_dir, f'{self.name}.mat'))

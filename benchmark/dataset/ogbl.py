@@ -18,7 +18,7 @@ SPLIT_NAME = {'train': 'train',
 def run_node2vec(path, data: Data) -> None:
     path = path.joinpath('embedding.pt')
     if path.exists():
-        return torch.load(path, map_location='cpu')
+        return torch.load(path, map_location='cpu', weights_only=False)
 
     from torch_geometric.nn import Node2Vec
 
@@ -53,7 +53,7 @@ def run_node2vec(path, data: Data) -> None:
             optimizer.step()
 
     torch.save(model.embedding.weight.data.cpu(), path)
-    return torch.load(path, map_location='cpu')
+    return torch.load(path, map_location='cpu', weights_only=False)
 
 
 def get_data(datapath, transform, args: Namespace):
